@@ -1,0 +1,19 @@
+{
+    "name": "AlienFarms.Editor",
+    "rootNamespace": "AlienFarms.Editor",
+    "references": [
+        "AlienFarms.Runtime",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
