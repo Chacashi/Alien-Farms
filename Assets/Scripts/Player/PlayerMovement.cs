@@ -103,6 +103,12 @@ namespace AlienFarms.Player
         /// <summary>Instantly moves the player and clears its velocity. Rotation is applied to the visual.</summary>
         public void Teleport(Vector3 position, Quaternion rotation)
         {
+            // May be called from PlayerInputManager.onPlayerJoined before this Awake has run.
+            if (_rb == null)
+            {
+                _rb = GetComponent<Rigidbody>();
+            }
+
             _rb.position = position;
             transform.position = position;
             _rb.linearVelocity = Vector3.zero;

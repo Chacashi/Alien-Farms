@@ -264,6 +264,8 @@ GameObject:
   - component: {fileID: 4265062030262414608}
   - component: {fileID: 770670607405494521}
   - component: {fileID: 3380034589129394156}
+  - component: {fileID: 7818434714832007616}
+  - component: {fileID: 8245825407222987962}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -381,7 +383,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f6445bb8fae4f84a8137f2aa8ff16c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Player.PlayerIdentity
-  _id: 1
+  _id: 0
 --- !u!114 &770670607405494521
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -419,6 +421,35 @@ MonoBehaviour:
   _rb: {fileID: 4375879930803449332}
   _cameraYawSource: {fileID: 8214373284223332368}
   _visual: {fileID: 7241696276358115105}
+--- !u!114 &7818434714832007616
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7117857313156260007}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb46bd44dff35ac42a515a34b0f1c0fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Player.PlayerAppearance
+  _bodyRenderer: {fileID: 8588914411410261689}
+--- !u!114 &8245825407222987962
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7117857313156260007}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67eceeecbf5e595408ea4cae85daef9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Player.PlayerRig
+  _identity: {fileID: 4265062030262414608}
+  _movement: {fileID: 3380034589129394156}
+  _camera: {fileID: 8748561648029091133}
+  _appearance: {fileID: 7818434714832007616}
 --- !u!1 &8093002818204508785
 GameObject:
   m_ObjectHideFlags: 0

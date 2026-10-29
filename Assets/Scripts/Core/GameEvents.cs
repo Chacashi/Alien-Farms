@@ -10,9 +10,12 @@ namespace AlienFarms.Core
     public static class GameEvents
     {
         public static event Action<PlayerId> OnPlayerJoined;
+        public static event Action<PlayerId> OnPlayerLeft;
         public static event Action<PlayerId> OnPauseRequested;
 
         public static void RaisePlayerJoined(PlayerId playerId) => OnPlayerJoined?.Invoke(playerId);
+
+        public static void RaisePlayerLeft(PlayerId playerId) => OnPlayerLeft?.Invoke(playerId);
 
         public static void RaisePauseRequested(PlayerId playerId) => OnPauseRequested?.Invoke(playerId);
 
@@ -21,6 +24,7 @@ namespace AlienFarms.Core
         private static void ResetStatics()
         {
             OnPlayerJoined = null;
+            OnPlayerLeft = null;
             OnPauseRequested = null;
         }
     }

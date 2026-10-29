@@ -35,10 +35,16 @@ namespace AlienFarms.Player
         private readonly RaycastHit[] _hits = new RaycastHit[MaxHits];
         private float _yaw;
         private float _pitch;
+        private bool _yawSnapped;
 
         private void Awake()
         {
-            _yaw = transform.eulerAngles.y;
+            // PlayerInputManager may call SnapYaw (via onPlayerJoined) before this Awake runs; keep that value.
+            if (!_yawSnapped)
+            {
+                _yaw = transform.eulerAngles.y;
+            }
+
             _pitch = _settings != null ? _settings.DefaultPitch : 0f;
         }
 
@@ -78,6 +84,11 @@ namespace AlienFarms.Player
         public void SnapYaw(float yaw)
         {
             _yaw = Mathf.Repeat(yaw, 360f);
+            _yawSnapped = true;
+
+            // Apply now so movement (which reads this rig's yaw) is correct before the next LateUpdate.
+            Vector3 euler = transform.eulerAngles;
+            transform.rotation = Quaternion.Euler(euler.x, _yaw, 0f);
         }
 
         private float ResolveDistance(Vector3 origin, Vector3 direction)
