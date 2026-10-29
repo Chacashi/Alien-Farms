@@ -42,9 +42,13 @@ namespace AlienFarms.Player
         private float _nextRetryTime;
         private bool _requiresRepress;
         private bool _releaseRequested;
+        private bool _inputEnabled = true;
 
         public bool IsHolding => _held != null;
         public IGrabbable Held => _held;
+
+        /// <summary>False while the match freezes this player: nothing can be grabbed.</summary>
+        public bool IsInputEnabled => _inputEnabled;
 
         private PlayerId Id => _identity != null ? _identity.Id : PlayerId.None;
 
@@ -52,7 +56,8 @@ namespace AlienFarms.Player
         {
             _animalMask = LayerMask.GetMask(LayerNames.Animal);
             _environmentMask = LayerMask.GetMask(LayerNames.Environment);
-            _dropBlockingMask = LayerMask.GetMask(LayerNames.Environment, LayerNames.Player, LayerNames.Animal);
+            _dropBlockingMask = LayerMask.GetMask(
+                LayerNames.Environment, LayerNames.Player, LayerNames.Animal, LayerNames.CapturedAnimal);
         }
 
         private void OnEnable()
@@ -98,7 +103,7 @@ namespace AlienFarms.Player
                 return;
             }
 
-            if (_settings == null || _input == null || _requiresRepress || !_input.IsGrabHeld)
+            if (!_inputEnabled || _settings == null || _input == null || _requiresRepress || !_input.IsGrabHeld)
             {
                 return;
             }
@@ -127,9 +132,25 @@ namespace AlienFarms.Player
             }
         }
 
+        /// <summary>
+        /// Disabling drops whatever is carried (Forced) and blocks grabbing. Re-enabling requires releasing Grab first
+        /// if it is still held, so a button held through a freeze does not grab instantly.
+        /// </summary>
+        public void SetInputEnabled(bool enabled)
+        {
+            _inputEnabled = enabled;
+            if (!enabled)
+            {
+                ForceDrop(DropReason.Forced, Vector3.zero);
+                return;
+            }
+
+            _requiresRepress = _input != null && _input.IsGrabHeld;
+        }
+
         private void HandleGrabStarted()
         {
-            if (_held != null || _requiresRepress || (_movement != null && _movement.IsStunned))
+            if (!_inputEnabled || _held != null || _requiresRepress || (_movement != null && _movement.IsStunned))
             {
                 return;
             }

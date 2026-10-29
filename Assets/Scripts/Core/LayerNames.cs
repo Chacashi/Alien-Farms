@@ -8,5 +8,7 @@ namespace AlienFarms.Core
         public const string Player = "Player";
         public const string Animal = "Animal";
         public const string Zone = "Zone";
+        public const string CapturedAnimal = "CapturedAnimal";
+        public const string ZoneBarrier = "ZoneBarrier";
     }
 }

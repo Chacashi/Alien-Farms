@@ -27,9 +27,14 @@ namespace AlienFarms.Player
         [SerializeField, Tooltip("Grabber on this root.")]
         private PlayerGrabber _grabber;
 
+        [SerializeField, Tooltip("Physics body collider on this root (CapsuleCollider); zones let it through their barrier.")]
+        private Collider _bodyCollider;
+
         public PlayerId Id => _identity != null ? _identity.Id : PlayerId.None;
 
         public PlayerGrabber Grabber => _grabber;
+
+        public Collider BodyCollider => _bodyCollider;
 
         /// <summary>Assigns identity, places the player at the spawn, aligns its camera and applies its color.</summary>
         public void Configure(PlayerId id, Transform spawn, Material material)
@@ -39,22 +44,49 @@ namespace AlienFarms.Player
                 _identity.Initialize(id);
             }
 
-            if (spawn != null)
-            {
-                if (_movement != null)
-                {
-                    _movement.Teleport(spawn.position, spawn.rotation);
-                }
-
-                if (_camera != null)
-                {
-                    _camera.SnapYaw(spawn.eulerAngles.y);
-                }
-            }
+            Respawn(spawn);
 
             if (_appearance != null)
             {
                 _appearance.ApplyMaterial(material);
+            }
+        }
+
+        /// <summary>Drops anything carried (Forced), moves the player to <paramref name="spawn"/> and aligns its camera.</summary>
+        public void Respawn(Transform spawn)
+        {
+            if (spawn == null)
+            {
+                return;
+            }
+
+            if (_grabber != null)
+            {
+                _grabber.ForceDrop(DropReason.Forced, Vector3.zero);
+            }
+
+            if (_movement != null)
+            {
+                _movement.Teleport(spawn.position, spawn.rotation);
+            }
+
+            if (_camera != null)
+            {
+                _camera.SnapYaw(spawn.eulerAngles.y);
+            }
+        }
+
+        /// <summary>Freezes (false) or unfreezes (true) movement and grabbing. The camera stays free.</summary>
+        public void SetControlsEnabled(bool enabled)
+        {
+            if (_movement != null)
+            {
+                _movement.SetInputEnabled(enabled);
+            }
+
+            if (_grabber != null)
+            {
+                _grabber.SetInputEnabled(enabled);
             }
         }
 
@@ -84,6 +116,16 @@ namespace AlienFarms.Player
             if (_grabber == null)
             {
                 TryGetComponent(out _grabber);
+            }
+
+            if (_bodyCollider == null && TryGetComponent(out CapsuleCollider capsule))
+            {
+                _bodyCollider = capsule;
+            }
+
+            if (_bodyCollider == null)
+            {
+                Debug.LogWarning($"[{nameof(PlayerRig)}] Missing body collider on '{name}'; zone barriers will block this player.", this);
             }
         }
     }

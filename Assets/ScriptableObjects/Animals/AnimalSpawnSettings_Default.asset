@@ -21,7 +21,8 @@ MonoBehaviour:
   _targetFreePopulation: 12
   _respawnInterval: 3
   _maxActiveAnimals: 60
-  _prewarmPerType: 12
+  _poolHardCap: 120
+  _prewarmPerType: 30
   _spawnRadius: 6
   _spawnClearance: 0.6
   _maxPlacementAttempts: 8

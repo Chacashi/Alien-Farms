@@ -35,7 +35,7 @@ namespace AlienFarms.Animals
         private float _respawnTimer;
         private bool _warnedCap;
 
-        /// <summary>Animals currently in play (including carried ones).</summary>
+        /// <summary>Animals currently in play (including carried and captured ones).</summary>
         public int ActiveCount => _active != null ? _active.Count : 0;
 
         private void Awake()
@@ -49,7 +49,7 @@ namespace AlienFarms.Animals
 
             _blockingMask = LayerMask.GetMask(LayerNames.Player, LayerNames.Animal, LayerNames.Environment);
             _bounds = _animalZone.Bounds;
-            _active = new List<Animal>(_settings.MaxActiveAnimals);
+            _active = new List<Animal>(_settings.PoolHardCap);
 
             AnimalSpawnEntry[] entries = _settings.Entries;
             _pools = new AnimalTypePool[entries.Length];
@@ -63,7 +63,7 @@ namespace AlienFarms.Animals
                     continue;
                 }
 
-                _pools[i] = new AnimalTypePool(data, _animalsContainer, _bounds, _settings.PrewarmPerType, _settings.MaxActiveAnimals);
+                _pools[i] = new AnimalTypePool(data, _animalsContainer, _bounds, _settings.PrewarmPerType, _settings.PoolHardCap);
                 _totalWeight += Mathf.Max(1, entries[i].Weight);
             }
         }
@@ -75,7 +75,11 @@ namespace AlienFarms.Animals
                 _pools[i]?.Prewarm(_settings.PrewarmPerType);
             }
 
-            SpawnInitial();
+            // ResetPopulation may already have populated the zone (e.g. a match reset before our Start).
+            if (_active.Count == 0)
+            {
+                SpawnInitial();
+            }
         }
 
         private void Update()
@@ -88,18 +92,22 @@ namespace AlienFarms.Animals
 
             _respawnTimer = _settings.RespawnInterval;
 
+            // Free = in play and not captured (carried included). Captured animals never block the refill,
+            // so the Animal Zone keeps its population however many get penned.
             int free = PruneAndCountFree();
-            if (free >= _settings.TargetFreePopulation)
+            if (free >= _settings.TargetFreePopulation || free >= _settings.MaxActiveAnimals)
             {
                 return;
             }
 
-            if (_active.Count >= _settings.MaxActiveAnimals)
+            // Absolute safety cap including captured animals. Below it, pools may instantiate past the prewarm:
+            // accepted as a rare case (only after many captures in a single round), never per frame.
+            if (_active.Count >= _settings.PoolHardCap)
             {
                 if (!_warnedCap)
                 {
                     _warnedCap = true;
-                    Debug.LogWarning($"[{nameof(AnimalSpawner)}] Reached {_settings.MaxActiveAnimals} active animals; refill paused.", this);
+                    Debug.LogWarning($"[{nameof(AnimalSpawner)}] Reached the hard cap of {_settings.PoolHardCap} animals; refill paused.", this);
                 }
 
                 return;
@@ -144,7 +152,7 @@ namespace AlienFarms.Animals
 
         private void SpawnInitial()
         {
-            int count = Mathf.Min(_settings.InitialCount, _settings.MaxActiveAnimals);
+            int count = Mathf.Min(_settings.InitialCount, Mathf.Min(_settings.MaxActiveAnimals, _settings.PoolHardCap));
             for (int i = 0; i < count; i++)
             {
                 TrySpawnOne();

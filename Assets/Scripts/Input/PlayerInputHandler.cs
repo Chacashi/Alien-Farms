@@ -28,6 +28,7 @@ namespace AlienFarms.Input
         [SerializeField] private InputActionReference _sprint;
         [SerializeField] private InputActionReference _grab;
         [SerializeField] private InputActionReference _pause;
+        [SerializeField] private InputActionReference _confirm;
 
         [Header("Cursor")]
         [SerializeField, Tooltip("Lock and hide the cursor while this player uses keyboard and mouse.")]
@@ -38,6 +39,7 @@ namespace AlienFarms.Input
         private InputAction _sprintAction;
         private InputAction _grabAction;
         private InputAction _pauseAction;
+        private InputAction _confirmAction;
 
         // Cursor.lockState is global: only the handler that locked it may release it.
         private bool _ownsCursorLock;
@@ -63,7 +65,7 @@ namespace AlienFarms.Input
 
             if (_identity == null)
             {
-                Debug.LogError($"[{nameof(PlayerInputHandler)}] PlayerIdentity is not assigned on '{name}'; pause requests will be ignored.", this);
+                Debug.LogError($"[{nameof(PlayerInputHandler)}] PlayerIdentity is not assigned on '{name}'; pause/confirm requests will be ignored.", this);
             }
 
             _moveAction = Resolve(_move);
@@ -71,6 +73,7 @@ namespace AlienFarms.Input
             _sprintAction = Resolve(_sprint);
             _grabAction = Resolve(_grab);
             _pauseAction = Resolve(_pause);
+            _confirmAction = Resolve(_confirm);
         }
 
         private void OnEnable()
@@ -84,6 +87,11 @@ namespace AlienFarms.Input
             if (_pauseAction != null)
             {
                 _pauseAction.performed += HandlePausePerformed;
+            }
+
+            if (_confirmAction != null)
+            {
+                _confirmAction.performed += HandleConfirmPerformed;
             }
 
             if (_playerInput != null)
@@ -116,6 +124,11 @@ namespace AlienFarms.Input
             if (_pauseAction != null)
             {
                 _pauseAction.performed -= HandlePausePerformed;
+            }
+
+            if (_confirmAction != null)
+            {
+                _confirmAction.performed -= HandleConfirmPerformed;
             }
 
             if (_playerInput != null)
@@ -162,6 +175,14 @@ namespace AlienFarms.Input
             }
         }
 
+        private void HandleConfirmPerformed(InputAction.CallbackContext context)
+        {
+            if (_identity != null)
+            {
+                GameEvents.RaiseConfirmPressed(_identity.Id);
+            }
+        }
+
         private void HandleControlsChanged(PlayerInput playerInput) => RefreshCursorLock();
 
         private void RefreshCursorLock()
@@ -202,7 +223,7 @@ namespace AlienFarms.Input
                 Debug.LogWarning($"[{nameof(PlayerInputHandler)}] Missing PlayerIdentity reference on '{name}'.", this);
             }
 
-            if (_move == null || _look == null || _sprint == null || _grab == null || _pause == null)
+            if (_move == null || _look == null || _sprint == null || _grab == null || _pause == null || _confirm == null)
             {
                 Debug.LogWarning($"[{nameof(PlayerInputHandler)}] One or more InputActionReferences are not assigned on '{name}'.", this);
             }

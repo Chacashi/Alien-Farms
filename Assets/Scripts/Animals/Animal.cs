@@ -7,7 +7,8 @@ namespace AlienFarms.Animals
     /// <summary>
     /// Pooled, Rigidbody-driven animal that wanders inside the Animal Zone, flees from nearby players
     /// and can be carried by a player. Derived types only change data and the flee direction.
-    /// State flow: Wandering &lt;-&gt; Fleeing -&gt; Carried -&gt; (released) Wandering.
+    /// State flow: Wandering &lt;-&gt; Fleeing -&gt; Carried -&gt; (released) Wandering, or Captured when the capture
+    /// referee accepts the drop (confined to the owner's pen until despawned).
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
@@ -21,6 +22,12 @@ namespace AlienFarms.Animals
 
         // After a drop, steering waits this long so the drop velocity is not overridden immediately (s).
         private const float SteeringResumeDelay = 0.35f;
+
+        // Extra inset when clamping a captured animal inside its pen (m).
+        private const float CaptureClampPadding = 0.1f;
+
+        // A captured animal pushed further than this outside its pen is snapped back (m).
+        private const float CaptureEscapeTolerance = 0.25f;
 
         // Shared by all animals: queries run sequentially on the main thread and are consumed immediately.
         private static readonly Collider[] s_playerHits = new Collider[8];
@@ -37,9 +44,14 @@ namespace AlienFarms.Animals
 
         private AnimalData _data;
         private Bounds _confinement;
+        private Bounds _homeConfinement;
         private AnimalTypePool _pool;
         private AnimalState _state = AnimalState.Inactive;
         private PlayerId _holder = PlayerId.None;
+        private PlayerId _owner = PlayerId.None;
+        private int _freeLayer;
+        private int _capturedLayer;
+        private bool _layersCached;
         private Transform _holdPoint;
         private int _playerMask;
 
@@ -57,8 +69,11 @@ namespace AlienFarms.Animals
         public AnimalData Data => _data;
         public AnimalState State => _state;
 
-        /// <summary>True while the animal is in play and not captured (Hito 4 will add Captured).</summary>
-        public bool IsFree => _state != AnimalState.Inactive;
+        /// <summary>True while the animal is in play and not captured.</summary>
+        public bool IsFree => _state != AnimalState.Inactive && _state != AnimalState.Captured;
+
+        /// <summary>Player whose pen holds this animal, or <see cref="PlayerId.None"/> while free.</summary>
+        public PlayerId Owner => _owner;
 
         public bool CanBeGrabbed => IsFree && _state != AnimalState.Carried && Time.time >= _grabCooldownUntil;
         public PlayerId Holder => _holder;
@@ -78,6 +93,7 @@ namespace AlienFarms.Animals
             }
 
             _playerMask = LayerMask.GetMask(LayerNames.Player);
+            CacheLayers();
         }
 
         /// <summary>Called once by the pool right after instantiation.</summary>
@@ -89,8 +105,11 @@ namespace AlienFarms.Animals
                 _rb = GetComponent<Rigidbody>();
             }
 
+            CacheLayers();
+
             _data = data;
             _confinement = confinement;
+            _homeConfinement = confinement;
             _pool = pool;
             _state = AnimalState.Inactive;
 
@@ -123,6 +142,10 @@ namespace AlienFarms.Animals
                 _collider.enabled = true;
             }
 
+            // Pooled instances may come back from a pen: restore the free setup.
+            gameObject.layer = _freeLayer;
+            _confinement = _homeConfinement;
+            _owner = PlayerId.None;
             _holder = PlayerId.None;
             _holdPoint = null;
             _grabCooldownUntil = 0f;
@@ -235,7 +258,53 @@ namespace AlienFarms.Animals
             _cornerEscape.Clear();
             EnterIdle();
 
+            // MUST stay the last statement: listeners (CaptureReferee) may call TryCapture synchronously
+            // and rely on the release state above being fully applied.
             GameEvents.RaiseAnimalDropped(previousHolder, this, reason);
+        }
+
+        /// <summary>
+        /// Moves a free, just-released animal into <paramref name="owner"/>'s pen: it becomes Captured, switches to the
+        /// CapturedAnimal layer, is clamped inside <paramref name="pen"/> and wanders there without fleeing.
+        /// Returns false unless the animal is Wandering or Fleeing.
+        /// </summary>
+        public bool TryCapture(PlayerId owner, Bounds pen)
+        {
+            if (owner == PlayerId.None || (_state != AnimalState.Wandering && _state != AnimalState.Fleeing))
+            {
+                return false;
+            }
+
+            _state = AnimalState.Captured;
+            _owner = owner;
+            _confinement = pen;
+            // The physics collider lives on this root (the visual has none), so the root layer is enough.
+            gameObject.layer = _capturedLayer;
+
+            ClampInsidePen();
+
+            _cornerEscape.Clear();
+            EnterIdle();
+            _steeringResumeTime = 0f;
+            return true;
+        }
+
+        /// <summary>Resolves the free (prefab) and captured layers once; safe to call before Awake.</summary>
+        private void CacheLayers()
+        {
+            if (_layersCached)
+            {
+                return;
+            }
+
+            _layersCached = true;
+            _freeLayer = gameObject.layer;
+            _capturedLayer = LayerMask.NameToLayer(LayerNames.CapturedAnimal);
+            if (_capturedLayer < 0)
+            {
+                Debug.LogError($"[{nameof(Animal)}] Layer '{LayerNames.CapturedAnimal}' is missing; captured animals keep their layer.", this);
+                _capturedLayer = _freeLayer;
+            }
         }
 
         /// <summary>Direction to flee in, given the planar unit vector pointing away from the threat.</summary>
@@ -256,6 +325,19 @@ namespace AlienFarms.Animals
             float now = Time.time;
             Vector3 position = _rb.position;
 
+            if (_state == AnimalState.Captured)
+            {
+                // Safety net: something (a crush against the barrier, a shove) pushed it out of its pen.
+                if (IsOutsidePen(position))
+                {
+                    ClampInsidePen();
+                    position = _rb.position;
+                }
+
+                ApplyDesiredVelocity(ComputeWanderVelocity(position, now));
+                return;
+            }
+
             if (now >= _nextDetectionTime)
             {
                 _nextDetectionTime = now + _data.DetectionInterval;
@@ -272,10 +354,46 @@ namespace AlienFarms.Animals
                 ? ComputeFleeVelocity(position)
                 : ComputeWanderVelocity(position, now);
 
+            ApplyDesiredVelocity(desired);
+        }
+
+        private void ApplyDesiredVelocity(Vector3 desired)
+        {
             Vector3 velocity = _rb.linearVelocity;
             Vector3 horizontal = new Vector3(velocity.x, 0f, velocity.z);
             horizontal = Vector3.MoveTowards(horizontal, desired, _data.Acceleration * Time.fixedDeltaTime);
             _rb.linearVelocity = new Vector3(horizontal.x, velocity.y, horizontal.z);
+        }
+
+        /// <summary>Clamps the body inside the pen (inset by its half size) and zeroes horizontal velocity (Y kept).</summary>
+        private void ClampInsidePen()
+        {
+            float halfSize = PlanarHalfSize();
+            Vector3 clamped = AnimalSteering.ClampInside(_rb.position, _confinement, halfSize + CaptureClampPadding);
+            _rb.position = clamped;
+            transform.position = clamped;
+
+            Vector3 velocity = _rb.linearVelocity;
+            _rb.linearVelocity = new Vector3(0f, velocity.y, 0f);
+        }
+
+        private bool IsOutsidePen(Vector3 position)
+        {
+            Vector3 min = _confinement.min;
+            Vector3 max = _confinement.max;
+            return position.x < min.x - CaptureEscapeTolerance || position.x > max.x + CaptureEscapeTolerance
+                || position.z < min.z - CaptureEscapeTolerance || position.z > max.z + CaptureEscapeTolerance;
+        }
+
+        private float PlanarHalfSize()
+        {
+            if (_collider == null || !_collider.enabled)
+            {
+                return 0f;
+            }
+
+            Vector3 extents = _collider.bounds.extents;
+            return Mathf.Max(extents.x, extents.z);
         }
 
         private void Update()

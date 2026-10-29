@@ -16,8 +16,8 @@ TagManager:
   - Player
   - Animal
   - Zone
-  - 
-  - 
+  - CapturedAnimal
+  - ZoneBarrier
   - 
   - 
   - 

@@ -20,8 +20,11 @@ namespace AlienFarms.Data
         [SerializeField, Min(0.1f), Tooltip("Seconds between refill attempts (one animal per attempt).")]
         private float _respawnInterval = 3f;
 
-        [SerializeField, Min(1), Tooltip("Hard cap of animals in the world (also the max size of each pool).")]
+        [SerializeField, Min(1), Tooltip("Max animals in play that are not captured (free + carried). Captured ones do not count.")]
         private int _maxActiveAnimals = 60;
+
+        [SerializeField, Min(1), Tooltip("Absolute cap of animals in the world including captured ones (also the max size of each pool). Refill stops when reached.")]
+        private int _poolHardCap = 120;
 
         [SerializeField, Min(0), Tooltip("Instances created per type at startup to avoid runtime instantiation.")]
         private int _prewarmPerType = 12;
@@ -41,6 +44,7 @@ namespace AlienFarms.Data
         public int TargetFreePopulation => _targetFreePopulation;
         public float RespawnInterval => _respawnInterval;
         public int MaxActiveAnimals => _maxActiveAnimals;
+        public int PoolHardCap => _poolHardCap;
         public int PrewarmPerType => _prewarmPerType;
         public float SpawnRadius => _spawnRadius;
         public float SpawnClearance => _spawnClearance;
@@ -58,9 +62,14 @@ namespace AlienFarms.Data
                 _targetFreePopulation = _maxActiveAnimals;
             }
 
-            if (_prewarmPerType > _maxActiveAnimals)
+            if (_poolHardCap < _maxActiveAnimals)
             {
-                _prewarmPerType = _maxActiveAnimals;
+                _poolHardCap = _maxActiveAnimals;
+            }
+
+            if (_prewarmPerType > _poolHardCap)
+            {
+                _prewarmPerType = _poolHardCap;
             }
         }
     }

@@ -436,6 +436,7 @@ MonoBehaviour:
   _sprint: {fileID: -586416493963132787, guid: 31166a29a951cef488e041e9f376137d, type: 3}
   _grab: {fileID: 4954065588466523864, guid: 31166a29a951cef488e041e9f376137d, type: 3}
   _pause: {fileID: 5262443328856900347, guid: 31166a29a951cef488e041e9f376137d, type: 3}
+  _confirm: {fileID: -6459304878507098170, guid: 31166a29a951cef488e041e9f376137d, type: 3}
   _lockCursorForMouse: 1
 --- !u!114 &3380034589129394156
 MonoBehaviour:
@@ -484,6 +485,7 @@ MonoBehaviour:
   _camera: {fileID: 8748561648029091133}
   _appearance: {fileID: 7818434714832007616}
   _grabber: {fileID: 5693563724347917862}
+  _bodyCollider: {fileID: 5003008152352457979}
 --- !u!114 &5693563724347917862
 MonoBehaviour:
   m_ObjectHideFlags: 0

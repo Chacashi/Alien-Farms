@@ -47,24 +47,7 @@ namespace AlienFarms.Zones
             }
         }
 
-        public bool Contains(Vector3 position)
-        {
-            Bounds bounds = Bounds;
-            return position.x >= bounds.min.x && position.x <= bounds.max.x
-                && position.z >= bounds.min.z && position.z <= bounds.max.z;
-        }
-
-        /// <summary>Clamps X/Z of <paramref name="position"/> inside the zone shrunk by <paramref name="margin"/>.</summary>
-        public Vector3 ClampInside(Vector3 position, float margin)
-        {
-            Bounds bounds = Bounds;
-            Vector3 center = bounds.center;
-            float halfX = Mathf.Max(0f, bounds.extents.x - margin);
-            float halfZ = Mathf.Max(0f, bounds.extents.z - margin);
-            position.x = Mathf.Clamp(position.x, center.x - halfX, center.x + halfX);
-            position.z = Mathf.Clamp(position.z, center.z - halfZ, center.z + halfZ);
-            return position;
-        }
+        public bool Contains(Vector3 position) => ZoneBounds.ContainsPlanar(Bounds, position);
 
         private Bounds ComputeBounds()
         {
@@ -73,20 +56,7 @@ namespace AlienFarms.Zones
                 TryGetComponent(out _box);
             }
 
-            if (_box == null)
-            {
-                return new Bounds(transform.position, Vector3.zero);
-            }
-
-            // collider.bounds is empty while the collider/object is disabled; fall back to the box definition.
-            if (_box.enabled && _box.gameObject.activeInHierarchy)
-            {
-                return _box.bounds;
-            }
-
-            Vector3 center = _box.transform.TransformPoint(_box.center);
-            Vector3 size = Vector3.Scale(_box.size, _box.transform.lossyScale);
-            return new Bounds(center, new Vector3(Mathf.Abs(size.x), Mathf.Abs(size.y), Mathf.Abs(size.z)));
+            return ZoneBounds.Compute(_box, transform);
         }
 
         private void OnValidate()

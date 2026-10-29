@@ -7,6 +7,9 @@ namespace AlienFarms.Animals
         Inactive = 0,
         Wandering = 1,
         Fleeing = 2,
-        Carried = 3
+        Carried = 3,
+
+        /// <summary>Released inside its owner's zone: confined to that pen, never flees, cannot be grabbed.</summary>
+        Captured = 4
     }
 }

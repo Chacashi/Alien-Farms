@@ -1,4 +1,5 @@
 using AlienFarms.Core;
+using AlienFarms.Zones;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -6,7 +7,8 @@ namespace AlienFarms.Player
 {
     /// <summary>
     /// Scene composition root for local multiplayer joining: listens to <see cref="PlayerInputManager"/>
-    /// and configures each spawned player (identity, spawn point, camera yaw, color) through its <see cref="PlayerRig"/>.
+    /// and configures each spawned player (identity, spawn point, camera yaw, color, zone access) through its
+    /// <see cref="PlayerRig"/>. Keeps a registry of joined rigs for the match (count, respawn, freeze).
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class PlayerJoinCoordinator : MonoBehaviour
@@ -27,7 +29,64 @@ namespace AlienFarms.Player
         [SerializeField, Tooltip("Overview camera rendered while no player has joined.")]
         private Camera _lobbyCamera;
 
+        [SerializeField, Tooltip("Player zones; each lets its owner through its barrier on join.")]
+        private PlayerZone[] _playerZones = new PlayerZone[RequiredPlayers];
+
+        // Index = (int)PlayerId - 1. Updated before PlayerJoined/PlayerLeft are raised.
+        private readonly PlayerRig[] _rigs = new PlayerRig[RequiredPlayers];
+        private bool _controlsEnabled = true;
         private bool _isQuitting;
+
+        /// <summary>Players currently registered (joined and configured).</summary>
+        public int JoinedCount
+        {
+            get
+            {
+                int count = 0;
+                for (int i = 0; i < _rigs.Length; i++)
+                {
+                    if (_rigs[i] != null)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+
+        public bool TryGetRig(PlayerId id, out PlayerRig rig)
+        {
+            int index = (int)id - 1;
+            rig = index >= 0 && index < _rigs.Length ? _rigs[index] : null;
+            return rig != null;
+        }
+
+        /// <summary>Drops carried animals and moves every joined player back to its spawn point.</summary>
+        public void RespawnAll()
+        {
+            for (int i = 0; i < _rigs.Length; i++)
+            {
+                PlayerRig rig = _rigs[i];
+                if (rig != null && i < _spawnPoints.Length)
+                {
+                    rig.Respawn(_spawnPoints[i]);
+                }
+            }
+        }
+
+        /// <summary>Freezes or unfreezes every joined player; also applied to players that join later.</summary>
+        public void SetControlsEnabled(bool enabled)
+        {
+            _controlsEnabled = enabled;
+            for (int i = 0; i < _rigs.Length; i++)
+            {
+                if (_rigs[i] != null)
+                {
+                    _rigs[i].SetControlsEnabled(enabled);
+                }
+            }
+        }
 
         private void OnEnable()
         {
@@ -68,6 +127,9 @@ namespace AlienFarms.Player
 
             PlayerId id = (PlayerId)(index + 1);
             rig.Configure(id, spawn, material);
+            _rigs[index] = rig;
+            GrantZoneAccess(id, rig.BodyCollider);
+            rig.SetControlsEnabled(_controlsEnabled);
 
             SetLobbyCameraActive(false);
 
@@ -82,12 +144,19 @@ namespace AlienFarms.Player
 
         private void HandlePlayerLeft(PlayerInput playerInput)
         {
+            bool hasRig = playerInput.TryGetComponent(out PlayerRig rig);
+            if (hasRig)
+            {
+                // Unregister before PlayerLeft so listeners already see the updated count (also on teardown).
+                Unregister(rig);
+            }
+
             if (IsTearingDown())
             {
                 return;
             }
 
-            if (playerInput.TryGetComponent(out PlayerRig rig) && rig.Id != PlayerId.None)
+            if (hasRig && rig.Id != PlayerId.None)
             {
                 GameEvents.RaisePlayerLeft(rig.Id);
             }
@@ -104,6 +173,34 @@ namespace AlienFarms.Player
                 // The manager keeps the remaining player's split-screen slot (e.g. right half if P1 left),
                 // so give it the full screen until the next join recomputes the layout.
                 ExpandRemainingPlayerCamera(playerInput);
+            }
+        }
+
+        private void Unregister(PlayerRig rig)
+        {
+            for (int i = 0; i < _rigs.Length; i++)
+            {
+                if (_rigs[i] == rig)
+                {
+                    _rigs[i] = null;
+                }
+            }
+        }
+
+        private void GrantZoneAccess(PlayerId id, Collider bodyCollider)
+        {
+            if (_playerZones == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _playerZones.Length; i++)
+            {
+                PlayerZone zone = _playerZones[i];
+                if (zone != null && zone.Owner == id)
+                {
+                    zone.GrantAccess(bodyCollider);
+                }
             }
         }
 
@@ -185,6 +282,32 @@ namespace AlienFarms.Player
 
             ValidateArray(_spawnPoints, "spawn point");
             ValidateArray(_playerMaterials, "player material");
+            ValidateZones();
+        }
+
+        private void ValidateZones()
+        {
+            bool hasPlayer1 = false;
+            bool hasPlayer2 = false;
+            if (_playerZones != null)
+            {
+                for (int i = 0; i < _playerZones.Length; i++)
+                {
+                    PlayerZone zone = _playerZones[i];
+                    if (zone == null)
+                    {
+                        continue;
+                    }
+
+                    hasPlayer1 |= zone.Owner == PlayerId.Player1;
+                    hasPlayer2 |= zone.Owner == PlayerId.Player2;
+                }
+            }
+
+            if (!hasPlayer1 || !hasPlayer2)
+            {
+                Debug.LogWarning($"[{nameof(PlayerJoinCoordinator)}] Player zones on '{name}' must cover Player1 and Player2; owners will be blocked by their barrier.", this);
+            }
         }
 
         private void ValidateArray<T>(T[] array, string label) where T : Object

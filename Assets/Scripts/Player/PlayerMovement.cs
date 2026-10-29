@@ -34,6 +34,7 @@ namespace AlienFarms.Player
         private bool _isCarrying;
         private float _carryWalkMultiplier = 1f;
         private float _stunTimer;
+        private bool _inputEnabled = true;
 
         /// <summary>Last non-zero horizontal move direction (normalized).</summary>
         public Vector3 Facing => _facing;
@@ -44,6 +45,9 @@ namespace AlienFarms.Player
         public bool IsStunned => _stunTimer > 0f;
 
         public bool IsCarrying => _isCarrying;
+
+        /// <summary>False while the match freezes this player (no move/sprint input; knockback still applies).</summary>
+        public bool IsInputEnabled => _inputEnabled;
 
         private void Awake()
         {
@@ -78,7 +82,7 @@ namespace AlienFarms.Player
                 return;
             }
 
-            Vector2 move = Vector2.ClampMagnitude(_input.Move, 1f);
+            Vector2 move = _inputEnabled ? Vector2.ClampMagnitude(_input.Move, 1f) : Vector2.zero;
             float magnitude = move.magnitude;
 
             Vector3 direction = Vector3.zero;
@@ -148,6 +152,16 @@ namespace AlienFarms.Player
             if (_visual != null)
             {
                 _visual.rotation = Quaternion.LookRotation(_facing, Vector3.up);
+            }
+        }
+
+        /// <summary>Enables or ignores move/sprint input. While disabled the player decelerates to a stop.</summary>
+        public void SetInputEnabled(bool enabled)
+        {
+            _inputEnabled = enabled;
+            if (!enabled)
+            {
+                _isSprinting = false;
             }
         }
 
