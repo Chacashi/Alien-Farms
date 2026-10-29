@@ -31,11 +31,19 @@ namespace AlienFarms.Player
 
         private Vector3 _facing = Vector3.forward;
         private bool _isSprinting;
+        private bool _isCarrying;
+        private float _carryWalkMultiplier = 1f;
+        private float _stunTimer;
 
         /// <summary>Last non-zero horizontal move direction (normalized).</summary>
         public Vector3 Facing => _facing;
 
         public bool IsSprinting => _isSprinting;
+
+        /// <summary>True while a knockback stun is active (input ignored).</summary>
+        public bool IsStunned => _stunTimer > 0f;
+
+        public bool IsCarrying => _isCarrying;
 
         private void Awake()
         {
@@ -62,6 +70,14 @@ namespace AlienFarms.Player
                 return;
             }
 
+            if (_stunTimer > 0f)
+            {
+                _stunTimer -= Time.fixedDeltaTime;
+                _isSprinting = false;
+                ApplyHorizontalTowards(Vector3.zero, _settings.StunDeceleration);
+                return;
+            }
+
             Vector2 move = Vector2.ClampMagnitude(_input.Move, 1f);
             float magnitude = move.magnitude;
 
@@ -77,15 +93,22 @@ namespace AlienFarms.Player
                 }
             }
 
-            _isSprinting = _input.IsSprintHeld && magnitude > 0.0001f;
-            float speed = _isSprinting ? _settings.SprintSpeed : _settings.WalkSpeed;
+            // Carrying forbids sprinting and slows the walk.
+            _isSprinting = !_isCarrying && _input.IsSprintHeld && magnitude > 0.0001f;
+            float speed = _isSprinting
+                ? _settings.SprintSpeed
+                : _settings.WalkSpeed * (_isCarrying ? _carryWalkMultiplier : 1f);
             Vector3 targetHorizontal = direction * (speed * magnitude);
 
+            float rate = targetHorizontal.sqrMagnitude > 0.0001f ? _settings.Acceleration : _settings.Deceleration;
+            ApplyHorizontalTowards(targetHorizontal, rate);
+        }
+
+        private void ApplyHorizontalTowards(Vector3 targetHorizontal, float rate)
+        {
             Vector3 velocity = _rb.linearVelocity;
             Vector3 horizontal = new Vector3(velocity.x, 0f, velocity.z);
-            float rate = targetHorizontal.sqrMagnitude > 0.0001f ? _settings.Acceleration : _settings.Deceleration;
             horizontal = Vector3.MoveTowards(horizontal, targetHorizontal, rate * Time.fixedDeltaTime);
-
             _rb.linearVelocity = new Vector3(horizontal.x, velocity.y, horizontal.z);
         }
 
@@ -113,6 +136,7 @@ namespace AlienFarms.Player
             transform.position = position;
             _rb.linearVelocity = Vector3.zero;
             _rb.angularVelocity = Vector3.zero;
+            _stunTimer = 0f;
 
             Vector3 forward = rotation * Vector3.forward;
             forward.y = 0f;
@@ -127,10 +151,29 @@ namespace AlienFarms.Player
             }
         }
 
-        /// <summary>Applies an instantaneous velocity change (e.g. knockback).</summary>
-        public void AddImpulse(Vector3 impulse)
+        /// <summary>While carrying: no sprint and walk speed scaled by <paramref name="walkMultiplier"/>.</summary>
+        public void SetCarryLoad(float walkMultiplier)
         {
-            _rb.AddForce(impulse, ForceMode.Impulse);
+            _isCarrying = true;
+            _carryWalkMultiplier = Mathf.Clamp01(walkMultiplier);
+        }
+
+        public void ClearCarryLoad()
+        {
+            _isCarrying = false;
+            _carryWalkMultiplier = 1f;
+        }
+
+        /// <summary>
+        /// Overwrites the horizontal velocity with <paramref name="knockbackVelocity"/> (Y is ignored) and ignores
+        /// input for <paramref name="stunDuration"/> seconds while decelerating with StunDeceleration.
+        /// </summary>
+        public void ApplyKnockback(Vector3 knockbackVelocity, float stunDuration)
+        {
+            Vector3 velocity = _rb.linearVelocity;
+            _rb.linearVelocity = new Vector3(knockbackVelocity.x, velocity.y, knockbackVelocity.z);
+            _stunTimer = Mathf.Max(_stunTimer, stunDuration);
+            _isSprinting = false;
         }
 
         private void GetPlanarBasis(out Vector3 forward, out Vector3 right)

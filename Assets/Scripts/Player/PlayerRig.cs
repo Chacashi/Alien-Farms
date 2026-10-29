@@ -24,7 +24,12 @@ namespace AlienFarms.Player
         [SerializeField, Tooltip("Appearance on this root.")]
         private PlayerAppearance _appearance;
 
+        [SerializeField, Tooltip("Grabber on this root.")]
+        private PlayerGrabber _grabber;
+
         public PlayerId Id => _identity != null ? _identity.Id : PlayerId.None;
+
+        public PlayerGrabber Grabber => _grabber;
 
         /// <summary>Assigns identity, places the player at the spawn, aligns its camera and applies its color.</summary>
         public void Configure(PlayerId id, Transform spawn, Material material)
@@ -73,6 +78,12 @@ namespace AlienFarms.Player
             if (_appearance == null)
             {
                 Debug.LogWarning($"[{nameof(PlayerRig)}] Missing PlayerAppearance on '{name}'.", this);
+            }
+
+            // Lives on this same root: auto-wire instead of warning.
+            if (_grabber == null)
+            {
+                TryGetComponent(out _grabber);
             }
         }
     }

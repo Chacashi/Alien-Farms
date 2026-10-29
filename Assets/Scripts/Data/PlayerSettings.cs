@@ -1,8 +1,9 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace AlienFarms.Data
 {
-    /// <summary>Tunable movement and camera values shared by player characters.</summary>
+    /// <summary>Tunable movement, camera, grab and tackle values shared by player characters.</summary>
     [CreateAssetMenu(fileName = "PlayerSettings", menuName = "Alien Farms/Player Settings")]
     public sealed class PlayerSettings : ScriptableObject
     {
@@ -47,6 +48,48 @@ namespace AlienFarms.Data
         [SerializeField, Min(0f), Tooltip("Sphere radius used to keep the camera out of geometry (m).")]
         private float _collisionRadius = 0.25f;
 
+        [Header("Grab")]
+        [SerializeField, Min(0f), Tooltip("Reach of the grab query from the player root (m).")]
+        private float _grabRange = 1.6f;
+
+        [SerializeField, Range(0f, 180f), Tooltip("Half angle of the grab cone around the facing direction (deg).")]
+        private float _grabHalfAngle = 60f;
+
+        [SerializeField, Min(0.02f), Tooltip("While Grab is held with empty hands, seconds between grab attempts.")]
+        private float _grabRetryInterval = 0.1f;
+
+        [SerializeField, Min(0f), Tooltip("Distance in front of the player where a released animal is placed (m).")]
+        private float _dropDistance = 1.2f;
+
+        [SerializeField, Min(0f), Tooltip("Forward speed given to a released animal (m/s).")]
+        private float _dropForwardSpeed = 2f;
+
+        [SerializeField, Min(0f), Tooltip("Upward speed given to a released animal (m/s).")]
+        private float _dropUpSpeed = 2f;
+
+        [Header("Tackle")]
+        [SerializeField, Min(0f), FormerlySerializedAs("_tackleMinRelativeSpeed")]
+        [Tooltip("Minimum closing speed (relative velocity along the line between both players) to steal (m/s).")]
+        private float _tackleMinClosingSpeed = 2.5f;
+
+        [SerializeField, Range(-1f, 1f), Tooltip("Min dot between the attacker's facing and the direction to the victim.")]
+        private float _tackleFacingDot = 0.5f;
+
+        [SerializeField, Min(0f), Tooltip("Horizontal speed applied to the tackled player (m/s).")]
+        private float _tackleKnockbackSpeed = 6f;
+
+        [SerializeField, Min(0f), Tooltip("Time the tackled player ignores input (s).")]
+        private float _tackleStunDuration = 0.35f;
+
+        [SerializeField, Min(0f), Tooltip("Horizontal deceleration while stunned (m/s^2).")]
+        private float _stunDeceleration = 15f;
+
+        [SerializeField, Min(0f), Tooltip("After being tackled, the player cannot be tackled again for this long (s).")]
+        private float _tackleImmunity = 1f;
+
+        [SerializeField, Min(0f), Tooltip("Extra speed given to a stolen animal in the tackle direction (m/s).")]
+        private float _stealDropSpeed = 3f;
+
         public float WalkSpeed => _walkSpeed;
         public float SprintSpeed => _sprintSpeed;
         public float Acceleration => _acceleration;
@@ -60,6 +103,19 @@ namespace AlienFarms.Data
         public float DefaultPitch => _defaultPitch;
         public float Distance => _distance;
         public float CollisionRadius => _collisionRadius;
+        public float GrabRange => _grabRange;
+        public float GrabHalfAngle => _grabHalfAngle;
+        public float GrabRetryInterval => _grabRetryInterval;
+        public float DropDistance => _dropDistance;
+        public float DropForwardSpeed => _dropForwardSpeed;
+        public float DropUpSpeed => _dropUpSpeed;
+        public float TackleMinClosingSpeed => _tackleMinClosingSpeed;
+        public float TackleFacingDot => _tackleFacingDot;
+        public float TackleKnockbackSpeed => _tackleKnockbackSpeed;
+        public float TackleStunDuration => _tackleStunDuration;
+        public float StunDeceleration => _stunDeceleration;
+        public float TackleImmunity => _tackleImmunity;
+        public float StealDropSpeed => _stealDropSpeed;
 
         private void OnValidate()
         {

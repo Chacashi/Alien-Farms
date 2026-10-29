@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3eaac3e1a1f463b46b1ddd00575e75c0, type: 3}
+  m_Name: AnimalData_Chicken
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Data.ChickenData
+  _prefab: {fileID: 7587689622338779946, guid: 750b55d0ef23f1d4e93205d8d5c3ef14, type: 3}
+  _mass: 0.5
+  _wanderSpeed: 1.2
+  _fleeSpeed: 5.5
+  _acceleration: 12
+  _turnSpeed: 540
+  _detectionRadius: 4
+  _fleeExitRadius: 6
+  _minFleeTime: 1
+  _detectionInterval: 0.2
+  _wanderRadius: 5
+  _idleTimeRange: {x: 0.5, y: 2}
+  _maxWanderLegTime: 4
+  _confinementMargin: 1.5
+  _carrySpeedMultiplier: 0.9
+  _holdOffset: {x: 0, y: 0.3, z: 0}
+  _grabCooldown: 0.25
+  _zigzagAngle: 35
+  _zigzagFrequency: 2

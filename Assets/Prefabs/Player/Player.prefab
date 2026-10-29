@@ -128,6 +128,37 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!1 &934420053064000088
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6129019983459185490}
+  m_Layer: 8
+  m_Name: HoldPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6129019983459185490
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 934420053064000088}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 2.3, z: 0.2}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7241696276358115105}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2833885321383160243
 GameObject:
   m_ObjectHideFlags: 0
@@ -266,6 +297,8 @@ GameObject:
   - component: {fileID: 3380034589129394156}
   - component: {fileID: 7818434714832007616}
   - component: {fileID: 8245825407222987962}
+  - component: {fileID: 5693563724347917862}
+  - component: {fileID: 5633965756350179368}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -450,6 +483,40 @@ MonoBehaviour:
   _movement: {fileID: 3380034589129394156}
   _camera: {fileID: 8748561648029091133}
   _appearance: {fileID: 7818434714832007616}
+  _grabber: {fileID: 5693563724347917862}
+--- !u!114 &5693563724347917862
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7117857313156260007}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 353ec7437ede23a4f90f8f2710c23c0e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Player.PlayerGrabber
+  _settings: {fileID: 11400000, guid: 8d01f790f630c514ea3e982292faa95a, type: 2}
+  _input: {fileID: 770670607405494521}
+  _identity: {fileID: 4265062030262414608}
+  _movement: {fileID: 3380034589129394156}
+  _holdPoint: {fileID: 6129019983459185490}
+--- !u!114 &5633965756350179368
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7117857313156260007}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3c78d15ff783b4e4ba32f8071399acb7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Player.PlayerTackle
+  _settings: {fileID: 11400000, guid: 8d01f790f630c514ea3e982292faa95a, type: 2}
+  _movement: {fileID: 3380034589129394156}
+  _grabber: {fileID: 5693563724347917862}
+  _identity: {fileID: 4265062030262414608}
 --- !u!1 &8093002818204508785
 GameObject:
   m_ObjectHideFlags: 0
@@ -571,6 +638,7 @@ Transform:
   m_Children:
   - {fileID: 6401078220675805094}
   - {fileID: 3877567005634844907}
+  - {fileID: 6129019983459185490}
   m_Father: {fileID: 3082466502802073027}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8772827656665176048

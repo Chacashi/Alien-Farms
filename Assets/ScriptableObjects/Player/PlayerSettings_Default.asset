@@ -25,3 +25,16 @@ MonoBehaviour:
   _defaultPitch: 20
   _distance: 6
   _collisionRadius: 0.25
+  _grabRange: 1.6
+  _grabHalfAngle: 60
+  _grabRetryInterval: 0.1
+  _dropDistance: 1.2
+  _dropForwardSpeed: 2
+  _dropUpSpeed: 2
+  _tackleMinClosingSpeed: 2.5
+  _tackleFacingDot: 0.5
+  _tackleKnockbackSpeed: 6
+  _tackleStunDuration: 0.35
+  _stunDeceleration: 15
+  _tackleImmunity: 1
+  _stealDropSpeed: 3
