@@ -24,6 +24,9 @@ namespace AlienFarms.Animals
         [SerializeField, Tooltip("Zone whose bounds confine animals.")]
         private AnimalZone _animalZone;
 
+        [SerializeField, Tooltip("Player zones registry (on the 'Zones' root); tells landing animals which pen they are in.")]
+        private PlayerZoneRegistry _playerZones;
+
         [SerializeField, Tooltip("Parent for pooled animal instances (keeps the hierarchy tidy).")]
         private Transform _animalsContainer;
 
@@ -47,11 +50,18 @@ namespace AlienFarms.Animals
                 return;
             }
 
+            if (_playerZones == null)
+            {
+                Debug.LogError($"[{nameof(AnimalSpawner)}] Missing PlayerZoneRegistry on '{name}'; animals will never be captured.", this);
+            }
+
             _blockingMask = LayerMask.GetMask(LayerNames.Player, LayerNames.Animal, LayerNames.Environment);
             _bounds = _animalZone.Bounds;
             _active = new List<Animal>(_settings.PoolHardCap);
 
             AnimalSpawnEntry[] entries = _settings.Entries;
+            // Unity null check before boxing to the interface (a destroyed registry must read as null).
+            IZoneResolver zones = _playerZones != null ? _playerZones : null;
             _pools = new AnimalTypePool[entries.Length];
             _totalWeight = 0;
             for (int i = 0; i < entries.Length; i++)
@@ -63,7 +73,8 @@ namespace AlienFarms.Animals
                     continue;
                 }
 
-                _pools[i] = new AnimalTypePool(data, _animalsContainer, _bounds, _settings.PrewarmPerType, _settings.PoolHardCap);
+                _pools[i] = new AnimalTypePool(
+                    data, _animalsContainer, _bounds, zones, _settings.KillHeight, _settings.PrewarmPerType, _settings.PoolHardCap);
                 _totalWeight += Mathf.Max(1, entries[i].Weight);
             }
         }
@@ -92,7 +103,7 @@ namespace AlienFarms.Animals
 
             _respawnTimer = _settings.RespawnInterval;
 
-            // Free = in play and not captured (carried included). Captured animals never block the refill,
+            // Free = in play and not captured (carried and airborne included). Captured animals never block the refill,
             // so the Animal Zone keeps its population however many get penned.
             int free = PruneAndCountFree();
             if (free >= _settings.TargetFreePopulation || free >= _settings.MaxActiveAnimals)
@@ -268,6 +279,11 @@ namespace AlienFarms.Animals
             if (_animalZone == null)
             {
                 Debug.LogWarning($"[{nameof(AnimalSpawner)}] Missing AnimalZone on '{name}'.", this);
+            }
+
+            if (_playerZones == null)
+            {
+                Debug.LogWarning($"[{nameof(AnimalSpawner)}] Missing PlayerZoneRegistry on '{name}'; animals will never be captured.", this);
             }
 
             if (_animalsContainer == null)

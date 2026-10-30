@@ -2,7 +2,7 @@ using AlienFarms.Core;
 
 namespace AlienFarms.Match
 {
-    /// <summary>Free roam until both players have joined; no captures.</summary>
+    /// <summary>Free roam until both players have joined; captures are not scored (the countdown resets the round).</summary>
     public sealed class WaitingForPlayersState : MatchState
     {
         public WaitingForPlayersState(IMatchContext context) : base(context)

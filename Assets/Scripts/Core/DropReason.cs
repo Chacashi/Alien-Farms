@@ -9,7 +9,10 @@ namespace AlienFarms.Core
         /// <summary>Another player tackled the holder.</summary>
         Stolen = 1,
 
-        /// <summary>System-driven drop: holder left, object despawned or was captured.</summary>
-        Forced = 2
+        /// <summary>System-driven drop: holder left, was frozen or the object despawned.</summary>
+        Forced = 2,
+
+        /// <summary>The holder released Grab while aiming: launched on a ballistic arc.</summary>
+        Thrown = 3
     }
 }

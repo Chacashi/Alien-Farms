@@ -1,37 +1,65 @@
+using System.Collections.Generic;
 using AlienFarms.Core;
 
 namespace AlienFarms.Match
 {
-    /// <summary>Per-player capture count for the current round. Pure logic, no Unity dependencies.</summary>
+    /// <summary>
+    /// Zone occupancy for the current round: the set of animals each player's zone holds. A player's score is the size
+    /// of its set. Idempotent (duplicate events are absorbed) and an animal is in at most one zone.
+    /// Pure logic, no Unity dependencies.
+    /// </summary>
     public sealed class MatchScore
     {
-        // Indexed by (int)PlayerId; slot 0 (None) stays unused.
-        private readonly int[] _scores = new int[3];
-
-        public int Get(PlayerId id)
+        // Indexed by (int)PlayerId; slot 0 (None) stays unused. Preallocated: no allocations while playing.
+        private readonly HashSet<object>[] _zones =
         {
-            int index = (int)id;
-            return IsPlayer(id) ? _scores[index] : 0;
-        }
+            new HashSet<object>(),
+            new HashSet<object>(),
+            new HashSet<object>()
+        };
 
-        /// <summary>Adds <paramref name="amount"/> to the player's score and returns the new total. None is ignored.</summary>
-        public int Add(PlayerId id, int amount = 1)
+        public int Get(PlayerId id) => IsPlayer(id) ? _zones[(int)id].Count : 0;
+
+        /// <summary>
+        /// Records <paramref name="animal"/> inside <paramref name="zoneOwner"/>'s zone. If the other zone held it, it
+        /// is moved and <paramref name="movedFrom"/> names that zone. Returns false (no change) when it was already
+        /// there, the owner is None or the animal is null.
+        /// </summary>
+        public bool TryAdd(PlayerId zoneOwner, object animal, out PlayerId movedFrom)
         {
-            if (!IsPlayer(id))
+            movedFrom = PlayerId.None;
+            if (!IsPlayer(zoneOwner) || animal == null)
             {
-                return 0;
+                return false;
             }
 
-            int index = (int)id;
-            _scores[index] += amount;
-            return _scores[index];
+            HashSet<object> target = _zones[(int)zoneOwner];
+            if (target.Contains(animal))
+            {
+                return false;
+            }
+
+            PlayerId other = zoneOwner == PlayerId.Player1 ? PlayerId.Player2 : PlayerId.Player1;
+            if (_zones[(int)other].Remove(animal))
+            {
+                movedFrom = other;
+            }
+
+            target.Add(animal);
+            return true;
+        }
+
+        /// <summary>Removes <paramref name="animal"/> from <paramref name="zoneOwner"/>'s zone. False if it was not there.</summary>
+        public bool TryRemove(PlayerId zoneOwner, object animal)
+        {
+            return IsPlayer(zoneOwner) && animal != null && _zones[(int)zoneOwner].Remove(animal);
         }
 
         public void Reset()
         {
-            for (int i = 0; i < _scores.Length; i++)
+            for (int i = 0; i < _zones.Length; i++)
             {
-                _scores[i] = 0;
+                _zones[i].Clear();
             }
         }
 

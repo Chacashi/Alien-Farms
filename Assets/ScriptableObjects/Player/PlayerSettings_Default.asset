@@ -31,6 +31,10 @@ MonoBehaviour:
   _dropDistance: 1.2
   _dropForwardSpeed: 2
   _dropUpSpeed: 2
+  _aimWalkMultiplier: 0.55
+  _aimCameraDistance: 4.5
+  _aimCameraBlendSpeed: 10
+  _aimLookSensitivityMultiplier: 0.7
   _tackleMinClosingSpeed: 2.5
   _tackleFacingDot: 0.5
   _tackleKnockbackSpeed: 6

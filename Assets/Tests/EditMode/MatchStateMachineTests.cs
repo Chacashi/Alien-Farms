@@ -143,7 +143,7 @@ namespace AlienFarms.Tests
         public void Playing_AfterMatchDuration_GoesToResults_AndPublishesResult()
         {
             EnterPlaying();
-            _context.Score.Add(PlayerId.Player2, 2);
+            TestScores.AddAnimals(_context.Score, PlayerId.Player2, 2);
 
             _context.Advance(MatchDuration - 1f, 0.5f);
             Assert.That(_context.Phase, Is.EqualTo(MatchPhase.Playing));
@@ -167,7 +167,7 @@ namespace AlienFarms.Tests
         public void Playing_PlayerLeaves_ReturnsToWaiting_AndAbortsRound()
         {
             EnterPlaying();
-            _context.Score.Add(PlayerId.Player1, 3);
+            TestScores.AddAnimals(_context.Score, PlayerId.Player1, 3);
             _context.Advance(10f);
 
             AssertReturnsToWaitingWhenPlayerLeaves();

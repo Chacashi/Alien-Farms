@@ -7,8 +7,8 @@ namespace AlienFarms.Player
 {
     /// <summary>
     /// Hold-to-carry grabbing: while Grab is held with empty hands, picks the closest <see cref="IGrabbable"/>
-    /// in a cone in front of the player (also catching ones that walk into range). Releasing Grab drops it in front.
-    /// Carries at most one object.
+    /// in a cone in front of the player (also catching ones that walk into range, free or penned). Releasing Grab drops
+    /// it in front, or throws it along the aimed arc while <see cref="PlayerAim"/> is aiming. Carries at most one object.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class PlayerGrabber : MonoBehaviour
@@ -34,8 +34,13 @@ namespace AlienFarms.Player
         [SerializeField, Tooltip("Point the carried object follows (child of the visual, above the head).")]
         private Transform _holdPoint;
 
+        [SerializeField, Tooltip("Optional: aim on this root. When aiming, releasing Grab throws instead of dropping.")]
+        private PlayerAim _aim;
+
+        [SerializeField, Tooltip("Layers searched for grabbables (Animal and CapturedAnimal).")]
+        private LayerMask _grabbableMask;
+
         private readonly Collider[] _hits = new Collider[8];
-        private int _animalMask;
         private int _environmentMask;
         private int _dropBlockingMask;
         private IGrabbable _held;
@@ -54,7 +59,6 @@ namespace AlienFarms.Player
 
         private void Awake()
         {
-            _animalMask = LayerMask.GetMask(LayerNames.Animal);
             _environmentMask = LayerMask.GetMask(LayerNames.Environment);
             _dropBlockingMask = LayerMask.GetMask(
                 LayerNames.Environment, LayerNames.Player, LayerNames.Animal, LayerNames.CapturedAnimal);
@@ -97,7 +101,15 @@ namespace AlienFarms.Player
                 else if (_releaseRequested || (_input != null && !_input.IsGrabHeld))
                 {
                     // Grab released (deferred from HandleGrabCanceled), or 'canceled' was missed (focus loss...).
-                    Drop(DropReason.Released, Vector3.zero);
+                    // The launch is read while still holding: aiming requires a held throwable.
+                    if (_aim != null && _aim.TryGetLaunch(out Vector3 origin, out Vector3 velocity))
+                    {
+                        Throw(origin, velocity);
+                    }
+                    else
+                    {
+                        Drop(DropReason.Released, Vector3.zero);
+                    }
                 }
 
                 return;
@@ -186,7 +198,7 @@ namespace AlienFarms.Player
             Vector3 facing = _movement.Facing;
             float minDot = Mathf.Cos(_settings.GrabHalfAngle * Mathf.Deg2Rad);
 
-            int count = Physics.OverlapSphereNonAlloc(origin, _settings.GrabRange, _hits, _animalMask, QueryTriggerInteraction.Ignore);
+            int count = Physics.OverlapSphereNonAlloc(origin, _settings.GrabRange, _hits, _grabbableMask, QueryTriggerInteraction.Ignore);
 
             IGrabbable best = null;
             float bestSqr = float.MaxValue;
@@ -266,26 +278,84 @@ namespace AlienFarms.Player
             dropDirection.Normalize();
 
             Vector3 root = transform.position;
-            Vector3 position = root + dropDirection * (_settings != null ? _settings.DropDistance : 1f);
-            position.y = root.y + DropHeight;
+            Vector3 handPosition = _holdPoint != null ? _holdPoint.position : root + Vector3.up * DropHeight;
+            Vector3 velocity = new Vector3(0f, extraVelocity.y, 0f);
+            Vector3 position;
 
-            Vector3 velocity = extraVelocity;
-            if (_settings != null)
+            // Never push the animal into a wall, another player or another animal: try in front, behind, left, right.
+            if (TryFindDropSpot(root, handPosition, dropDirection, out position, out Vector3 chosen))
             {
-                velocity += dropDirection * _settings.DropForwardSpeed + Vector3.up * _settings.DropUpSpeed;
+                if (chosen == dropDirection)
+                {
+                    // Only the preferred direction keeps the extra push (e.g. the tackle).
+                    velocity = extraVelocity;
+                }
+
+                if (_settings != null)
+                {
+                    velocity += chosen * _settings.DropForwardSpeed;
+                }
+            }
+            else
+            {
+                // Boxed in on all sides: last resort, release at the hand (it slides off the head if needed).
+                position = handPosition;
             }
 
-            // Never push the animal into a wall, another player or another animal: drop it in place instead.
-            Vector3 handPosition = _holdPoint != null ? _holdPoint.position : root + Vector3.up * DropHeight;
-            if (IsDropSpotBlocked(position)
-                || Physics.Linecast(handPosition, position, _environmentMask, QueryTriggerInteraction.Ignore))
+            if (_settings != null)
             {
-                position = handPosition;
-                velocity.x = 0f;
-                velocity.z = 0f;
+                velocity += Vector3.up * _settings.DropUpSpeed;
             }
 
             held.Release(position, velocity, reason);
+            ClearCarryLoad();
+        }
+
+        /// <summary>
+        /// First free drop spot at drop distance and height around the player: <paramref name="preferred"/>, then behind,
+        /// left and right. A spot is free when nothing overlaps it and no wall stands between the hand and it.
+        /// </summary>
+        private bool TryFindDropSpot(
+            Vector3 root, Vector3 handPosition, Vector3 preferred, out Vector3 position, out Vector3 direction)
+        {
+            float distance = _settings != null ? _settings.DropDistance : 1f;
+            Vector3 right = new Vector3(preferred.z, 0f, -preferred.x);
+
+            for (int i = 0; i < 4; i++)
+            {
+                direction = i == 0 ? preferred : i == 1 ? -preferred : i == 2 ? -right : right;
+                position = root + direction * distance;
+                position.y = root.y + DropHeight;
+
+                if (!IsDropSpotBlocked(position)
+                    && !Physics.Linecast(handPosition, position, _environmentMask, QueryTriggerInteraction.Ignore))
+                {
+                    return true;
+                }
+            }
+
+            position = Vector3.zero;
+            direction = Vector3.zero;
+            return false;
+        }
+
+        /// <summary>
+        /// Launches the carried object from <paramref name="origin"/> with <paramref name="velocity"/>, both from
+        /// <see cref="PlayerAim.TryGetLaunch"/> (already corrected for walls, same values the preview draws).
+        /// </summary>
+        private void Throw(Vector3 origin, Vector3 velocity)
+        {
+            IGrabbable held = _held;
+            _held = null;
+            _releaseRequested = false;
+
+            if (IsDestroyed(held))
+            {
+                ClearCarryLoad();
+                return;
+            }
+
+            held.Release(origin, velocity, DropReason.Thrown);
             ClearCarryLoad();
         }
 
@@ -320,6 +390,12 @@ namespace AlienFarms.Player
 
         private bool IsHeldDestroyed() => IsDestroyed(_held);
 
+        // Editor-time default only; runtime never resolves layers by name for this mask.
+        private void Reset()
+        {
+            _grabbableMask = LayerMask.GetMask(LayerNames.Animal, LayerNames.CapturedAnimal);
+        }
+
         // Interface references bypass Unity's overloaded null check.
         private static bool IsDestroyed(IGrabbable grabbable) => grabbable is Object unityObject && unityObject == null;
 
@@ -348,6 +424,16 @@ namespace AlienFarms.Player
             if (_holdPoint == null)
             {
                 Debug.LogWarning($"[{nameof(PlayerGrabber)}] Missing hold point on '{name}'.", this);
+            }
+
+            if (_aim == null)
+            {
+                TryGetComponent(out _aim);
+            }
+
+            if (_grabbableMask.value == 0)
+            {
+                Debug.LogWarning($"[{nameof(PlayerGrabber)}] Grabbable mask on '{name}' is empty; nothing can be grabbed (use Animal + CapturedAnimal).", this);
             }
         }
     }

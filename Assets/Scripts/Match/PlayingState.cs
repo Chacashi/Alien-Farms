@@ -2,7 +2,7 @@ using AlienFarms.Core;
 
 namespace AlienFarms.Match
 {
-    /// <summary>Round in progress: timer runs (1 Hz event) and captures are enabled.</summary>
+    /// <summary>Round in progress: timer runs (1 Hz event) and score changes are published.</summary>
     public sealed class PlayingState : MatchState
     {
         public PlayingState(IMatchContext context) : base(context)

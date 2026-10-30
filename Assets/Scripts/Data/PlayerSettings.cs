@@ -3,7 +3,7 @@ using UnityEngine.Serialization;
 
 namespace AlienFarms.Data
 {
-    /// <summary>Tunable movement, camera, grab and tackle values shared by player characters.</summary>
+    /// <summary>Tunable movement, camera, grab, aim and tackle values shared by player characters.</summary>
     [CreateAssetMenu(fileName = "PlayerSettings", menuName = "Alien Farms/Player Settings")]
     public sealed class PlayerSettings : ScriptableObject
     {
@@ -67,6 +67,19 @@ namespace AlienFarms.Data
         [SerializeField, Min(0f), Tooltip("Upward speed given to a released animal (m/s).")]
         private float _dropUpSpeed = 2f;
 
+        [Header("Aim")]
+        [SerializeField, Range(0.1f, 1f), Tooltip("Walk speed multiplier while aiming a throw (stacks with the carry multiplier).")]
+        private float _aimWalkMultiplier = 0.55f;
+
+        [SerializeField, Min(0.5f), Tooltip("Camera distance to its target while aiming (m).")]
+        private float _aimCameraDistance = 4.5f;
+
+        [SerializeField, Min(0.01f), Tooltip("How fast the camera distance blends in and out of aim (1/s, exponential).")]
+        private float _aimCameraBlendSpeed = 10f;
+
+        [SerializeField, Range(0.1f, 1f), Tooltip("Look sensitivity multiplier while aiming.")]
+        private float _aimLookSensitivityMultiplier = 0.7f;
+
         [Header("Tackle")]
         [SerializeField, Min(0f), FormerlySerializedAs("_tackleMinRelativeSpeed")]
         [Tooltip("Minimum closing speed (relative velocity along the line between both players) to steal (m/s).")]
@@ -109,6 +122,10 @@ namespace AlienFarms.Data
         public float DropDistance => _dropDistance;
         public float DropForwardSpeed => _dropForwardSpeed;
         public float DropUpSpeed => _dropUpSpeed;
+        public float AimWalkMultiplier => _aimWalkMultiplier;
+        public float AimCameraDistance => _aimCameraDistance;
+        public float AimCameraBlendSpeed => _aimCameraBlendSpeed;
+        public float AimLookSensitivityMultiplier => _aimLookSensitivityMultiplier;
         public float TackleMinClosingSpeed => _tackleMinClosingSpeed;
         public float TackleFacingDot => _tackleFacingDot;
         public float TackleKnockbackSpeed => _tackleKnockbackSpeed;

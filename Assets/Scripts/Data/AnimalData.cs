@@ -64,6 +64,17 @@ namespace AlienFarms.Data
         [SerializeField, Min(0f), Tooltip("After being dropped the animal cannot be grabbed for this long (s).")]
         private float _grabCooldown = 0.25f;
 
+        [Header("Throw")]
+        [SerializeField, Tooltip("Optional throw tuning for this type; empty uses the thrower's default.")]
+        private ThrowSettings _throwSettings;
+
+        [SerializeField, Min(0.5f), Tooltip("Safety timeout: an airborne animal is forced to land after this long (s).")]
+        private float _maxAirborneTime = 4f;
+
+        [Header("Pen")]
+        [SerializeField, Min(0f), Tooltip("Distance kept from the pen edges while captured (m).")]
+        private float _penConfinementMargin = 0.5f;
+
         public Animal Prefab => _prefab;
         public float Mass => _mass;
         public float WanderSpeed => _wanderSpeed;
@@ -81,6 +92,9 @@ namespace AlienFarms.Data
         public float CarrySpeedMultiplier => _carrySpeedMultiplier;
         public Vector3 HoldOffset => _holdOffset;
         public float GrabCooldown => _grabCooldown;
+        public ThrowSettings ThrowSettings => _throwSettings;
+        public float MaxAirborneTime => _maxAirborneTime;
+        public float PenConfinementMargin => _penConfinementMargin;
 
         protected virtual void OnValidate()
         {

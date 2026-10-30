@@ -1,3 +1,4 @@
+using AlienFarms.Core;
 using AlienFarms.Data;
 using UnityEngine;
 using UnityEngine.Pool;
@@ -13,13 +14,24 @@ namespace AlienFarms.Animals
         private readonly AnimalData _data;
         private readonly Transform _container;
         private readonly Bounds _confinement;
+        private readonly IZoneResolver _zones;
+        private readonly float _killHeight;
         private readonly ObjectPool<Animal> _pool;
 
-        public AnimalTypePool(AnimalData data, Transform container, Bounds confinement, int defaultCapacity, int maxSize)
+        public AnimalTypePool(
+            AnimalData data,
+            Transform container,
+            Bounds confinement,
+            IZoneResolver zones,
+            float killHeight,
+            int defaultCapacity,
+            int maxSize)
         {
             _data = data;
             _container = container;
             _confinement = confinement;
+            _zones = zones;
+            _killHeight = killHeight;
 
             int max = Mathf.Max(1, maxSize);
             _pool = new ObjectPool<Animal>(
@@ -66,7 +78,7 @@ namespace AlienFarms.Animals
         {
             Animal animal = Object.Instantiate(_data.Prefab, _container);
             animal.gameObject.SetActive(false);
-            animal.Initialize(_data, _confinement, this);
+            animal.Initialize(_data, _confinement, this, _zones, _killHeight);
             return animal;
         }
 

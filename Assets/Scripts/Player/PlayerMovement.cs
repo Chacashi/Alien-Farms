@@ -6,7 +6,8 @@ namespace AlienFarms.Player
 {
     /// <summary>
     /// Camera-relative, Rigidbody-driven ground movement with walk/sprint speeds.
-    /// The root never rotates; only <see cref="_visual"/> turns to face the move direction.
+    /// The root never rotates; only <see cref="_visual"/> turns to face the move direction (or, while aiming, the
+    /// camera's planar forward so the player strafes).
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
@@ -35,8 +36,9 @@ namespace AlienFarms.Player
         private float _carryWalkMultiplier = 1f;
         private float _stunTimer;
         private bool _inputEnabled = true;
+        private bool _isAiming;
 
-        /// <summary>Last non-zero horizontal move direction (normalized).</summary>
+        /// <summary>Last non-zero horizontal move direction, or the camera forward while aiming (normalized).</summary>
         public Vector3 Facing => _facing;
 
         public bool IsSprinting => _isSprinting;
@@ -48,6 +50,12 @@ namespace AlienFarms.Player
 
         /// <summary>False while the match freezes this player (no move/sprint input; knockback still applies).</summary>
         public bool IsInputEnabled => _inputEnabled;
+
+        /// <summary>True while aiming a throw: faces the camera, strafes, slower walk, no sprint.</summary>
+        public bool IsAiming => _isAiming;
+
+        /// <summary>Current Rigidbody velocity (world space).</summary>
+        public Vector3 Velocity => _rb != null ? _rb.linearVelocity : Vector3.zero;
 
         private void Awake()
         {
@@ -85,23 +93,34 @@ namespace AlienFarms.Player
             Vector2 move = _inputEnabled ? Vector2.ClampMagnitude(_input.Move, 1f) : Vector2.zero;
             float magnitude = move.magnitude;
 
+            GetPlanarBasis(out Vector3 forward, out Vector3 right);
+            if (_isAiming)
+            {
+                // Strafe: keep facing where the camera looks, whatever the move direction.
+                _facing = forward;
+            }
+
             Vector3 direction = Vector3.zero;
             if (magnitude > 0.0001f)
             {
-                GetPlanarBasis(out Vector3 forward, out Vector3 right);
                 direction = forward * move.y + right * move.x;
                 if (direction.sqrMagnitude > 0.0001f)
                 {
                     direction.Normalize();
-                    _facing = direction;
+                    if (!_isAiming)
+                    {
+                        _facing = direction;
+                    }
                 }
             }
 
-            // Carrying forbids sprinting and slows the walk.
-            _isSprinting = !_isCarrying && _input.IsSprintHeld && magnitude > 0.0001f;
+            // Carrying or aiming forbids sprinting; both slow the walk.
+            _isSprinting = !_isCarrying && !_isAiming && _input.IsSprintHeld && magnitude > 0.0001f;
             float speed = _isSprinting
                 ? _settings.SprintSpeed
-                : _settings.WalkSpeed * (_isCarrying ? _carryWalkMultiplier : 1f);
+                : _settings.WalkSpeed
+                  * (_isCarrying ? _carryWalkMultiplier : 1f)
+                  * (_isAiming ? _settings.AimWalkMultiplier : 1f);
             Vector3 targetHorizontal = direction * (speed * magnitude);
 
             float rate = targetHorizontal.sqrMagnitude > 0.0001f ? _settings.Acceleration : _settings.Deceleration;
@@ -160,6 +179,16 @@ namespace AlienFarms.Player
         {
             _inputEnabled = enabled;
             if (!enabled)
+            {
+                _isSprinting = false;
+            }
+        }
+
+        /// <summary>Enters or leaves aim mode (driven by PlayerAim).</summary>
+        public void SetAimMode(bool aiming)
+        {
+            _isAiming = aiming;
+            if (aiming)
             {
                 _isSprinting = false;
             }

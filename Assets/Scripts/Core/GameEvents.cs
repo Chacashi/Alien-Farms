@@ -22,11 +22,20 @@ namespace AlienFarms.Core
         /// <summary>A player picked up an animal.</summary>
         public static event Action<PlayerId, Animal> OnAnimalGrabbed;
 
-        /// <summary>An animal left the hands of the given player (the previous holder).</summary>
+        /// <summary>
+        /// An animal left the hands of the given player (the previous holder). The animal is Airborne at this point,
+        /// including <see cref="DropReason.Thrown"/> launches; where it lands decides capture.
+        /// </summary>
         public static event Action<PlayerId, Animal, DropReason> OnAnimalDropped;
 
-        /// <summary>An animal was captured into the given player's zone.</summary>
+        /// <summary>
+        /// An animal settled inside the given player's zone (the zone owner), whoever released it. It counts for that
+        /// player until <see cref="OnAnimalLeftZone"/> is raised for it.
+        /// </summary>
         public static event Action<PlayerId, Animal> OnAnimalCaptured;
+
+        /// <summary>A captured animal left the given player's zone (grabbed by anyone or despawned).</summary>
+        public static event Action<PlayerId, Animal> OnAnimalLeftZone;
 
         /// <summary>The given player's score changed to the new total.</summary>
         public static event Action<PlayerId, int> OnScoreChanged;
@@ -61,6 +70,8 @@ namespace AlienFarms.Core
 
         public static void RaiseAnimalCaptured(PlayerId playerId, Animal animal) => OnAnimalCaptured?.Invoke(playerId, animal);
 
+        public static void RaiseAnimalLeftZone(PlayerId playerId, Animal animal) => OnAnimalLeftZone?.Invoke(playerId, animal);
+
         public static void RaiseScoreChanged(PlayerId playerId, int score) => OnScoreChanged?.Invoke(playerId, score);
 
         public static void RaiseMatchPhaseChanged(MatchPhase previous, MatchPhase current) =>
@@ -85,6 +96,7 @@ namespace AlienFarms.Core
             OnAnimalGrabbed = null;
             OnAnimalDropped = null;
             OnAnimalCaptured = null;
+            OnAnimalLeftZone = null;
             OnScoreChanged = null;
             OnMatchPhaseChanged = null;
             OnCountdownTick = null;

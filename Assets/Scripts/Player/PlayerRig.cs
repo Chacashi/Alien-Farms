@@ -27,14 +27,9 @@ namespace AlienFarms.Player
         [SerializeField, Tooltip("Grabber on this root.")]
         private PlayerGrabber _grabber;
 
-        [SerializeField, Tooltip("Physics body collider on this root (CapsuleCollider); zones let it through their barrier.")]
-        private Collider _bodyCollider;
-
         public PlayerId Id => _identity != null ? _identity.Id : PlayerId.None;
 
         public PlayerGrabber Grabber => _grabber;
-
-        public Collider BodyCollider => _bodyCollider;
 
         /// <summary>Assigns identity, places the player at the spawn, aligns its camera and applies its color.</summary>
         public void Configure(PlayerId id, Transform spawn, Material material)
@@ -116,16 +111,6 @@ namespace AlienFarms.Player
             if (_grabber == null)
             {
                 TryGetComponent(out _grabber);
-            }
-
-            if (_bodyCollider == null && TryGetComponent(out CapsuleCollider capsule))
-            {
-                _bodyCollider = capsule;
-            }
-
-            if (_bodyCollider == null)
-            {
-                Debug.LogWarning($"[{nameof(PlayerRig)}] Missing body collider on '{name}'; zone barriers will block this player.", this);
             }
         }
     }

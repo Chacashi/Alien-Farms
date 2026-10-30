@@ -9,7 +9,10 @@ namespace AlienFarms.Animals
         Fleeing = 2,
         Carried = 3,
 
-        /// <summary>Released inside its owner's zone: confined to that pen, never flees, cannot be grabbed.</summary>
-        Captured = 4
+        /// <summary>Settled in a player zone: confined to that pen, never flees, can be grabbed by either player.</summary>
+        Captured = 4,
+
+        /// <summary>Released or thrown, flying until it lands; cannot be grabbed. Landing decides Captured or free.</summary>
+        Airborne = 5
     }
 }

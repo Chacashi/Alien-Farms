@@ -29,3 +29,6 @@ MonoBehaviour:
   _carrySpeedMultiplier: 0.7
   _holdOffset: {x: 0, y: 0.5, z: 0}
   _grabCooldown: 0.25
+  _throwSettings: {fileID: 0}
+  _maxAirborneTime: 4
+  _penConfinementMargin: 0.5

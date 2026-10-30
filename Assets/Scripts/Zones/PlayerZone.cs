@@ -4,8 +4,8 @@ using UnityEngine;
 namespace AlienFarms.Zones
 {
     /// <summary>
-    /// A player's pen. Its BoxCollider defines the capture area; a child barrier (layer ZoneBarrier) keeps the rival
-    /// and captured animals out/in, while the owner is allowed through via <see cref="GrantAccess"/>.
+    /// A player's pen. Its BoxCollider defines the capture area: an animal that lands inside counts for the owner while
+    /// it stays captured. A child barrier (layer ZoneBarrier) keeps captured animals in; both players walk through it.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BoxCollider))]
@@ -15,14 +15,14 @@ namespace AlienFarms.Zones
         private static readonly Color s_player2Color = new Color(1f, 0.25f, 0.25f, 0.35f);
 
         [Header("Config")]
-        [SerializeField, Tooltip("Player that scores by releasing animals inside this zone.")]
+        [SerializeField, Tooltip("Player that scores for every animal settled inside this zone.")]
         private PlayerId _owner = PlayerId.Player1;
 
         [Header("References")]
         [SerializeField, Tooltip("Box that defines the capture area (trigger on this object).")]
         private BoxCollider _area;
 
-        [SerializeField, Tooltip("Solid collider (child 'Barrier', layer ZoneBarrier, not a trigger) at the zone entrance.")]
+        [SerializeField, Tooltip("Solid collider (child 'Barrier', layer ZoneBarrier, not a trigger) that keeps captured animals in.")]
         private Collider _barrier;
 
         private Bounds _bounds;
@@ -62,20 +62,6 @@ namespace AlienFarms.Zones
 
         /// <summary>True when X/Z of <paramref name="position"/> lie inside the zone (edges inclusive).</summary>
         public bool Contains(Vector3 position) => ZoneBounds.ContainsPlanar(Bounds, position);
-
-        /// <summary>
-        /// Lets <paramref name="playerCollider"/> pass through the barrier. Both colliders must stay enabled:
-        /// disabling either one may reset the ignore pair, so call again if that ever happens.
-        /// </summary>
-        public void GrantAccess(Collider playerCollider)
-        {
-            if (playerCollider == null || _barrier == null)
-            {
-                return;
-            }
-
-            Physics.IgnoreCollision(_barrier, playerCollider, true);
-        }
 
         private Bounds ComputeBounds()
         {

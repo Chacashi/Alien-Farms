@@ -29,6 +29,7 @@ namespace AlienFarms.Input
         [SerializeField] private InputActionReference _grab;
         [SerializeField] private InputActionReference _pause;
         [SerializeField] private InputActionReference _confirm;
+        [SerializeField] private InputActionReference _aim;
 
         [Header("Cursor")]
         [SerializeField, Tooltip("Lock and hide the cursor while this player uses keyboard and mouse.")]
@@ -40,6 +41,7 @@ namespace AlienFarms.Input
         private InputAction _grabAction;
         private InputAction _pauseAction;
         private InputAction _confirmAction;
+        private InputAction _aimAction;
 
         // Cursor.lockState is global: only the handler that locked it may release it.
         private bool _ownsCursorLock;
@@ -52,6 +54,7 @@ namespace AlienFarms.Input
         public Vector2 Look => _lookAction != null ? _lookAction.ReadValue<Vector2>() : Vector2.zero;
         public bool IsSprintHeld => _sprintAction != null && _sprintAction.IsPressed();
         public bool IsGrabHeld => _grabAction != null && _grabAction.IsPressed();
+        public bool IsAimHeld => _aimAction != null && _aimAction.IsPressed();
 
         /// <summary>True when Look is currently driven by a pointer delta (mouse) rather than a stick rate.</summary>
         public bool IsLookPointerDelta => _lookAction != null && _lookAction.activeControl?.device is Pointer;
@@ -74,6 +77,7 @@ namespace AlienFarms.Input
             _grabAction = Resolve(_grab);
             _pauseAction = Resolve(_pause);
             _confirmAction = Resolve(_confirm);
+            _aimAction = Resolve(_aim);
         }
 
         private void OnEnable()
@@ -223,7 +227,7 @@ namespace AlienFarms.Input
                 Debug.LogWarning($"[{nameof(PlayerInputHandler)}] Missing PlayerIdentity reference on '{name}'.", this);
             }
 
-            if (_move == null || _look == null || _sprint == null || _grab == null || _pause == null || _confirm == null)
+            if (_move == null || _look == null || _sprint == null || _grab == null || _pause == null || _confirm == null || _aim == null)
             {
                 Debug.LogWarning($"[{nameof(PlayerInputHandler)}] One or more InputActionReferences are not assigned on '{name}'.", this);
             }

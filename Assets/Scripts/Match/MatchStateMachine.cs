@@ -26,8 +26,8 @@ namespace AlienFarms.Match
         public MatchPhase CurrentPhase => _current != null ? _current.Phase : MatchPhase.None;
 
         /// <summary>
-        /// Exit current -> switch -> raise phase event -> Enter next. The event goes before Enter so listeners such as
-        /// the CaptureReferee are already updated when Enter forces drops. Returning to WaitingForPlayers from any other
+        /// Exit current -> switch -> raise phase event -> Enter next. The event goes before Enter so listeners (and the
+        /// phase-gated score publishing) are already updated when Enter forces drops. Returning to WaitingForPlayers from any other
         /// phase aborts the round: ResetRound(false) runs before Enter (score/timer cleared, animals repopulated,
         /// remaining player not teleported). The very first Waiting does not reset.
         /// Returns false for a phase without state.

@@ -9,6 +9,8 @@ namespace AlienFarms.Match
     /// <summary>
     /// Scene composition root of the match: owns the phase state machine, score and timer, and bridges them to the
     /// players (via <see cref="PlayerJoinCoordinator"/>) and the animals (via <see cref="AnimalSpawner"/>).
+    /// The score mirrors zone occupancy from <see cref="GameEvents.OnAnimalCaptured"/> / <see cref="GameEvents.OnAnimalLeftZone"/>;
+    /// it is tracked in every phase but only published while playing.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MatchManager : MonoBehaviour, IMatchContext
@@ -55,12 +57,14 @@ namespace AlienFarms.Match
         private void OnEnable()
         {
             GameEvents.OnAnimalCaptured += HandleAnimalCaptured;
+            GameEvents.OnAnimalLeftZone += HandleAnimalLeftZone;
             GameEvents.OnConfirmPressed += HandleConfirmPressed;
         }
 
         private void OnDisable()
         {
             GameEvents.OnAnimalCaptured -= HandleAnimalCaptured;
+            GameEvents.OnAnimalLeftZone -= HandleAnimalLeftZone;
             GameEvents.OnConfirmPressed -= HandleConfirmPressed;
         }
 
@@ -95,9 +99,11 @@ namespace AlienFarms.Match
                 _players.RespawnAll();
             }
 
+            // Despawning captured animals raises OnAnimalLeftZone; the reset below clears whatever is left anyway.
             _spawner.ResetPopulation();
 
             _score.Reset();
+            // Published regardless of phase: the HUD must show 0-0 for the new round.
             GameEvents.RaiseScoreChanged(PlayerId.Player1, 0);
             GameEvents.RaiseScoreChanged(PlayerId.Player2, 0);
 
@@ -110,15 +116,37 @@ namespace AlienFarms.Match
             _players.SetControlsEnabled(enabled);
         }
 
-        private void HandleAnimalCaptured(PlayerId playerId, Animal animal)
+        private void HandleAnimalCaptured(PlayerId zoneOwner, Animal animal)
         {
-            if (playerId == PlayerId.None)
+            if (_score == null || animal == null || !CaptureRules.CountsForZone(animal.State, zoneOwner))
             {
                 return;
             }
 
-            int score = _score.Add(playerId);
-            GameEvents.RaiseScoreChanged(playerId, score);
+            if (_score.TryAdd(zoneOwner, animal, out PlayerId movedFrom))
+            {
+                PublishScore(zoneOwner);
+                if (movedFrom != PlayerId.None)
+                {
+                    PublishScore(movedFrom);
+                }
+            }
+        }
+
+        private void HandleAnimalLeftZone(PlayerId zoneOwner, Animal animal)
+        {
+            if (_score != null && _score.TryRemove(zoneOwner, animal))
+            {
+                PublishScore(zoneOwner);
+            }
+        }
+
+        private void PublishScore(PlayerId playerId)
+        {
+            if (CaptureRules.PublishesScore(CurrentPhase))
+            {
+                GameEvents.RaiseScoreChanged(playerId, _score.Get(playerId));
+            }
         }
 
         private void HandleConfirmPressed(PlayerId playerId)

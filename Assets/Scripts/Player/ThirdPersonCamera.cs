@@ -8,6 +8,7 @@ namespace AlienFarms.Player
     /// <summary>
     /// Orbit camera rig driven by this player's Look input. Lives on the CameraRig (child of the
     /// non-rotating player root); the camera is a child placed at local (0, 0, -distance).
+    /// While aiming, the distance blends to the aim distance and look sensitivity is reduced.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class ThirdPersonCamera : MonoBehaviour
@@ -36,6 +37,19 @@ namespace AlienFarms.Player
         private float _yaw;
         private float _pitch;
         private bool _yawSnapped;
+        private bool _isAiming;
+        private float _currentDistance;
+
+        /// <summary>Current orbit pitch (deg, positive looks down).</summary>
+        public float Pitch => _pitch;
+
+        /// <summary>Current orbit yaw (deg).</summary>
+        public float Yaw => _yaw;
+
+        /// <summary>Horizontal unit vector the camera looks along.</summary>
+        public Vector3 PlanarForward => Quaternion.Euler(0f, _yaw, 0f) * Vector3.forward;
+
+        public bool IsAiming => _isAiming;
 
         private void Awake()
         {
@@ -46,6 +60,7 @@ namespace AlienFarms.Player
             }
 
             _pitch = _settings != null ? _settings.DefaultPitch : 0f;
+            _currentDistance = _settings != null ? _settings.Distance : 0f;
         }
 
         private void LateUpdate()
@@ -65,6 +80,16 @@ namespace AlienFarms.Player
                 delta.y = -delta.y;
             }
 
+            if (_isAiming)
+            {
+                delta *= _settings.AimLookSensitivityMultiplier;
+            }
+
+            // Exponential blend: frame-rate independent and never overshoots.
+            float targetDistance = _isAiming ? _settings.AimCameraDistance : _settings.Distance;
+            float blend = 1f - Mathf.Exp(-_settings.AimCameraBlendSpeed * Time.deltaTime);
+            _currentDistance = Mathf.Lerp(_currentDistance, targetDistance, blend);
+
             _yaw = Mathf.Repeat(_yaw + delta.x, 360f);
             _pitch = Mathf.Clamp(_pitch - delta.y, _settings.MinPitch, _settings.MaxPitch);
 
@@ -74,10 +99,16 @@ namespace AlienFarms.Player
 
             if (_cameraTransform != null)
             {
-                float distance = ResolveDistance(pivot, rotation * Vector3.back);
+                float distance = ResolveDistance(pivot, rotation * Vector3.back, _currentDistance);
                 _cameraTransform.localPosition = new Vector3(0f, 0f, -distance);
                 _cameraTransform.localRotation = Quaternion.identity;
             }
+        }
+
+        /// <summary>Enters or leaves aim mode (driven by PlayerAim).</summary>
+        public void SetAimMode(bool aiming)
+        {
+            _isAiming = aiming;
         }
 
         /// <summary>Sets the orbit yaw instantly (e.g. after a respawn).</summary>
@@ -91,9 +122,8 @@ namespace AlienFarms.Player
             transform.rotation = Quaternion.Euler(euler.x, _yaw, 0f);
         }
 
-        private float ResolveDistance(Vector3 origin, Vector3 direction)
+        private float ResolveDistance(Vector3 origin, Vector3 direction, float desired)
         {
-            float desired = _settings.Distance;
             int count = Physics.SphereCastNonAlloc(
                 origin, _settings.CollisionRadius, direction, _hits, desired, _collisionMask, QueryTriggerInteraction.Ignore);
 

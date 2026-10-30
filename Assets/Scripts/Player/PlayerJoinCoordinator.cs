@@ -1,5 +1,4 @@
 using AlienFarms.Core;
-using AlienFarms.Zones;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -7,7 +6,7 @@ namespace AlienFarms.Player
 {
     /// <summary>
     /// Scene composition root for local multiplayer joining: listens to <see cref="PlayerInputManager"/>
-    /// and configures each spawned player (identity, spawn point, camera yaw, color, zone access) through its
+    /// and configures each spawned player (identity, spawn point, camera yaw, color) through its
     /// <see cref="PlayerRig"/>. Keeps a registry of joined rigs for the match (count, respawn, freeze).
     /// </summary>
     [DisallowMultipleComponent]
@@ -28,9 +27,6 @@ namespace AlienFarms.Player
 
         [SerializeField, Tooltip("Overview camera rendered while no player has joined.")]
         private Camera _lobbyCamera;
-
-        [SerializeField, Tooltip("Player zones; each lets its owner through its barrier on join.")]
-        private PlayerZone[] _playerZones = new PlayerZone[RequiredPlayers];
 
         // Index = (int)PlayerId - 1. Updated before PlayerJoined/PlayerLeft are raised.
         private readonly PlayerRig[] _rigs = new PlayerRig[RequiredPlayers];
@@ -128,7 +124,6 @@ namespace AlienFarms.Player
             PlayerId id = (PlayerId)(index + 1);
             rig.Configure(id, spawn, material);
             _rigs[index] = rig;
-            GrantZoneAccess(id, rig.BodyCollider);
             rig.SetControlsEnabled(_controlsEnabled);
 
             SetLobbyCameraActive(false);
@@ -183,23 +178,6 @@ namespace AlienFarms.Player
                 if (_rigs[i] == rig)
                 {
                     _rigs[i] = null;
-                }
-            }
-        }
-
-        private void GrantZoneAccess(PlayerId id, Collider bodyCollider)
-        {
-            if (_playerZones == null)
-            {
-                return;
-            }
-
-            for (int i = 0; i < _playerZones.Length; i++)
-            {
-                PlayerZone zone = _playerZones[i];
-                if (zone != null && zone.Owner == id)
-                {
-                    zone.GrantAccess(bodyCollider);
                 }
             }
         }
@@ -282,32 +260,6 @@ namespace AlienFarms.Player
 
             ValidateArray(_spawnPoints, "spawn point");
             ValidateArray(_playerMaterials, "player material");
-            ValidateZones();
-        }
-
-        private void ValidateZones()
-        {
-            bool hasPlayer1 = false;
-            bool hasPlayer2 = false;
-            if (_playerZones != null)
-            {
-                for (int i = 0; i < _playerZones.Length; i++)
-                {
-                    PlayerZone zone = _playerZones[i];
-                    if (zone == null)
-                    {
-                        continue;
-                    }
-
-                    hasPlayer1 |= zone.Owner == PlayerId.Player1;
-                    hasPlayer2 |= zone.Owner == PlayerId.Player2;
-                }
-            }
-
-            if (!hasPlayer1 || !hasPlayer2)
-            {
-                Debug.LogWarning($"[{nameof(PlayerJoinCoordinator)}] Player zones on '{name}' must cover Player1 and Player2; owners will be blocked by their barrier.", this);
-            }
         }
 
         private void ValidateArray<T>(T[] array, string label) where T : Object

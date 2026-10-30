@@ -39,6 +39,10 @@ namespace AlienFarms.Data
         [SerializeField, Min(1), Tooltip("Random placement attempts before skipping a spawn.")]
         private int _maxPlacementAttempts = 8;
 
+        [Header("Safety")]
+        [SerializeField, Tooltip("World height below which an animal is considered lost (fell off the map) and is despawned (m).")]
+        private float _killHeight = -10f;
+
         public AnimalSpawnEntry[] Entries => _entries;
         public int InitialCount => _initialCount;
         public int TargetFreePopulation => _targetFreePopulation;
@@ -49,6 +53,7 @@ namespace AlienFarms.Data
         public float SpawnRadius => _spawnRadius;
         public float SpawnClearance => _spawnClearance;
         public int MaxPlacementAttempts => _maxPlacementAttempts;
+        public float KillHeight => _killHeight;
 
         private void OnValidate()
         {
