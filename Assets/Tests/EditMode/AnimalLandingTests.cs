@@ -1,5 +1,6 @@
 using AlienFarms.Animals;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace AlienFarms.Tests
 {
@@ -170,6 +171,78 @@ namespace AlienFarms.Tests
 
             Assert.That(airborneSince, Is.EqualTo(1f));
             Assert.That(onPlayerSince, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void Stuck_TouchingEnvironmentStillAndUngrounded_IsStuck()
+        {
+            Assert.That(AnimalLanding.IsStuckOnEnvironment(true, false, false, 0.01f, 0.2f), Is.True);
+        }
+
+        [TestCase(false, false, false, 0.01f)]
+        [TestCase(true, true, false, 0.01f)]
+        [TestCase(true, false, true, 0.01f)]
+        [TestCase(true, false, false, 1f)]
+        public void Stuck_OtherwiseIsNotStuck(bool touching, bool grounded, bool onPlayer, float speedSqr)
+        {
+            Assert.That(AnimalLanding.IsStuckOnEnvironment(touching, grounded, onPlayer, speedSqr, 0.2f), Is.False);
+        }
+
+        [Test]
+        public void ShouldPushOff_OnlyAfterBeingStuckLongEnough()
+        {
+            float stuckSince = 0f;
+
+            Assert.That(AnimalLanding.ShouldPushOff(false, 1f, ref stuckSince, 0.3f, 0, 3), Is.False);
+            Assert.That(stuckSince, Is.EqualTo(1f));
+            Assert.That(AnimalLanding.ShouldPushOff(true, 1.2f, ref stuckSince, 0.3f, 0, 3), Is.False);
+            Assert.That(AnimalLanding.ShouldPushOff(true, 1.31f, ref stuckSince, 0.3f, 0, 3), Is.True);
+        }
+
+        [Test]
+        public void ShouldPushOff_OutOfPushes_NeverPushes()
+        {
+            float stuckSince = 0f;
+
+            Assert.That(AnimalLanding.ShouldPushOff(true, 1f, ref stuckSince, 0.3f, 2, 3), Is.True);
+            Assert.That(AnimalLanding.ShouldPushOff(true, 1f, ref stuckSince, 0.3f, 3, 3), Is.False);
+            Assert.That(AnimalLanding.ShouldPushOff(true, 100f, ref stuckSince, 0.3f, 3, 3), Is.False);
+        }
+
+        [Test]
+        public void ShouldPushOff_UnstuckRestartsTimer()
+        {
+            float stuckSince = 0f;
+            AnimalLanding.ShouldPushOff(true, 0.25f, ref stuckSince, 0.3f, 0, 3);
+            AnimalLanding.ShouldPushOff(false, 0.26f, ref stuckSince, 0.3f, 0, 3);
+
+            Assert.That(AnimalLanding.ShouldPushOff(true, 0.4f, ref stuckSince, 0.3f, 0, 3), Is.False);
+        }
+
+        [Test]
+        public void PushOffDirection_PointsFromContactTowardsBody()
+        {
+            // Balanced on the -Z edge of a fence (edge at z = -0.15, body center at z = -0.28).
+            Vector3 direction = AnimalLanding.PushOffDirection(
+                new Vector3(-6.5f, 1.4f, -0.28f), new Vector3(-6.5f, 1.1f, -0.15f), Vector3.up, Vector3.forward);
+
+            Assert.That(direction.z, Is.LessThan(-0.99f));
+            Assert.That(direction.y, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void PushOffDirection_CenteredContact_UsesNormalThenFallback()
+        {
+            Vector3 center = new Vector3(1f, 1f, 1f);
+            Vector3 contact = new Vector3(1f, 0.5f, 1f);
+
+            Vector3 alongNormal = AnimalLanding.PushOffDirection(center, contact, new Vector3(1f, 1f, 0f), Vector3.forward);
+            Vector3 alongFallback = AnimalLanding.PushOffDirection(center, contact, Vector3.up, Vector3.left);
+            Vector3 lastResort = AnimalLanding.PushOffDirection(center, contact, Vector3.up, Vector3.up);
+
+            Assert.That(alongNormal.x, Is.EqualTo(1f).Within(0.0001f));
+            Assert.That(alongFallback.x, Is.EqualTo(-1f).Within(0.0001f));
+            Assert.That(lastResort, Is.EqualTo(Vector3.back));
         }
     }
 }

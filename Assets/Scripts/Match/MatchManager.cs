@@ -2,6 +2,7 @@ using AlienFarms.Animals;
 using AlienFarms.Core;
 using AlienFarms.Data;
 using AlienFarms.Player;
+using AlienFarms.Zones;
 using UnityEngine;
 
 namespace AlienFarms.Match
@@ -25,6 +26,9 @@ namespace AlienFarms.Match
 
         [SerializeField, Tooltip("Animal spawner (population reset between rounds).")]
         private AnimalSpawner _spawner;
+
+        [SerializeField, Tooltip("Random obstacle layout of the Animal Zone (rolled on each new round).")]
+        private ObstacleField _obstacles;
 
         private MatchStateMachine _machine;
         private MatchScore _score;
@@ -97,6 +101,13 @@ namespace AlienFarms.Match
             if (respawnPlayers)
             {
                 _players.RespawnAll();
+
+                // Must run after the respawn (slots with a player stay empty) and before the repopulation
+                // (the spawner avoids active obstacles). Direct call, not an event, because the order matters.
+                if (_obstacles != null)
+                {
+                    _obstacles.Regenerate();
+                }
             }
 
             // Despawning captured animals raises OnAnimalLeftZone; the reset below clears whatever is left anyway.
@@ -169,6 +180,11 @@ namespace AlienFarms.Match
             if (_spawner == null)
             {
                 Debug.LogWarning($"[{nameof(MatchManager)}] Missing AnimalSpawner on '{name}'.", this);
+            }
+
+            if (_obstacles == null)
+            {
+                Debug.LogWarning($"[{nameof(MatchManager)}] No ObstacleField on '{name}'; the obstacle layout never changes between rounds.", this);
             }
         }
     }

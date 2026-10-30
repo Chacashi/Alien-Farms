@@ -54,6 +54,16 @@ namespace AlienFarms.Data
         [SerializeField, Min(0f), Tooltip("Distance kept from the Animal Zone edges (m).")]
         private float _confinementMargin = 1.5f;
 
+        [Header("Obstacles")]
+        [SerializeField, Min(0f), Tooltip("Extra probe distance ahead (beyond body radius + stopping distance) to detect obstacles (m).")]
+        private float _obstacleLookahead = 1f;
+
+        [SerializeField, Min(0f), Tooltip("Once the animal picks a side to go around an obstacle, it keeps it this long (s).")]
+        private float _obstacleSideHoldTime = 0.6f;
+
+        [SerializeField, Range(0, 5), Tooltip("New wander targets inside an obstacle are re-rolled up to this many times.")]
+        private int _wanderTargetRetries = 3;
+
         [Header("Carry")]
         [SerializeField, Range(0.3f, 1f), Tooltip("Multiplier applied to the holder's walk speed.")]
         private float _carrySpeedMultiplier = 0.9f;
@@ -89,6 +99,9 @@ namespace AlienFarms.Data
         public Vector2 IdleTimeRange => _idleTimeRange;
         public float MaxWanderLegTime => _maxWanderLegTime;
         public float ConfinementMargin => _confinementMargin;
+        public float ObstacleLookahead => _obstacleLookahead;
+        public float ObstacleSideHoldTime => _obstacleSideHoldTime;
+        public int WanderTargetRetries => _wanderTargetRetries;
         public float CarrySpeedMultiplier => _carrySpeedMultiplier;
         public Vector3 HoldOffset => _holdOffset;
         public float GrabCooldown => _grabCooldown;

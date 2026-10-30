@@ -15,6 +15,10 @@ namespace AlienFarms.Player
     {
         private const float DropHeight = 0.6f;
         private const float DropClearanceRadius = 0.3f;
+
+        // A target whose collider bottom is this far above the player's feet stands on something (fence, engine, disc):
+        // its line of sight is retried once from the hold point, over the obstacle it stands on (m).
+        private const float ElevatedTargetHeight = 0.5f;
         private const float Epsilon = 0.0001f;
 
         [Header("Config")]
@@ -195,6 +199,8 @@ namespace AlienFarms.Player
             }
 
             Vector3 origin = transform.position;
+            // Line of sight starts at chest height (same height the drop uses) so low walls and fences block it.
+            Vector3 eye = origin + Vector3.up * DropHeight;
             Vector3 facing = _movement.Facing;
             float minDot = Mathf.Cos(_settings.GrabHalfAngle * Mathf.Deg2Rad);
 
@@ -204,7 +210,8 @@ namespace AlienFarms.Player
             float bestSqr = float.MaxValue;
             for (int i = 0; i < count; i++)
             {
-                Rigidbody body = _hits[i].attachedRigidbody;
+                Collider hit = _hits[i];
+                Rigidbody body = hit.attachedRigidbody;
                 _hits[i] = null;
                 if (body == null)
                 {
@@ -224,6 +231,11 @@ namespace AlienFarms.Player
                     continue;
                 }
 
+                if (!HasLineOfSight(eye, origin.y, hit.bounds))
+                {
+                    continue;
+                }
+
                 // Resolving a physics query result (<= 10 Hz while the button is held), equivalent to a physics event.
                 if (!body.TryGetComponent(out IGrabbable grabbable) || !grabbable.CanBeGrabbed)
                 {
@@ -239,6 +251,28 @@ namespace AlienFarms.Player
                 _held = best;
                 _movement.SetCarryLoad(best.CarrySpeedMultiplier);
             }
+        }
+
+        /// <summary>
+        /// No grabbing through fences, obstacles or walls (Environment). Pen barriers (ZoneBarrier) never block; an animal
+        /// pressed against a wall is reachable because the line ends at its center, before the wall. An animal standing
+        /// on an obstacle gets a second line from the hold point, which passes over the obstacle under it. Animals on the
+        /// floor never get the retry, so a fence between player and animal always blocks.
+        /// </summary>
+        private bool HasLineOfSight(Vector3 eye, float feetHeight, Bounds target)
+        {
+            Vector3 center = target.center;
+            if (!Physics.Linecast(eye, center, _environmentMask, QueryTriggerInteraction.Ignore))
+            {
+                return true;
+            }
+
+            if (target.min.y - feetHeight < ElevatedTargetHeight)
+            {
+                return false;
+            }
+
+            return !Physics.Linecast(_holdPoint.position, center, _environmentMask, QueryTriggerInteraction.Ignore);
         }
 
         private void Drop(DropReason reason, Vector3 extraVelocity)

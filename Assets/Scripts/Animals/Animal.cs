@@ -55,6 +55,21 @@ namespace AlienFarms.Animals
         // Candidate directions tried around the player when relocating (every 360 / count degrees).
         private const int RelocateDirections = 8;
 
+        // Airborne ground probe: the body's footprint (planar extents shrunk by this factor so side contacts with walls
+        // never count) swept down as a thin box, so resting on an edge narrower than the body counts as grounded.
+        private const float FootprintInset = 0.9f;
+        private const float FootprintHalfThickness = 0.02f;
+
+        // Airborne, touching Environment, slower than this and not grounded for MaxStuckTime: pushed off (m/s, s).
+        private const float MaxStuckSpeed = 0.2f;
+        private const float MaxStuckTime = 0.3f;
+
+        // Push-offs allowed per flight; past this a wedged animal is left to the air timeout (despawn + refill).
+        private const int MaxPushOffsPerFlight = 3;
+
+        // Obstacle probe sphere radius, as a fraction of the body's smallest planar half extent.
+        private const float ProbeRadiusFactor = 0.9f;
+
         // A relocation ground hit higher than this above the player's feet is a ledge or a fence top, not the floor (m).
         private const float RelocateMaxStepUp = 0.5f;
 
@@ -93,6 +108,16 @@ namespace AlienFarms.Animals
         private float _activeMargin;
         private float _collisionRadius;
         private float _halfHeight;
+        private float _probeRadius;
+        private int _obstacleMask;
+        private int _environmentLayer = -1;
+        private bool _hitEnvironmentInFlight;
+        private bool _environmentContact;
+        private Vector3 _environmentContactPoint;
+        private Vector3 _environmentContactNormal;
+        private float _stuckSince;
+        private int _pushOffCount;
+        private AvoidanceSide _avoidance;
 
         private float _nextDetectionTime;
         private bool _isIdle;
@@ -146,6 +171,8 @@ namespace AlienFarms.Animals
             _playerMask = LayerMask.GetMask(LayerNames.Player);
             _groundMask = LayerMask.GetMask(LayerNames.Ground, LayerNames.Environment);
             _relocateBlockingMask = LayerMask.GetMask(LayerNames.Environment, LayerNames.Player);
+            _obstacleMask = LayerMask.GetMask(LayerNames.Environment);
+            _environmentLayer = LayerMask.NameToLayer(LayerNames.Environment);
             CacheLayers();
             CacheCollisionSize();
         }
@@ -213,6 +240,7 @@ namespace AlienFarms.Animals
             _grabCooldownUntil = 0f;
             _steeringResumeTime = 0f;
             _cornerEscape.Clear();
+            _avoidance.Clear();
             _state = AnimalState.Wandering;
 
             float interval = _data != null ? _data.DetectionInterval : 0.2f;
@@ -340,7 +368,58 @@ namespace AlienFarms.Animals
             _state = AnimalState.Airborne;
             _airborneSince = Time.time;
             _onPlayer = false;
+            _hitEnvironmentInFlight = false;
+            _environmentContact = false;
+            _stuckSince = Time.time;
+            _pushOffCount = 0;
             _cornerEscape.Clear();
+            _avoidance.Clear();
+        }
+
+        /// <summary>
+        /// First Environment contact in flight (wall, fence, rounded obstacle): the horizontal momentum is removed so the
+        /// animal drops where the throw preview stops, instead of skimming a curved surface. Ground contacts are left to
+        /// the normal landing. Never applies on a player (SlideOff/Relocate keep working).
+        /// </summary>
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (!RecordEnvironmentContact(collision) || _hitEnvironmentInFlight)
+            {
+                return;
+            }
+
+            _hitEnvironmentInFlight = true;
+            Vector3 velocity = _rb.linearVelocity;
+            _rb.linearVelocity = new Vector3(0f, Mathf.Min(velocity.y, 0f), 0f);
+        }
+
+        private void OnCollisionStay(Collision collision)
+        {
+            RecordEnvironmentContact(collision);
+        }
+
+        /// <summary>Airborne contact with Environment: remembered for the next step's stuck check. No allocations.</summary>
+        private bool RecordEnvironmentContact(Collision collision)
+        {
+            if (_state != AnimalState.Airborne || _environmentLayer < 0 || collision.gameObject.layer != _environmentLayer)
+            {
+                return false;
+            }
+
+            _environmentContact = true;
+            if (collision.contactCount > 0)
+            {
+                ContactPoint contact = collision.GetContact(0);
+                _environmentContactPoint = contact.point;
+                _environmentContactNormal = contact.normal;
+            }
+            else
+            {
+                _environmentContactPoint = _rb.position;
+                _environmentContactNormal = Vector3.zero;
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -367,6 +446,7 @@ namespace AlienFarms.Animals
             // Short pause before steering takes over again (reads as a recovery after the landing).
             _steeringResumeTime = Time.time + SteeringResumeDelay;
             _cornerEscape.Clear();
+            _avoidance.Clear();
             EnterIdle();
         }
 
@@ -386,6 +466,7 @@ namespace AlienFarms.Animals
             ClampInsidePen();
 
             _cornerEscape.Clear();
+            _avoidance.Clear();
             EnterIdle();
             _steeringResumeTime = 0f;
 
@@ -440,6 +521,8 @@ namespace AlienFarms.Animals
 
             _collisionRadius = Mathf.Max(Mathf.Abs(extents.x), Mathf.Abs(extents.z));
             _halfHeight = Mathf.Abs(extents.y);
+            // Never taller than the body, so the probe (centered at half height) does not scrape the floor.
+            _probeRadius = ProbeRadiusFactor * Mathf.Min(Mathf.Min(Mathf.Abs(extents.x), Mathf.Abs(extents.z)), _halfHeight);
         }
 
         /// <summary>Resolves the free (prefab) and captured layers once; safe to call before Awake.</summary>
@@ -489,12 +572,28 @@ namespace AlienFarms.Animals
             // In flight: pure physics (no steering, no clamp) until it lands.
             if (_state == AnimalState.Airborne)
             {
-                bool grounded = Probe(_groundMask, out _);
+                // Center ray first (cheap, also catches a body sunk into the floor), then the whole footprint (edges).
+                bool grounded = Probe(_groundMask, out _) || ProbeFootprint(_groundMask);
                 // Only probed when not grounded: a player under the animal is the one case that blocks the landing.
                 RaycastHit playerHit = default;
                 bool onPlayer = !grounded && Probe(_playerMask, out playerHit);
                 AnimalLanding.TrackPlayerContact(onPlayer, _onPlayer, now, ref _airborneSince, ref _onPlayerSince);
                 _onPlayer = onPlayer;
+
+                // Collision callbacks run after the physics step: this reads the contacts of the previous step.
+                bool touchingEnvironment = _environmentContact;
+                _environmentContact = false;
+                bool stuck = AnimalLanding.IsStuckOnEnvironment(
+                    touchingEnvironment, grounded, onPlayer, _rb.linearVelocity.sqrMagnitude, MaxStuckSpeed);
+                if (AnimalLanding.ShouldPushOff(stuck, now, ref _stuckSince, MaxStuckTime, _pushOffCount, MaxPushOffsPerFlight))
+                {
+                    _pushOffCount++;
+                    PushOffEnvironment();
+                    // A fresh fall: never despawned by the air timeout while it is still on the map.
+                    _airborneSince = now;
+                    _stuckSince = now;
+                    return;
+                }
 
                 AirborneOutcome outcome = AnimalLanding.Evaluate(
                     now - _airborneSince, _rb.linearVelocity.y, grounded, onPlayer, now - _onPlayerSince, MaxOnPlayerTime,
@@ -554,10 +653,22 @@ namespace AlienFarms.Animals
                 return;
             }
 
-            Vector3 desired = _state == AnimalState.Fleeing
-                ? ComputeFleeVelocity(position)
-                : ComputeWanderVelocity(position, now);
+            Vector3 desired;
+            Vector3 sideHint;
+            float speed;
+            if (_state == AnimalState.Fleeing)
+            {
+                desired = ComputeFleeVelocity(position, out sideHint);
+                speed = _data.FleeSpeed;
+            }
+            else
+            {
+                desired = ComputeWanderVelocity(position, now);
+                sideHint = Vector3.zero;
+                speed = _data.WanderSpeed;
+            }
 
+            desired = AvoidObstacles(position, desired, speed, sideHint, now);
             ApplyDesiredVelocity(desired);
         }
 
@@ -604,6 +715,34 @@ namespace AlienFarms.Animals
                 _rb.linearVelocity = new Vector3(direction.x * SlideOffSpeed, velocity.y, direction.z * SlideOffSpeed);
                 return;
             }
+        }
+
+        /// <summary>Pushes a stuck airborne animal horizontally away from the Environment contact; it then falls and lands.</summary>
+        private void PushOffEnvironment()
+        {
+            Vector3 center = _collider != null && _collider.enabled ? _collider.bounds.center : _rb.position;
+            Vector3 fallback = _visual != null ? -_visual.forward : Vector3.back;
+            Vector3 direction = AnimalLanding.PushOffDirection(center, _environmentContactPoint, _environmentContactNormal, fallback);
+            Vector3 velocity = _rb.linearVelocity;
+            _rb.linearVelocity = new Vector3(direction.x * SlideOffSpeed, Mathf.Min(velocity.y, 0f), direction.z * SlideOffSpeed);
+        }
+
+        /// <summary>
+        /// Thin box with the body's (inset) planar footprint swept from the collider center to just below its bottom.
+        /// False when the collider is disabled (the center ray covers that case).
+        /// </summary>
+        private bool ProbeFootprint(int mask)
+        {
+            if (_collider == null || !_collider.enabled)
+            {
+                return false;
+            }
+
+            Bounds bounds = _collider.bounds;
+            Vector3 extents = bounds.extents;
+            Vector3 halfExtents = new Vector3(extents.x * FootprintInset, FootprintHalfThickness, extents.z * FootprintInset);
+            float distance = Mathf.Max(0f, extents.y - FootprintHalfThickness) + GroundProbeSkin;
+            return Physics.BoxCast(bounds.center, halfExtents, Vector3.down, Quaternion.identity, distance, mask, QueryTriggerInteraction.Ignore);
         }
 
         private bool IsSlideBlocked(Vector3 direction, Rigidbody support)
@@ -816,7 +955,91 @@ namespace AlienFarms.Animals
             }
         }
 
-        private Vector3 ComputeFleeVelocity(Vector3 position)
+        /// <summary>
+        /// Forward sphere probe against Environment; on a hit, slides <paramref name="desired"/> along the obstacle
+        /// (<see cref="ObstacleAvoidance"/>) and confines the result to the zone again. <paramref name="sideHint"/> picks the
+        /// side to go around a head-on obstacle (away from the threat when fleeing; zero = remembered or random side).
+        /// </summary>
+        private Vector3 AvoidObstacles(Vector3 position, Vector3 desired, float speed, Vector3 sideHint, float now)
+        {
+            if (_obstacleMask == 0 || _probeRadius <= Epsilon || speed <= Epsilon || desired.sqrMagnitude < Epsilon)
+            {
+                return desired;
+            }
+
+            Vector3 direction = desired / speed;
+            Vector3 castDirection = direction.normalized;
+            float stopping = StoppingDistance(speed);
+            float probeDistance = _collisionRadius + stopping + _data.ObstacleLookahead;
+            Vector3 origin = position + Vector3.up * _halfHeight;
+
+            if (!Physics.SphereCast(origin, _probeRadius, castDirection, out RaycastHit hit, probeDistance, _obstacleMask, QueryTriggerInteraction.Ignore))
+            {
+                if (_avoidance.Side != 0 && !_avoidance.IsActive(now))
+                {
+                    _avoidance.Clear();
+                }
+
+                return desired;
+            }
+
+            // Identifies the collider for the side memory (a different obstacle never inherits the side).
+            int obstacleId = hit.colliderEntityId.GetHashCode();
+            float holdTime = _data.ObstacleSideHoldTime;
+
+            // No hint and no remembered side: pick one at random (inactive memory) so a herd does not all turn the same way.
+            if (sideHint.sqrMagnitude < Epsilon && _avoidance.Side == 0)
+            {
+                _avoidance.Begin(Random.value < 0.5f ? -1 : 1, 0f, obstacleId);
+            }
+
+            Vector3 avoided = ObstacleAvoidance.Avoid(
+                direction, hit.normal, hit.distance, probeDistance, obstacleId, sideHint, now, holdTime, ref _avoidance);
+            Vector3 confined = AnimalSteering.ConfineDirection(position, avoided, _confinement, _activeMargin, stopping);
+
+            // Wedge between the obstacle and a zone edge: the edge cancelled the detour (or turned it back into the
+            // obstacle). Go around the other side instead, once.
+            Vector3 planarNormal = new Vector3(hit.normal.x, 0f, hit.normal.z);
+            float corneredSqr = AnimalSteering.CorneredRatio * AnimalSteering.CorneredRatio;
+            bool detoured = Vector3.Dot(direction, planarNormal) < 0f;
+            if (detoured
+                && (confined.sqrMagnitude < corneredSqr * avoided.sqrMagnitude || Vector3.Dot(confined, planarNormal) < -Epsilon))
+            {
+                int otherSide = -ObstacleAvoidance.SideOf(avoided, hit.normal);
+                _avoidance.Begin(otherSide, now + holdTime, obstacleId);
+                avoided = ObstacleAvoidance.Detour(direction, hit.normal, hit.distance, probeDistance, otherSide);
+                confined = AnimalSteering.ConfineDirection(position, avoided, _confinement, _activeMargin, stopping);
+            }
+
+            return confined * speed;
+        }
+
+        /// <summary>
+        /// Random wander target inside the zone, re-rolled up to <see cref="AnimalData.WanderTargetRetries"/> times while
+        /// it lands inside an obstacle. The last roll is kept anyway (avoidance and the leg timeout handle it).
+        /// </summary>
+        private Vector3 PickWanderTarget(Vector3 position)
+        {
+            Vector3 target = AnimalSteering.RandomPointInside(position, _data.WanderRadius, _confinement, _activeMargin);
+            if (_obstacleMask == 0)
+            {
+                return target;
+            }
+
+            for (int i = 0; i < _data.WanderTargetRetries; i++)
+            {
+                if (!Physics.CheckSphere(target + Vector3.up * _halfHeight, _collisionRadius, _obstacleMask, QueryTriggerInteraction.Ignore))
+                {
+                    break;
+                }
+
+                target = AnimalSteering.RandomPointInside(position, _data.WanderRadius, _confinement, _activeMargin);
+            }
+
+            return target;
+        }
+
+        private Vector3 ComputeFleeVelocity(Vector3 position, out Vector3 awayFromThreat)
         {
             Vector3 away = position - _threatPosition;
             away.y = 0f;
@@ -827,6 +1050,7 @@ namespace AlienFarms.Animals
             }
 
             away.Normalize();
+            awayFromThreat = away;
             Vector3 direction = ComputeFleeDirection(away);
             direction.y = 0f;
             float speed = _data.FleeSpeed;
@@ -849,7 +1073,7 @@ namespace AlienFarms.Animals
                 }
 
                 _isIdle = false;
-                _wanderTarget = AnimalSteering.RandomPointInside(position, _data.WanderRadius, _confinement, _activeMargin);
+                _wanderTarget = PickWanderTarget(position);
                 _legEndTime = now + _data.MaxWanderLegTime;
             }
 

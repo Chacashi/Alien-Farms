@@ -24,5 +24,6 @@ MonoBehaviour:
   _poolHardCap: 120
   _prewarmPerType: 30
   _spawnRadius: 6
-  _spawnClearance: 0.6
-  _maxPlacementAttempts: 8
+  _spawnClearance: 0.8
+  _maxPlacementAttempts: 16
+  _killHeight: -10

@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af57994617453a54687fadc3ef99344f, type: 3}
+  m_Name: ObstacleLayoutSettings_Default
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Data.ObstacleLayoutSettings
+  _minActive: 4
+  _maxActive: 8
+  _variants:
+  - _variant: {fileID: 11400000, guid: d7384364845e9f54a8ebddddfcce149c, type: 2}
+    _weight: 4
+  - _variant: {fileID: 11400000, guid: 7ddaa5a64663bb84ba9f50434f30187a, type: 2}
+    _weight: 2
+  - _variant: {fileID: 11400000, guid: d75030fe07f43ac4a963f872c799a83e, type: 2}
+    _weight: 2
+  - _variant: {fileID: 11400000, guid: dd395497c5112824ba82ca38b607fe3e, type: 2}
+    _weight: 1
+  _minSpacing: 5.5
+  _mirrorAcrossCenter: 1
+  _clearanceProbeHeight: 1
+  _minEdgeDistance: 4
+  _useFixedSeed: 0
+  _seed: 12345

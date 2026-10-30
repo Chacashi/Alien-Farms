@@ -17,7 +17,10 @@ namespace AlienFarms.Match
 
         void ChangeState(MatchPhase next);
 
-        /// <summary>Clears score and timer and repopulates animals; optionally moves players back to their spawns.</summary>
+        /// <summary>
+        /// Clears score and timer and repopulates animals; optionally moves players back to their spawns and, when
+        /// respawning players, rolls a new obstacle layout.
+        /// </summary>
         void ResetRound(bool respawnPlayers);
 
         /// <summary>Freezes (false) or unfreezes (true) movement and grabbing of every player. Camera stays free.</summary>

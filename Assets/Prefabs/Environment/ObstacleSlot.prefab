@@ -1,0 +1,365 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8768562914955925582
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5672544763454591392}
+  - component: {fileID: 1617506728039955876}
+  m_Layer: 7
+  m_Name: ObstacleSlot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5672544763454591392
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8768562914955925582}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 9146289732767380619}
+  - {fileID: 6428786925647735707}
+  - {fileID: 7612025172843326616}
+  - {fileID: 4420943039935655501}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1617506728039955876
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8768562914955925582}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 657dc4ce2f31ef94a94b3c0246258204, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleSlot
+  _mirror: {fileID: 0}
+  _clearanceRadius: 2.5
+  _variants:
+  - {fileID: 3865263042172451390}
+  - {fileID: 4822573859820124405}
+  - {fileID: 515795603269757266}
+  - {fileID: 114196710153684307}
+--- !u!1001 &265067455637969552
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5672544763454591392}
+    m_Modifications:
+    - target: {fileID: 285151667305316521, guid: f9eb6caa3dc0b8648848532c14ffd9dc, type: 3}
+      propertyPath: m_Name
+      value: Obstacle_UFOEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 285151667305316521, guid: f9eb6caa3dc0b8648848532c14ffd9dc, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7642307176076752392, guid: f9eb6caa3dc0b8648848532c14ffd9dc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7642307176076752392, guid: f9eb6caa3dc0b8648848532c14ffd9dc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7642307176076752392, guid: f9eb6caa3dc0b8648848532c14ffd9dc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7642307176076752392, guid: f9eb6caa3dc0b8648848532c14ffd9dc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7642307176076752392, guid: f9eb6caa3dc0b8648848532c14ffd9dc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7642307176076752392, guid: f9eb6caa3dc0b8648848532c14ffd9dc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7642307176076752392, guid: f9eb6caa3dc0b8648848532c14ffd9dc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7642307176076752392, guid: f9eb6caa3dc0b8648848532c14ffd9dc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7642307176076752392, guid: f9eb6caa3dc0b8648848532c14ffd9dc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7642307176076752392, guid: f9eb6caa3dc0b8648848532c14ffd9dc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: f9eb6caa3dc0b8648848532c14ffd9dc, type: 3}
+--- !u!114 &515795603269757266 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 325891037460132802, guid: f9eb6caa3dc0b8648848532c14ffd9dc, type: 3}
+  m_PrefabInstance: {fileID: 265067455637969552}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 656b88fbd565e724c87c698bce916ecd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleVariant
+--- !u!4 &7612025172843326616 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7642307176076752392, guid: f9eb6caa3dc0b8648848532c14ffd9dc, type: 3}
+  m_PrefabInstance: {fileID: 265067455637969552}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1623999525116437155
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5672544763454591392}
+    m_Modifications:
+    - target: {fileID: 1605078251525923354, guid: 2686a35b83322ca4ca8ed7e4fdd1079f, type: 3}
+      propertyPath: m_Name
+      value: Obstacle_UFOScrap
+      objectReference: {fileID: 0}
+    - target: {fileID: 1605078251525923354, guid: 2686a35b83322ca4ca8ed7e4fdd1079f, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3158081838617873646, guid: 2686a35b83322ca4ca8ed7e4fdd1079f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3158081838617873646, guid: 2686a35b83322ca4ca8ed7e4fdd1079f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3158081838617873646, guid: 2686a35b83322ca4ca8ed7e4fdd1079f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3158081838617873646, guid: 2686a35b83322ca4ca8ed7e4fdd1079f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3158081838617873646, guid: 2686a35b83322ca4ca8ed7e4fdd1079f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3158081838617873646, guid: 2686a35b83322ca4ca8ed7e4fdd1079f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3158081838617873646, guid: 2686a35b83322ca4ca8ed7e4fdd1079f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3158081838617873646, guid: 2686a35b83322ca4ca8ed7e4fdd1079f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3158081838617873646, guid: 2686a35b83322ca4ca8ed7e4fdd1079f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3158081838617873646, guid: 2686a35b83322ca4ca8ed7e4fdd1079f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 2686a35b83322ca4ca8ed7e4fdd1079f, type: 3}
+--- !u!114 &114196710153684307 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1665258443479279600, guid: 2686a35b83322ca4ca8ed7e4fdd1079f, type: 3}
+  m_PrefabInstance: {fileID: 1623999525116437155}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 656b88fbd565e724c87c698bce916ecd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleVariant
+--- !u!4 &4420943039935655501 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3158081838617873646, guid: 2686a35b83322ca4ca8ed7e4fdd1079f, type: 3}
+  m_PrefabInstance: {fileID: 1623999525116437155}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1732289573180118601
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5672544763454591392}
+    m_Modifications:
+    - target: {fileID: 7414176496499385026, guid: 46406a9efa52e824facd6cf2a1ad1fa0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7414176496499385026, guid: 46406a9efa52e824facd6cf2a1ad1fa0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7414176496499385026, guid: 46406a9efa52e824facd6cf2a1ad1fa0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7414176496499385026, guid: 46406a9efa52e824facd6cf2a1ad1fa0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7414176496499385026, guid: 46406a9efa52e824facd6cf2a1ad1fa0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7414176496499385026, guid: 46406a9efa52e824facd6cf2a1ad1fa0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7414176496499385026, guid: 46406a9efa52e824facd6cf2a1ad1fa0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7414176496499385026, guid: 46406a9efa52e824facd6cf2a1ad1fa0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7414176496499385026, guid: 46406a9efa52e824facd6cf2a1ad1fa0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7414176496499385026, guid: 46406a9efa52e824facd6cf2a1ad1fa0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8165519015868855050, guid: 46406a9efa52e824facd6cf2a1ad1fa0, type: 3}
+      propertyPath: m_Name
+      value: Obstacle_Fence
+      objectReference: {fileID: 0}
+    - target: {fileID: 8165519015868855050, guid: 46406a9efa52e824facd6cf2a1ad1fa0, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 46406a9efa52e824facd6cf2a1ad1fa0, type: 3}
+--- !u!114 &3865263042172451390 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3291700810045582455, guid: 46406a9efa52e824facd6cf2a1ad1fa0, type: 3}
+  m_PrefabInstance: {fileID: 1732289573180118601}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 656b88fbd565e724c87c698bce916ecd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleVariant
+--- !u!4 &9146289732767380619 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7414176496499385026, guid: 46406a9efa52e824facd6cf2a1ad1fa0, type: 3}
+  m_PrefabInstance: {fileID: 1732289573180118601}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &2850745532761818047
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5672544763454591392}
+    m_Modifications:
+    - target: {fileID: 4092503083259418001, guid: 344cbe055e154694aac7855878d7517c, type: 3}
+      propertyPath: m_Name
+      value: Obstacle_UFODisc
+      objectReference: {fileID: 0}
+    - target: {fileID: 4092503083259418001, guid: 344cbe055e154694aac7855878d7517c, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9131121158117419044, guid: 344cbe055e154694aac7855878d7517c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9131121158117419044, guid: 344cbe055e154694aac7855878d7517c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9131121158117419044, guid: 344cbe055e154694aac7855878d7517c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9131121158117419044, guid: 344cbe055e154694aac7855878d7517c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9131121158117419044, guid: 344cbe055e154694aac7855878d7517c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9131121158117419044, guid: 344cbe055e154694aac7855878d7517c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9131121158117419044, guid: 344cbe055e154694aac7855878d7517c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9131121158117419044, guid: 344cbe055e154694aac7855878d7517c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9131121158117419044, guid: 344cbe055e154694aac7855878d7517c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9131121158117419044, guid: 344cbe055e154694aac7855878d7517c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 344cbe055e154694aac7855878d7517c, type: 3}
+--- !u!114 &4822573859820124405 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7305639772635364170, guid: 344cbe055e154694aac7855878d7517c, type: 3}
+  m_PrefabInstance: {fileID: 2850745532761818047}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 656b88fbd565e724c87c698bce916ecd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleVariant
+--- !u!4 &6428786925647735707 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 9131121158117419044, guid: 344cbe055e154694aac7855878d7517c, type: 3}
+  m_PrefabInstance: {fileID: 2850745532761818047}
+  m_PrefabAsset: {fileID: 0}

@@ -209,6 +209,160 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 19310433}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &20045939
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2132848144}
+    m_Modifications:
+    - target: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: _mirror
+      value: 
+      objectReference: {fileID: 23154370}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -13.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8768562914955925582, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_Name
+      value: Slot_05
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+--- !u!114 &20045940 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 20045939}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 657dc4ce2f31ef94a94b3c0246258204, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleSlot
+--- !u!4 &20045941 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 20045939}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &23154368
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2132848144}
+    m_Modifications:
+    - target: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: _mirror
+      value: 
+      objectReference: {fileID: 20045940}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 13.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8768562914955925582, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_Name
+      value: Slot_06
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+--- !u!4 &23154369 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 23154368}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &23154370 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 23154368}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 657dc4ce2f31ef94a94b3c0246258204, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleSlot
 --- !u!1 &33464267
 GameObject:
   m_ObjectHideFlags: 0
@@ -499,6 +653,7 @@ Transform:
   - {fileID: 1066719197}
   - {fileID: 132681977}
   - {fileID: 1813304269}
+  - {fileID: 2132848144}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &132681976
@@ -2240,6 +2395,83 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &842607939
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2132848144}
+    m_Modifications:
+    - target: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: _mirror
+      value: 
+      objectReference: {fileID: 1081882078}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -6
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -9.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8768562914955925582, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_Name
+      value: Slot_11
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+--- !u!114 &842607940 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 842607939}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 657dc4ce2f31ef94a94b3c0246258204, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleSlot
+--- !u!4 &842607941 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 842607939}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &888992679
 GameObject:
   m_ObjectHideFlags: 0
@@ -2280,6 +2512,160 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &912885383
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2132848144}
+    m_Modifications:
+    - target: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: _mirror
+      value: 
+      objectReference: {fileID: 1031133638}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -13
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 8.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8768562914955925582, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_Name
+      value: Slot_01
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+--- !u!114 &912885384 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 912885383}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 657dc4ce2f31ef94a94b3c0246258204, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleSlot
+--- !u!4 &912885385 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 912885383}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &945146758
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2132848144}
+    m_Modifications:
+    - target: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: _mirror
+      value: 
+      objectReference: {fileID: 967800579}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 9.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8768562914955925582, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_Name
+      value: Slot_04
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+--- !u!4 &945146759 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 945146758}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &945146760 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 945146758}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 657dc4ce2f31ef94a94b3c0246258204, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleSlot
 --- !u!1 &955901982
 GameObject:
   m_ObjectHideFlags: 0
@@ -2450,6 +2836,83 @@ Transform:
   - {fileID: 2081998421}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &967800578
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2132848144}
+    m_Modifications:
+    - target: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: _mirror
+      value: 
+      objectReference: {fileID: 945146760}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -6
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 9.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8768562914955925582, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_Name
+      value: Slot_03
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+--- !u!114 &967800579 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 967800578}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 657dc4ce2f31ef94a94b3c0246258204, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleSlot
+--- !u!4 &967800580 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 967800578}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1011480435
 GameObject:
   m_ObjectHideFlags: 0
@@ -2482,6 +2945,7 @@ MonoBehaviour:
   _settings: {fileID: 11400000, guid: 49fdfa7bc9bdf024da188678ac1f3463, type: 2}
   _players: {fileID: 1499937869}
   _spawner: {fileID: 188548379}
+  _obstacles: {fileID: 2132848145}
 --- !u!4 &1011480438
 Transform:
   m_ObjectHideFlags: 0
@@ -2549,6 +3013,160 @@ MonoBehaviour:
   _player: 2
   _format: P2  {0}
   _text: {fileID: 362996571}
+--- !u!1001 &1030207227
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2132848144}
+    m_Modifications:
+    - target: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: _mirror
+      value: 
+      objectReference: {fileID: 1385598891}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -8.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8768562914955925582, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_Name
+      value: Slot_10
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+--- !u!4 &1030207228 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 1030207227}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1030207229 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 1030207227}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 657dc4ce2f31ef94a94b3c0246258204, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleSlot
+--- !u!1001 &1031133636
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2132848144}
+    m_Modifications:
+    - target: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: _mirror
+      value: 
+      objectReference: {fileID: 912885384}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 8.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8768562914955925582, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_Name
+      value: Slot_02
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+--- !u!4 &1031133637 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 1031133636}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1031133638 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 1031133636}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 657dc4ce2f31ef94a94b3c0246258204, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleSlot
 --- !u!1 &1064485241
 GameObject:
   m_ObjectHideFlags: 0
@@ -2851,6 +3469,83 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1071324130}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &1081882076
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2132848144}
+    m_Modifications:
+    - target: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: _mirror
+      value: 
+      objectReference: {fileID: 842607940}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -9.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8768562914955925582, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_Name
+      value: Slot_12
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+--- !u!4 &1081882077 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 1081882076}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1081882078 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 1081882076}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 657dc4ce2f31ef94a94b3c0246258204, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleSlot
 --- !u!1 &1105249378
 GameObject:
   m_ObjectHideFlags: 0
@@ -2988,6 +3683,160 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1105249378}
   m_CullTransparentMesh: 1
+--- !u!1001 &1188022049
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2132848144}
+    m_Modifications:
+    - target: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: _mirror
+      value: 
+      objectReference: {fileID: 1740425459}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -6.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8768562914955925582, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_Name
+      value: Slot_07
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+--- !u!114 &1188022050 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 1188022049}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 657dc4ce2f31ef94a94b3c0246258204, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleSlot
+--- !u!4 &1188022051 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 1188022049}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1385598890
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2132848144}
+    m_Modifications:
+    - target: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: _mirror
+      value: 
+      objectReference: {fileID: 1030207229}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -13
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -8.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8768562914955925582, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_Name
+      value: Slot_09
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+--- !u!114 &1385598891 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 1385598890}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 657dc4ce2f31ef94a94b3c0246258204, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleSlot
+--- !u!4 &1385598892 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 1385598890}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1409478889
 GameObject:
   m_ObjectHideFlags: 0
@@ -3594,6 +4443,83 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 10, z: 32}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1001 &1740425457
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2132848144}
+    m_Modifications:
+    - target: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: _mirror
+      value: 
+      objectReference: {fileID: 1188022050}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 6.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8768562914955925582, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_Name
+      value: Slot_08
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+--- !u!4 &1740425458 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 1740425457}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1740425459 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 1740425457}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 657dc4ce2f31ef94a94b3c0246258204, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleSlot
 --- !u!1 &1797694796
 GameObject:
   m_ObjectHideFlags: 0
@@ -3837,6 +4763,79 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1001 &1978879422
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2132848144}
+    m_Modifications:
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 9.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8768562914955925582, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_Name
+      value: Slot_13
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+--- !u!4 &1978879423 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 1978879422}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1978879424 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 1978879422}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 657dc4ce2f31ef94a94b3c0246258204, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleSlot
 --- !u!1 &2001781477
 GameObject:
   m_ObjectHideFlags: 0
@@ -4049,6 +5048,79 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!1001 &2028819123
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2132848144}
+    m_Modifications:
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -9.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8768562914955925582, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+      propertyPath: m_Name
+      value: Slot_14
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+--- !u!4 &2028819124 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5672544763454591392, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 2028819123}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2028819125 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1617506728039955876, guid: 48a1622ce43e08e4aa24b8990b93ccd0, type: 3}
+  m_PrefabInstance: {fileID: 2028819123}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 657dc4ce2f31ef94a94b3c0246258204, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleSlot
 --- !u!1 &2081998420
 GameObject:
   m_ObjectHideFlags: 0
@@ -4223,6 +5295,84 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 82, y: 10, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &2132848143
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2132848144}
+  - component: {fileID: 2132848145}
+  m_Layer: 7
+  m_Name: Obstacles
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2132848144
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2132848143}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 912885385}
+  - {fileID: 1031133637}
+  - {fileID: 967800580}
+  - {fileID: 945146759}
+  - {fileID: 20045941}
+  - {fileID: 23154369}
+  - {fileID: 1188022051}
+  - {fileID: 1740425458}
+  - {fileID: 1385598892}
+  - {fileID: 1030207228}
+  - {fileID: 842607941}
+  - {fileID: 1081882077}
+  - {fileID: 1978879423}
+  - {fileID: 2028819124}
+  m_Father: {fileID: 129192933}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2132848145
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2132848143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a39706204d5de345a3664a2718512dd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleField
+  _settings: {fileID: 11400000, guid: d3479525b680d7545848a4559dc6ed4f, type: 2}
+  _slots:
+  - {fileID: 912885384}
+  - {fileID: 1031133638}
+  - {fileID: 967800579}
+  - {fileID: 945146760}
+  - {fileID: 20045940}
+  - {fileID: 23154370}
+  - {fileID: 1188022050}
+  - {fileID: 1740425459}
+  - {fileID: 1385598891}
+  - {fileID: 1030207229}
+  - {fileID: 842607940}
+  - {fileID: 1081882078}
+  - {fileID: 1978879424}
+  - {fileID: 2028819125}
+  _clearanceMask:
+    serializedVersion: 2
+    m_Bits: 256
+  _animalZone: {fileID: 457471110}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
