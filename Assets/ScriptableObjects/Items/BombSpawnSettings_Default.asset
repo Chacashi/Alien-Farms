@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9919fd18ac5c414cba6638837ecd580, type: 3}
+  m_Name: BombSpawnSettings_Default
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Data.BombSpawnSettings
+  _maxActive: 1
+  _initialDelay: 12
+  _respawnIntervalRange: {x: 15, y: 25}
+  _retryDelay: 1
+  _edgeMargin: 3
+  _spawnClearance: 0.8
+  _playerClearance: 3
+  _maxPlacementAttempts: 12
+  _spawnDropHeight: 0.3
+  _poolMaxSize: 4
+  _killHeight: -10

@@ -13,6 +13,9 @@ namespace AlienFarms.Core
         Forced = 2,
 
         /// <summary>The holder released Grab while aiming: launched on a ballistic arc.</summary>
-        Thrown = 3
+        Thrown = 3,
+
+        /// <summary>A blast stunned the holder.</summary>
+        Stunned = 4
     }
 }

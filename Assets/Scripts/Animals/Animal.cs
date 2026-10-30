@@ -14,7 +14,7 @@ namespace AlienFarms.Animals
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public abstract class Animal : MonoBehaviour, IThrowable
+    public abstract class Animal : MonoBehaviour, IThrowable, IScareable
     {
         private const float ArrivalDistanceSqr = 0.3f * 0.3f;
         private const float MinVisualSpeedSqr = 0.2f * 0.2f;
@@ -101,6 +101,9 @@ namespace AlienFarms.Animals
         private Transform _holdPoint;
         private int _playerMask;
         private int _groundMask;
+        // Airborne landing only: an inert bomb is something to stand on. Relocation keeps using _groundMask so it
+        // never places an animal on top of a bomb.
+        private int _landingMask;
         private float _airborneSince;
         private float _onPlayerSince;
         private bool _onPlayer;
@@ -170,7 +173,8 @@ namespace AlienFarms.Animals
 
             _playerMask = LayerMask.GetMask(LayerNames.Player);
             _groundMask = LayerMask.GetMask(LayerNames.Ground, LayerNames.Environment);
-            _relocateBlockingMask = LayerMask.GetMask(LayerNames.Environment, LayerNames.Player);
+            _landingMask = LayerMask.GetMask(LayerNames.Ground, LayerNames.Environment, LayerNames.Bomb);
+            _relocateBlockingMask = LayerMask.GetMask(LayerNames.Environment, LayerNames.Player, LayerNames.Bomb);
             _obstacleMask = LayerMask.GetMask(LayerNames.Environment);
             _environmentLayer = LayerMask.NameToLayer(LayerNames.Environment);
             CacheLayers();
@@ -361,6 +365,23 @@ namespace AlienFarms.Animals
             // MUST stay the last statement: listeners may react synchronously and rely on the release state above
             // being fully applied.
             GameEvents.RaiseAnimalDropped(previousHolder, this, reason);
+        }
+
+        /// <summary>
+        /// Sudden threat (a blast): a free animal on the ground flees from <paramref name="threatPosition"/> for at least
+        /// <paramref name="minDuration"/> seconds. Carried, airborne, captured and inactive animals ignore it.
+        /// </summary>
+        public void Scare(Vector3 threatPosition, float minDuration)
+        {
+            if (_data == null || (_state != AnimalState.Wandering && _state != AnimalState.Fleeing))
+            {
+                return;
+            }
+
+            float fleeEnd = Time.time + Mathf.Max(minDuration, _data.MinFleeTime);
+            _threatPosition = threatPosition;
+            _minFleeEndTime = _state == AnimalState.Fleeing ? Mathf.Max(_minFleeEndTime, fleeEnd) : fleeEnd;
+            _state = AnimalState.Fleeing;
         }
 
         private void EnterAirborne()
@@ -573,7 +594,7 @@ namespace AlienFarms.Animals
             if (_state == AnimalState.Airborne)
             {
                 // Center ray first (cheap, also catches a body sunk into the floor), then the whole footprint (edges).
-                bool grounded = Probe(_groundMask, out _) || ProbeFootprint(_groundMask);
+                bool grounded = Probe(_landingMask, out _) || ProbeFootprint(_landingMask);
                 // Only probed when not grounded: a player under the animal is the one case that blocks the landing.
                 RaycastHit playerHit = default;
                 bool onPlayer = !grounded && Probe(_playerMask, out playerHit);

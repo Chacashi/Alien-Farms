@@ -1,6 +1,7 @@
 using AlienFarms.Animals;
 using AlienFarms.Core;
 using AlienFarms.Data;
+using AlienFarms.Items;
 using AlienFarms.Player;
 using AlienFarms.Zones;
 using UnityEngine;
@@ -29,6 +30,9 @@ namespace AlienFarms.Match
 
         [SerializeField, Tooltip("Random obstacle layout of the Animal Zone (rolled on each new round).")]
         private ObstacleField _obstacles;
+
+        [SerializeField, Tooltip("Optional: stun bomb spawner (bombs cleared between rounds).")]
+        private BombSpawner _bombs;
 
         private MatchStateMachine _machine;
         private MatchScore _score;
@@ -113,6 +117,11 @@ namespace AlienFarms.Match
             // Despawning captured animals raises OnAnimalLeftZone; the reset below clears whatever is left anyway.
             _spawner.ResetPopulation();
 
+            if (_bombs != null)
+            {
+                _bombs.ResetBombs();
+            }
+
             _score.Reset();
             // Published regardless of phase: the HUD must show 0-0 for the new round.
             GameEvents.RaiseScoreChanged(PlayerId.Player1, 0);
@@ -185,6 +194,11 @@ namespace AlienFarms.Match
             if (_obstacles == null)
             {
                 Debug.LogWarning($"[{nameof(MatchManager)}] No ObstacleField on '{name}'; the obstacle layout never changes between rounds.", this);
+            }
+
+            if (_bombs == null)
+            {
+                Debug.LogWarning($"[{nameof(MatchManager)}] No BombSpawner on '{name}'; bombs are not cleared between rounds.", this);
             }
         }
     }

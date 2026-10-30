@@ -55,7 +55,7 @@ namespace AlienFarms.Animals
                 Debug.LogError($"[{nameof(AnimalSpawner)}] Missing PlayerZoneRegistry on '{name}'; animals will never be captured.", this);
             }
 
-            _blockingMask = LayerMask.GetMask(LayerNames.Player, LayerNames.Animal, LayerNames.Environment);
+            _blockingMask = LayerMask.GetMask(LayerNames.Player, LayerNames.Animal, LayerNames.Environment, LayerNames.Bomb);
             _bounds = _animalZone.Bounds;
             _active = new List<Animal>(_settings.PoolHardCap);
 

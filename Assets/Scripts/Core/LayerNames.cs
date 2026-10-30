@@ -10,5 +10,6 @@ namespace AlienFarms.Core
         public const string Zone = "Zone";
         public const string CapturedAnimal = "CapturedAnimal";
         public const string ZoneBarrier = "ZoneBarrier";
+        public const string Bomb = "Bomb";
     }
 }

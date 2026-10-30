@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15c67b6e36625444796e8221504d4390, type: 3}
+  m_Name: BombData_Stunner
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Data.BombData
+  _prefab: {fileID: 8359414346262549598, guid: 18402db6530f4ac41932843987b71121, type: 3}
+  _throwSettings: {fileID: 11400000, guid: 53b11a47f9c7cc94388baadea62ecc2e, type: 2}
+  _carrySpeedMultiplier: 0.9
+  _holdOffset: {x: 0, y: 0, z: 0}
+  _grabCooldown: 0.25
+  _blastRadius: 3.5
+  _stunDuration: 2.5
+  _knockbackSpeed: 5
+  _maxArmedTime: 4
+  _armedBlinkInterval: 0.12
+  _scaresAnimals: 1
+  _animalScareRadius: 5
+  _animalScareDuration: 1.5
+  _blastVfxPrefab: {fileID: 2107231481314390831, guid: 276c5a769557fb34bb20b79787ae8e32, type: 3}
+  _blastVfxDuration: 0.4

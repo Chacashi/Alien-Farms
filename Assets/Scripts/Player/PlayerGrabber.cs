@@ -41,7 +41,7 @@ namespace AlienFarms.Player
         [SerializeField, Tooltip("Optional: aim on this root. When aiming, releasing Grab throws instead of dropping.")]
         private PlayerAim _aim;
 
-        [SerializeField, Tooltip("Layers searched for grabbables (Animal and CapturedAnimal).")]
+        [SerializeField, Tooltip("Layers searched for grabbables (Animal, CapturedAnimal and Bomb).")]
         private LayerMask _grabbableMask;
 
         private readonly Collider[] _hits = new Collider[8];
@@ -65,7 +65,7 @@ namespace AlienFarms.Player
         {
             _environmentMask = LayerMask.GetMask(LayerNames.Environment);
             _dropBlockingMask = LayerMask.GetMask(
-                LayerNames.Environment, LayerNames.Player, LayerNames.Animal, LayerNames.CapturedAnimal);
+                LayerNames.Environment, LayerNames.Player, LayerNames.Animal, LayerNames.CapturedAnimal, LayerNames.Bomb);
         }
 
         private void OnEnable()
@@ -139,10 +139,12 @@ namespace AlienFarms.Player
         /// <summary>Drops the carried object (if any) in front of the player, adding <paramref name="extraVelocity"/>.</summary>
         public void ForceDrop(DropReason reason, Vector3 extraVelocity)
         {
+            bool wasHolding = _held != null;
             Drop(reason, extraVelocity);
 
-            // After a steal the button must be released and pressed again to grab.
-            if (reason == DropReason.Stolen)
+            // After a steal or a blast the button must be released and pressed again to grab (only if something was
+            // knocked out of the hands: empty hands keep grabbing as soon as the stun ends).
+            if (wasHolding && IsKnockedOut(reason))
             {
                 _requiresRepress = true;
             }
@@ -292,9 +294,9 @@ namespace AlienFarms.Player
                 return;
             }
 
-            // On a steal, throw along the tackle direction (away from the attacker), not where the victim faced.
+            // On a steal or a blast, throw along the push direction (away from the attacker), not where the victim faced.
             Vector3 dropDirection = _movement != null ? _movement.Facing : transform.forward;
-            if (reason == DropReason.Stolen)
+            if (IsKnockedOut(reason))
             {
                 Vector3 tackleDirection = new Vector3(extraVelocity.x, 0f, extraVelocity.z);
                 if (tackleDirection.sqrMagnitude > Epsilon)
@@ -427,8 +429,11 @@ namespace AlienFarms.Player
         // Editor-time default only; runtime never resolves layers by name for this mask.
         private void Reset()
         {
-            _grabbableMask = LayerMask.GetMask(LayerNames.Animal, LayerNames.CapturedAnimal);
+            _grabbableMask = LayerMask.GetMask(LayerNames.Animal, LayerNames.CapturedAnimal, LayerNames.Bomb);
         }
+
+        /// <summary>Drops caused by a hit (tackle or blast): pushed along the hit and require re-pressing Grab.</summary>
+        private static bool IsKnockedOut(DropReason reason) => reason == DropReason.Stolen || reason == DropReason.Stunned;
 
         // Interface references bypass Unity's overloaded null check.
         private static bool IsDestroyed(IGrabbable grabbable) => grabbable is Object unityObject && unityObject == null;
@@ -467,7 +472,7 @@ namespace AlienFarms.Player
 
             if (_grabbableMask.value == 0)
             {
-                Debug.LogWarning($"[{nameof(PlayerGrabber)}] Grabbable mask on '{name}' is empty; nothing can be grabbed (use Animal + CapturedAnimal).", this);
+                Debug.LogWarning($"[{nameof(PlayerGrabber)}] Grabbable mask on '{name}' is empty; nothing can be grabbed (use Animal + CapturedAnimal + Bomb).", this);
             }
         }
     }

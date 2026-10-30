@@ -55,6 +55,17 @@ namespace AlienFarms.Core
         /// <summary>Global: the round ended with this result (contains both players' scores).</summary>
         public static event Action<MatchResult> OnMatchEnded;
 
+        /// <summary>
+        /// A thrown bomb exploded. Payload: thrower (the player who threw it), blast center and blast radius (m).
+        /// </summary>
+        public static event Action<PlayerId, Vector3, float> OnBombDetonated;
+
+        /// <summary>
+        /// A player was stunned by a blast. Payload: victim, source (the thrower) and stun duration (s).
+        /// Tackle stuns do not raise it.
+        /// </summary>
+        public static event Action<PlayerId, PlayerId, float> OnPlayerStunned;
+
         public static void RaisePlayerJoined(PlayerId playerId) => OnPlayerJoined?.Invoke(playerId);
 
         public static void RaisePlayerLeft(PlayerId playerId) => OnPlayerLeft?.Invoke(playerId);
@@ -85,6 +96,12 @@ namespace AlienFarms.Core
 
         public static void RaiseMatchEnded(MatchResult result) => OnMatchEnded?.Invoke(result);
 
+        public static void RaiseBombDetonated(PlayerId thrower, Vector3 position, float radius) =>
+            OnBombDetonated?.Invoke(thrower, position, radius);
+
+        public static void RaisePlayerStunned(PlayerId victim, PlayerId source, float duration) =>
+            OnPlayerStunned?.Invoke(victim, source, duration);
+
         // Enter Play Mode without domain reload keeps statics alive: clear stale subscribers.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
@@ -103,6 +120,8 @@ namespace AlienFarms.Core
             OnCountdownFinished = null;
             OnMatchTimeChanged = null;
             OnMatchEnded = null;
+            OnBombDetonated = null;
+            OnPlayerStunned = null;
         }
     }
 }
