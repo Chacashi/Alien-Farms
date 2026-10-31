@@ -729,9 +729,17 @@ PrefabInstance:
       value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 1919393575610279811, guid: b5e4ecff2e7a2b14ab1cacb545d9e707, type: 3}
+      propertyPath: m_Navigation.m_SelectOnUp
+      value: 
+      objectReference: {fileID: 1521990191}
+    - target: {fileID: 1919393575610279811, guid: b5e4ecff2e7a2b14ab1cacb545d9e707, type: 3}
       propertyPath: m_Navigation.m_WrapAround
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1919393575610279811, guid: b5e4ecff2e7a2b14ab1cacb545d9e707, type: 3}
+      propertyPath: m_Navigation.m_SelectOnDown
+      value: 
+      objectReference: {fileID: 1521990191}
     - target: {fileID: 1919393575610279811, guid: b5e4ecff2e7a2b14ab1cacb545d9e707, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
       value: 1
@@ -2596,6 +2604,81 @@ Transform:
   - {fileID: 1184459779}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &715924620
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 715924621}
+  - component: {fileID: 715924623}
+  - component: {fileID: 715924622}
+  m_Layer: 5
+  m_Name: NameStripe
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &715924621
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 715924620}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2063935149}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 1, y: 0}
+  m_AnchorMax: {x: 1, y: 0}
+  m_AnchoredPosition: {x: 0, y: -4}
+  m_SizeDelta: {x: 220, y: 8}
+  m_Pivot: {x: 1, y: 0.5}
+--- !u!114 &715924622
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 715924620}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 0.651, g: 0.886, b: 0.18, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 2
+--- !u!222 &715924623
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 715924620}
+  m_CullTransparentMesh: 1
 --- !u!1 &744201693
 GameObject:
   m_ObjectHideFlags: 0
@@ -3021,12 +3104,12 @@ PrefabInstance:
       objectReference: {fileID: 1432272385}
     - target: {fileID: 1919393575610279811, guid: b5e4ecff2e7a2b14ab1cacb545d9e707, type: 3}
       propertyPath: m_Navigation.m_WrapAround
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1919393575610279811, guid: b5e4ecff2e7a2b14ab1cacb545d9e707, type: 3}
       propertyPath: m_Navigation.m_SelectOnDown
       value: 
-      objectReference: {fileID: 1432272385}
+      objectReference: {fileID: 1435923953}
     - target: {fileID: 1919393575610279811, guid: b5e4ecff2e7a2b14ab1cacb545d9e707, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
       value: 1
@@ -3577,6 +3660,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Match.MatchExit
   _match: {fileID: 1011480437}
+  _session: {fileID: 11400000, guid: bacc8b976cfcbbf4397203a3b15af683, type: 2}
 --- !u!114 &1011480440
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4202,6 +4286,81 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 657dc4ce2f31ef94a94b3c0246258204, type: 3}
   m_Name: 
   m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Zones.ObstacleSlot
+--- !u!1 &1132932359
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1132932360}
+  - component: {fileID: 1132932362}
+  - component: {fileID: 1132932361}
+  m_Layer: 5
+  m_Name: NameStripe
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1132932360
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1132932359}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1243312620}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -4}
+  m_SizeDelta: {x: 220, y: 8}
+  m_Pivot: {x: 0, y: 0.5}
+--- !u!114 &1132932361
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1132932359}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 0.784, b: 0.078, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 2
+--- !u!222 &1132932362
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1132932359}
+  m_CullTransparentMesh: 1
 --- !u!1 &1144031500
 GameObject:
   m_ObjectHideFlags: 0
@@ -4394,7 +4553,8 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1132932360}
   m_Father: {fileID: 1386462516}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -4974,10 +5134,10 @@ PrefabInstance:
     - target: {fileID: 1919393575610279811, guid: b5e4ecff2e7a2b14ab1cacb545d9e707, type: 3}
       propertyPath: m_Navigation.m_SelectOnUp
       value: 
-      objectReference: {fileID: 848809803}
+      objectReference: {fileID: 1435923953}
     - target: {fileID: 1919393575610279811, guid: b5e4ecff2e7a2b14ab1cacb545d9e707, type: 3}
       propertyPath: m_Navigation.m_WrapAround
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1919393575610279811, guid: b5e4ecff2e7a2b14ab1cacb545d9e707, type: 3}
       propertyPath: m_Navigation.m_SelectOnDown
@@ -5127,7 +5287,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1919393575610279811, guid: b5e4ecff2e7a2b14ab1cacb545d9e707, type: 3}
       propertyPath: m_Interactable
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1919393575610279811, guid: b5e4ecff2e7a2b14ab1cacb545d9e707, type: 3}
       propertyPath: m_Navigation.m_Mode
@@ -5179,6 +5339,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 1029314938051550294, guid: b5e4ecff2e7a2b14ab1cacb545d9e707, type: 3}
   m_PrefabInstance: {fileID: 1435923950}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1435923953 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1919393575610279811, guid: b5e4ecff2e7a2b14ab1cacb545d9e707, type: 3}
+  m_PrefabInstance: {fileID: 1435923950}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1 &1454967920
 GameObject:
   m_ObjectHideFlags: 0
@@ -5375,6 +5546,7 @@ MonoBehaviour:
   _fallbackCharacters:
   - {fileID: 11400000, guid: f05f460065a1b6542bd9d8daba983f26, type: 2}
   - {fileID: 11400000, guid: 7d2cacf5b4896444fa60e58e169af5a3, type: 2}
+  _session: {fileID: 11400000, guid: bacc8b976cfcbbf4397203a3b15af683, type: 2}
   _lobbyCamera: {fileID: 534350374}
 --- !u!114 &1499937870
 MonoBehaviour:
@@ -5542,7 +5714,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1919393575610279811, guid: b5e4ecff2e7a2b14ab1cacb545d9e707, type: 3}
       propertyPath: m_Interactable
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1919393575610279811, guid: b5e4ecff2e7a2b14ab1cacb545d9e707, type: 3}
       propertyPath: m_Navigation.m_Mode
@@ -5594,6 +5766,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 1029314938051550294, guid: b5e4ecff2e7a2b14ab1cacb545d9e707, type: 3}
   m_PrefabInstance: {fileID: 1521990188}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1521990191 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1919393575610279811, guid: b5e4ecff2e7a2b14ab1cacb545d9e707, type: 3}
+  m_PrefabInstance: {fileID: 1521990188}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1 &1611370476
 GameObject:
   m_ObjectHideFlags: 0
@@ -5882,6 +6065,8 @@ MonoBehaviour:
   _scoreText: {fileID: 423942279}
   _nameP1: {fileID: 1243312621}
   _nameP2: {fileID: 2063935150}
+  _nameStripeP1: {fileID: 1132932361}
+  _nameStripeP2: {fileID: 715924622}
 --- !u!114 &1670202843
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6844,6 +7029,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.UI.JoinPromptView
   _promptRoot: {fileID: 744201693}
   _maxPlayers: 2
+  _session: {fileID: 11400000, guid: bacc8b976cfcbbf4397203a3b15af683, type: 2}
 --- !u!114 &2006330833
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7018,7 +7204,8 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 715924621}
   m_Father: {fileID: 1386462516}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}

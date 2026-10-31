@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: MenuSettings_Default
   m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Data.MenuSettings
   _navigateStepThreshold: 0.5
-  _loadDelayAfterConfirm: 0.8
+  _loadDelayAfterConfirm: 2

@@ -32,6 +32,8 @@ Assets/
     Zones/         # PlayerZone, AnimalZone
     Match/         # MatchManager, timer, puntaje, estados de partida
     UI/            # HUD, menús, pausa, resultados (solo lógica; el Canvas vive en la escena)
+    Menu/          # Flujo del MainMenu: título, lobby, selección de personaje
+    Items/         # Ítems de partida (bomba stunner)
     Audio/
     Data/          # Clases ScriptableObject (definiciones, no instancias)
     Utilities/     # Extensiones, ObjectPool genérico, helpers

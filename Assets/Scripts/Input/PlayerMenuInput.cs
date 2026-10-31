@@ -180,7 +180,11 @@ namespace AlienFarms.Input
             ClearQueuedCommands();
             _horizontal.Reset();
             _vertical.Reset();
-            _playerInput.SwitchCurrentActionMap(InputMapNames.UI);
+            InputActionMap currentMap = _playerInput.currentActionMap;
+            if (currentMap == null || currentMap.name != InputMapNames.UI)
+            {
+                _playerInput.SwitchCurrentActionMap(InputMapNames.UI);
+            }
 
             if (_gameplayInput != null)
             {

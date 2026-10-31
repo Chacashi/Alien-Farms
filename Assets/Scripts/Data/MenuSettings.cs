@@ -10,7 +10,7 @@ namespace AlienFarms.Data
         private float _navigateStepThreshold = 0.5f;
 
         [SerializeField, Min(0f), Tooltip("Delay between everyone confirming and loading the next scene (s, unscaled).")]
-        private float _loadDelayAfterConfirm = 0.8f;
+        private float _loadDelayAfterConfirm = 2f;
 
         public float NavigateStepThreshold => _navigateStepThreshold;
         public float LoadDelayAfterConfirm => _loadDelayAfterConfirm;

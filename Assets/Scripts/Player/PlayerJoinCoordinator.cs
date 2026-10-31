@@ -26,13 +26,16 @@ namespace AlienFarms.Player
         [SerializeField, Tooltip("Characters used when no character was picked beforehand, by player index (0 = Player 1, 1 = Player 2).")]
         private CharacterDefinition[] _fallbackCharacters = new CharacterDefinition[RequiredPlayers];
 
+        [SerializeField, Tooltip("Optional: choices made in the MainMenu. When ready, players join with their devices and characters at Start.")]
+        private MatchSession _session;
+
         [SerializeField, Tooltip("Overview camera rendered while no player has joined.")]
         private Camera _lobbyCamera;
 
         // Index = (int)PlayerId - 1. Updated before PlayerJoined/PlayerLeft are raised.
         private readonly PlayerRig[] _rigs = new PlayerRig[RequiredPlayers];
 
-        // Characters picked before joining (character select session, 8B). Null slot -> fallback character.
+        // Characters picked before joining (character select session). Null slot -> fallback character.
         private readonly CharacterDefinition[] _pendingCharacters = new CharacterDefinition[RequiredPlayers];
         private bool _controlsEnabled = true;
         private bool _isQuitting;
@@ -110,6 +113,14 @@ namespace AlienFarms.Player
             _manager.onPlayerLeft -= HandlePlayerLeft;
         }
 
+        private void Start()
+        {
+            if (_session != null && _session.IsReady)
+            {
+                JoinFromSession();
+            }
+        }
+
         private void OnApplicationQuit()
         {
             _isQuitting = true;
@@ -142,6 +153,68 @@ namespace AlienFarms.Player
             // Character first: HUD/results listeners know who the player is when PlayerJoined arrives.
             GameEvents.RaisePlayerCharacterAssigned(id, character);
             GameEvents.RaisePlayerJoined(id);
+        }
+
+        /// <summary>
+        /// Joins every session player with the devices and scheme it used in the MainMenu (P1 left, P2 right).
+        /// A slot whose devices are gone falls back to press-to-join with its fallback character.
+        /// </summary>
+        private void JoinFromSession()
+        {
+            if (_manager == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < RequiredPlayers; i++)
+            {
+                PlayerId id = (PlayerId)(i + 1);
+                if (!_session.TryGetSlot(id, out SessionSlot slot))
+                {
+                    continue;
+                }
+
+                // Kept even if the join fails: a manual join of this slot still uses the picked character.
+                _pendingCharacters[i] = slot.Character;
+                if (!AreDevicesAvailable(slot))
+                {
+                    Debug.LogWarning($"[{nameof(PlayerJoinCoordinator)}] {id} has no available session devices; it can join by pressing a button.", this);
+                    continue;
+                }
+
+                if (_manager.JoinPlayer(i, i, slot.ControlScheme, slot.Devices) == null)
+                {
+                    Debug.LogWarning($"[{nameof(PlayerJoinCoordinator)}] Could not join {id} from the session; it can join by pressing a button.", this);
+                }
+            }
+
+            if (_manager.playerCount >= _manager.maxPlayerCount)
+            {
+                _manager.DisableJoining();
+            }
+            else
+            {
+                _manager.EnableJoining();
+            }
+        }
+
+        private static bool AreDevicesAvailable(SessionSlot slot)
+        {
+            InputDevice[] devices = slot.Devices;
+            if (devices == null || devices.Length == 0 || string.IsNullOrEmpty(slot.ControlScheme))
+            {
+                return false;
+            }
+
+            for (int i = 0; i < devices.Length; i++)
+            {
+                if (devices[i] == null || !devices[i].added)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private CharacterDefinition ResolveCharacter(int index)

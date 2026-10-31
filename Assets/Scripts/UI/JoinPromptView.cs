@@ -1,9 +1,15 @@
+using System.Collections;
 using AlienFarms.Core;
+using AlienFarms.Data;
 using UnityEngine;
 
 namespace AlienFarms.UI
 {
-    /// <summary>Shows the "press a button to join" prompt while the lobby is not full.</summary>
+    /// <summary>
+    /// Shows the "press a button to join" prompt while the lobby is not full. When a MainMenu session is ready the
+    /// players join by themselves at Start, so the prompt stays hidden for the first frame and only shows afterwards
+    /// if a session player could not be joined.
+    /// </summary>
     [DisallowMultipleComponent]
     public sealed class JoinPromptView : MonoBehaviour
     {
@@ -15,8 +21,30 @@ namespace AlienFarms.UI
         [SerializeField, Min(1), Tooltip("Players needed before the prompt hides. Keep in sync with PlayerInputManager Max Player Count.")]
         private int _maxPlayers = 2;
 
+        [SerializeField, Tooltip("Optional: MainMenu session. When ready, the prompt starts hidden.")]
+        private MatchSession _session;
+
         // Bit (int)PlayerId set while that player is joined; idempotent against repeated events.
         private int _joinedMask;
+        private bool _suppressedBySession;
+
+        private void Awake()
+        {
+            _suppressedBySession = _session != null && _session.IsReady;
+        }
+
+        private IEnumerator Start()
+        {
+            if (!_suppressedBySession)
+            {
+                yield break;
+            }
+
+            // One frame: every Start (including the session joins) has run by then.
+            yield return null;
+            _suppressedBySession = false;
+            Refresh();
+        }
 
         private void OnEnable()
         {
@@ -57,7 +85,7 @@ namespace AlienFarms.UI
         {
             if (_promptRoot != null)
             {
-                _promptRoot.SetActive(CountJoined() < _maxPlayers);
+                _promptRoot.SetActive(!_suppressedBySession && CountJoined() < _maxPlayers);
             }
         }
 

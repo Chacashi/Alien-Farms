@@ -2,12 +2,14 @@ using AlienFarms.Core;
 using AlienFarms.Data;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace AlienFarms.UI
 {
     /// <summary>
     /// Shows the round result (winner by character name, both names and the score) while the match is in Results.
-    /// The winner text is tinted with the winner's Theme.Secondary. Lives on an always-active object and toggles
+    /// The winner text is tinted with the winner's Theme.Secondary; names use the dark Theme.Accent (readable on the
+    /// cream wood panel) and optional stripes under them carry Theme.Secondary. Lives on an always-active object and toggles
     /// <see cref="_panelRoot"/>. Buttons (rematch, title) are wired in the scene; the menu owner is set by ResultsMenuController.
     /// </summary>
     [DisallowMultipleComponent]
@@ -37,6 +39,12 @@ namespace AlienFarms.UI
 
         [SerializeField, Tooltip("Optional: Player 2 character name (right).")]
         private TMP_Text _nameP2;
+
+        [SerializeField, Tooltip("Optional: stripe/underline under Player 1's name (Theme.Secondary color).")]
+        private Image _nameStripeP1;
+
+        [SerializeField, Tooltip("Optional: stripe/underline under Player 2's name (Theme.Secondary color).")]
+        private Image _nameStripeP2;
 
         private readonly PlayerCharacterCache _characters = new PlayerCharacterCache();
         private Color _winnerDefaultColor = Color.white;
@@ -89,8 +97,8 @@ namespace AlienFarms.UI
                 _scoreText.SetText(_scoreFormat, result.Player1Score, result.Player2Score);
             }
 
-            SetName(_nameP1, PlayerId.Player1);
-            SetName(_nameP2, PlayerId.Player2);
+            SetName(_nameP1, _nameStripeP1, PlayerId.Player1);
+            SetName(_nameP2, _nameStripeP2, PlayerId.Player2);
             SetVisible(true);
         }
 
@@ -102,18 +110,21 @@ namespace AlienFarms.UI
             }
         }
 
-        private void SetName(TMP_Text text, PlayerId id)
+        private void SetName(TMP_Text text, Image stripe, PlayerId id)
         {
-            if (text == null)
+            CharacterDefinition character = _characters.Get(id);
+            if (text != null)
             {
-                return;
+                text.SetText(GetName(id));
+                if (character != null)
+                {
+                    text.color = character.Theme.Accent;
+                }
             }
 
-            text.SetText(GetName(id));
-            CharacterDefinition character = _characters.Get(id);
-            if (character != null)
+            if (stripe != null && character != null)
             {
-                text.color = character.Theme.Secondary;
+                stripe.color = character.Theme.Secondary;
             }
         }
 

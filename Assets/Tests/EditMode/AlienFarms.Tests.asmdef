@@ -3,6 +3,7 @@
     "rootNamespace": "AlienFarms.Tests",
     "references": [
         "AlienFarms.Runtime",
+        "Unity.InputSystem",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
