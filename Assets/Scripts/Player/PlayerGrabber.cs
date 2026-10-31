@@ -52,6 +52,11 @@ namespace AlienFarms.Player
         private bool _requiresRepress;
         private bool _releaseRequested;
         private bool _inputEnabled = true;
+        private bool _paused;
+
+        // Frame of the last unpause. Re-enabled actions only report their held state on the next input update (and
+        // FixedUpdate runs before it), so the "lost cancel" poll is skipped until then.
+        private int _resumeFrame = int.MinValue;
 
         public bool IsHolding => _held != null;
         public IGrabbable Held => _held;
@@ -102,7 +107,7 @@ namespace AlienFarms.Player
                     _held = null;
                     ClearCarryLoad();
                 }
-                else if (_releaseRequested || (_input != null && !_input.IsGrabHeld))
+                else if (_releaseRequested || (!_paused && !IsInResumeGrace() && _input != null && !_input.IsGrabHeld))
                 {
                     // Grab released (deferred from HandleGrabCanceled), or 'canceled' was missed (focus loss...).
                     // The launch is read while still holding: aiming requires a held throwable.
@@ -117,6 +122,17 @@ namespace AlienFarms.Player
                 }
 
                 return;
+            }
+
+            if (_paused || IsInResumeGrace())
+            {
+                return;
+            }
+
+            // A release missed while paused (its 'canceled' is ignored) still re-arms grabbing.
+            if (_requiresRepress && _input != null && !_input.IsGrabHeld)
+            {
+                _requiresRepress = false;
             }
 
             if (!_inputEnabled || _settings == null || _input == null || _requiresRepress || !_input.IsGrabHeld)
@@ -166,9 +182,27 @@ namespace AlienFarms.Player
             _requiresRepress = _input != null && _input.IsGrabHeld;
         }
 
+        /// <summary>
+        /// While paused, Grab 'canceled' (raised when the gameplay action map is disabled for the menu) is ignored, so the
+        /// carried object is kept. On resume the held state is polled again (Grab uses initialStateCheck) and decides.
+        /// </summary>
+        public void SetPaused(bool paused)
+        {
+            if (_paused == paused)
+            {
+                return;
+            }
+
+            _paused = paused;
+            if (!paused)
+            {
+                _resumeFrame = Time.frameCount;
+            }
+        }
+
         private void HandleGrabStarted()
         {
-            if (!_inputEnabled || _held != null || _requiresRepress || (_movement != null && _movement.IsStunned))
+            if (_paused || !_inputEnabled || _held != null || _requiresRepress || (_movement != null && _movement.IsStunned))
             {
                 return;
             }
@@ -182,6 +216,11 @@ namespace AlienFarms.Player
 
         private void HandleGrabCanceled()
         {
+            if (_paused)
+            {
+                return;
+            }
+
             _requiresRepress = false;
 
             // Deferred to FixedUpdate on purpose: when the player is destroyed, PlayerInput cancels Grab before our
@@ -425,6 +464,8 @@ namespace AlienFarms.Player
         }
 
         private bool IsHeldDestroyed() => IsDestroyed(_held);
+
+        private bool IsInResumeGrace() => Time.frameCount <= _resumeFrame + 1;
 
         // Editor-time default only; runtime never resolves layers by name for this mask.
         private void Reset()

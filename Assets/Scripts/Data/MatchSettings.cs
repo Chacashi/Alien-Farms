@@ -16,7 +16,7 @@ namespace AlienFarms.Data
         [SerializeField, Min(0f), Tooltip("How long the 'GO' message stays on screen after the countdown (s).")]
         private float _goMessageDuration = 1f;
 
-        [SerializeField, Min(0f), Tooltip("Confirm is ignored this long after results appear, so a held button does not restart instantly (s).")]
+        [SerializeField, Min(0f), Tooltip("Rematch requests (and the results menu) are ignored this long after results appear, so a held button does not restart instantly (s).")]
         private float _resultsInputDelay = 1.5f;
 
         public float MatchDuration => _matchDuration;

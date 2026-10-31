@@ -1,6 +1,7 @@
 using System;
-// Core -> Animals reference accepted while there is a single runtime asmdef; revisit if Core gets its own assembly.
+// Core -> Animals / Data references accepted while there is a single runtime asmdef; revisit if Core gets its own assembly.
 using AlienFarms.Animals;
+using AlienFarms.Data;
 using UnityEngine;
 
 namespace AlienFarms.Core
@@ -14,10 +15,33 @@ namespace AlienFarms.Core
     {
         public static event Action<PlayerId> OnPlayerJoined;
         public static event Action<PlayerId> OnPlayerLeft;
+
+        /// <summary>A player held Pause long enough to request the pause menu.</summary>
         public static event Action<PlayerId> OnPauseRequested;
 
-        /// <summary>A player pressed Confirm (e.g. restart from the results screen).</summary>
-        public static event Action<PlayerId> OnConfirmPressed;
+        /// <summary>
+        /// Hold-to-pause progress of the given player changed (0..1). Raised only while the value changes
+        /// (holding, or once with 0 on release).
+        /// </summary>
+        public static event Action<PlayerId, float> OnPauseHoldProgress;
+
+        /// <summary>The game was paused; payload: the player who owns the pause menu.</summary>
+        public static event Action<PlayerId> OnGamePaused;
+
+        /// <summary>The game was resumed; payload: the player who owned the pause menu.</summary>
+        public static event Action<PlayerId> OnGameResumed;
+
+        /// <summary>A player pressed Cancel while navigating a menu.</summary>
+        public static event Action<PlayerId> OnMenuCancelPressed;
+
+        /// <summary>A player's PlayerInput lost one of its paired devices (e.g. gamepad unplugged).</summary>
+        public static event Action<PlayerId> OnPlayerDeviceLost;
+
+        /// <summary>A player's PlayerInput regained a previously lost device.</summary>
+        public static event Action<PlayerId> OnPlayerDeviceRegained;
+
+        /// <summary>A joined player was assigned a character. Raised right before <see cref="OnPlayerJoined"/>.</summary>
+        public static event Action<PlayerId, CharacterDefinition> OnPlayerCharacterAssigned;
 
         /// <summary>A player picked up an animal.</summary>
         public static event Action<PlayerId, Animal> OnAnimalGrabbed;
@@ -72,7 +96,21 @@ namespace AlienFarms.Core
 
         public static void RaisePauseRequested(PlayerId playerId) => OnPauseRequested?.Invoke(playerId);
 
-        public static void RaiseConfirmPressed(PlayerId playerId) => OnConfirmPressed?.Invoke(playerId);
+        public static void RaisePauseHoldProgress(PlayerId playerId, float normalized) =>
+            OnPauseHoldProgress?.Invoke(playerId, normalized);
+
+        public static void RaiseGamePaused(PlayerId owner) => OnGamePaused?.Invoke(owner);
+
+        public static void RaiseGameResumed(PlayerId owner) => OnGameResumed?.Invoke(owner);
+
+        public static void RaiseMenuCancelPressed(PlayerId playerId) => OnMenuCancelPressed?.Invoke(playerId);
+
+        public static void RaisePlayerDeviceLost(PlayerId playerId) => OnPlayerDeviceLost?.Invoke(playerId);
+
+        public static void RaisePlayerDeviceRegained(PlayerId playerId) => OnPlayerDeviceRegained?.Invoke(playerId);
+
+        public static void RaisePlayerCharacterAssigned(PlayerId playerId, CharacterDefinition character) =>
+            OnPlayerCharacterAssigned?.Invoke(playerId, character);
 
         public static void RaiseAnimalGrabbed(PlayerId playerId, Animal animal) => OnAnimalGrabbed?.Invoke(playerId, animal);
 
@@ -109,7 +147,13 @@ namespace AlienFarms.Core
             OnPlayerJoined = null;
             OnPlayerLeft = null;
             OnPauseRequested = null;
-            OnConfirmPressed = null;
+            OnPauseHoldProgress = null;
+            OnGamePaused = null;
+            OnGameResumed = null;
+            OnMenuCancelPressed = null;
+            OnPlayerDeviceLost = null;
+            OnPlayerDeviceRegained = null;
+            OnPlayerCharacterAssigned = null;
             OnAnimalGrabbed = null;
             OnAnimalDropped = null;
             OnAnimalCaptured = null;

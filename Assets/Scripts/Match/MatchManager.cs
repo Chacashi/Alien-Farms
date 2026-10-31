@@ -40,6 +40,9 @@ namespace AlienFarms.Match
 
         public MatchPhase CurrentPhase => _machine != null ? _machine.CurrentPhase : MatchPhase.None;
 
+        /// <summary>True when <see cref="RequestRematch"/> would start a new round now.</summary>
+        public bool IsRematchReady => _machine != null && _machine.IsRematchReady;
+
         MatchSettings IMatchContext.Settings => _settings;
 
         int IMatchContext.JoinedPlayerCount => _players != null ? _players.JoinedCount : 0;
@@ -66,14 +69,12 @@ namespace AlienFarms.Match
         {
             GameEvents.OnAnimalCaptured += HandleAnimalCaptured;
             GameEvents.OnAnimalLeftZone += HandleAnimalLeftZone;
-            GameEvents.OnConfirmPressed += HandleConfirmPressed;
         }
 
         private void OnDisable()
         {
             GameEvents.OnAnimalCaptured -= HandleAnimalCaptured;
             GameEvents.OnAnimalLeftZone -= HandleAnimalLeftZone;
-            GameEvents.OnConfirmPressed -= HandleConfirmPressed;
         }
 
         private void Start()
@@ -98,6 +99,32 @@ namespace AlienFarms.Match
             {
                 Debug.LogError($"[{nameof(MatchManager)}] No state for phase {next}.", this);
             }
+        }
+
+        /// <summary>
+        /// Restarts the current round from the countdown (Countdown.Enter resets the round with respawn). While waiting
+        /// for players there is no round to restart, so the arena is just reset (respawn, new layout, animals).
+        /// </summary>
+        public void RestartRound()
+        {
+            if (_machine == null)
+            {
+                return;
+            }
+
+            if (CurrentPhase == MatchPhase.WaitingForPlayers)
+            {
+                ResetRound(true);
+                return;
+            }
+
+            ChangeState(MatchPhase.Countdown);
+        }
+
+        /// <summary>Asks the Results state for a rematch; it honors <see cref="MatchSettings.ResultsInputDelay"/> and needs both players.</summary>
+        public void RequestRematch()
+        {
+            _machine?.OnConfirmPressed(PlayerId.None);
         }
 
         public void ResetRound(bool respawnPlayers)
@@ -167,11 +194,6 @@ namespace AlienFarms.Match
             {
                 GameEvents.RaiseScoreChanged(playerId, _score.Get(playerId));
             }
-        }
-
-        private void HandleConfirmPressed(PlayerId playerId)
-        {
-            _machine?.OnConfirmPressed(playerId);
         }
 
         private void OnValidate()

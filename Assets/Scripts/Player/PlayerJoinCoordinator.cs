@@ -1,4 +1,5 @@
 using AlienFarms.Core;
+using AlienFarms.Data;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -6,7 +7,7 @@ namespace AlienFarms.Player
 {
     /// <summary>
     /// Scene composition root for local multiplayer joining: listens to <see cref="PlayerInputManager"/>
-    /// and configures each spawned player (identity, spawn point, camera yaw, color) through its
+    /// and configures each spawned player (identity, spawn point, camera yaw, character) through its
     /// <see cref="PlayerRig"/>. Keeps a registry of joined rigs for the match (count, respawn, freeze).
     /// </summary>
     [DisallowMultipleComponent]
@@ -22,14 +23,17 @@ namespace AlienFarms.Player
         [SerializeField, Tooltip("Spawn points by player index (0 = Player 1, 1 = Player 2).")]
         private Transform[] _spawnPoints = new Transform[RequiredPlayers];
 
-        [SerializeField, Tooltip("Body materials by player index (0 = Player 1, 1 = Player 2).")]
-        private Material[] _playerMaterials = new Material[RequiredPlayers];
+        [SerializeField, Tooltip("Characters used when no character was picked beforehand, by player index (0 = Player 1, 1 = Player 2).")]
+        private CharacterDefinition[] _fallbackCharacters = new CharacterDefinition[RequiredPlayers];
 
         [SerializeField, Tooltip("Overview camera rendered while no player has joined.")]
         private Camera _lobbyCamera;
 
         // Index = (int)PlayerId - 1. Updated before PlayerJoined/PlayerLeft are raised.
         private readonly PlayerRig[] _rigs = new PlayerRig[RequiredPlayers];
+
+        // Characters picked before joining (character select session, 8B). Null slot -> fallback character.
+        private readonly CharacterDefinition[] _pendingCharacters = new CharacterDefinition[RequiredPlayers];
         private bool _controlsEnabled = true;
         private bool _isQuitting;
 
@@ -114,7 +118,7 @@ namespace AlienFarms.Player
         private void HandlePlayerJoined(PlayerInput playerInput)
         {
             int index = playerInput.playerIndex;
-            if (!TryGetJoinData(index, playerInput, out PlayerRig rig, out Transform spawn, out Material material))
+            if (!TryGetJoinData(index, playerInput, out PlayerRig rig, out Transform spawn))
             {
                 // Never leave a half-configured player alive.
                 Destroy(playerInput.gameObject);
@@ -122,7 +126,8 @@ namespace AlienFarms.Player
             }
 
             PlayerId id = (PlayerId)(index + 1);
-            rig.Configure(id, spawn, material);
+            CharacterDefinition character = ResolveCharacter(index);
+            rig.Configure(id, spawn, character);
             _rigs[index] = rig;
             rig.SetControlsEnabled(_controlsEnabled);
 
@@ -134,7 +139,20 @@ namespace AlienFarms.Player
                 _manager.DisableJoining();
             }
 
+            // Character first: HUD/results listeners know who the player is when PlayerJoined arrives.
+            GameEvents.RaisePlayerCharacterAssigned(id, character);
             GameEvents.RaisePlayerJoined(id);
+        }
+
+        private CharacterDefinition ResolveCharacter(int index)
+        {
+            CharacterDefinition pending = _pendingCharacters[index];
+            if (pending != null)
+            {
+                return pending;
+            }
+
+            return index < _fallbackCharacters.Length ? _fallbackCharacters[index] : null;
         }
 
         private void HandlePlayerLeft(PlayerInput playerInput)
@@ -193,11 +211,10 @@ namespace AlienFarms.Player
             }
         }
 
-        private bool TryGetJoinData(int index, PlayerInput playerInput, out PlayerRig rig, out Transform spawn, out Material material)
+        private bool TryGetJoinData(int index, PlayerInput playerInput, out PlayerRig rig, out Transform spawn)
         {
             rig = null;
             spawn = null;
-            material = null;
 
             if (index < 0 || index >= RequiredPlayers)
             {
@@ -211,12 +228,6 @@ namespace AlienFarms.Player
                 return false;
             }
 
-            if (index >= _playerMaterials.Length || _playerMaterials[index] == null)
-            {
-                Debug.LogError($"[{nameof(PlayerJoinCoordinator)}] No material for player index {index}.", this);
-                return false;
-            }
-
             if (!playerInput.TryGetComponent(out rig))
             {
                 Debug.LogError($"[{nameof(PlayerJoinCoordinator)}] Joined player '{playerInput.name}' has no {nameof(PlayerRig)}.", this);
@@ -224,7 +235,6 @@ namespace AlienFarms.Player
             }
 
             spawn = _spawnPoints[index];
-            material = _playerMaterials[index];
             return true;
         }
 
@@ -259,7 +269,7 @@ namespace AlienFarms.Player
             }
 
             ValidateArray(_spawnPoints, "spawn point");
-            ValidateArray(_playerMaterials, "player material");
+            ValidateArray(_fallbackCharacters, "fallback character");
         }
 
         private void ValidateArray<T>(T[] array, string label) where T : Object

@@ -15,7 +15,7 @@ namespace AlienFarms.Core
         /// <summary>Timer running and score changes published.</summary>
         Playing = 3,
 
-        /// <summary>Round over: results shown, players frozen until Confirm.</summary>
+        /// <summary>Round over: results shown, players frozen until a rematch is requested.</summary>
         Results = 4
     }
 }

@@ -25,6 +25,9 @@ namespace AlienFarms.Match
 
         public MatchPhase CurrentPhase => _current != null ? _current.Phase : MatchPhase.None;
 
+        /// <summary>True when a rematch request would be accepted now (Results, delay elapsed, both players).</summary>
+        public bool IsRematchReady => _current != null && _current.IsRematchReady;
+
         /// <summary>
         /// Exit current -> switch -> raise phase event -> Enter next. The event goes before Enter so listeners (and the
         /// phase-gated score publishing) are already updated when Enter forces drops. Returning to WaitingForPlayers from any other

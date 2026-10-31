@@ -1,5 +1,4 @@
 using System;
-using AlienFarms.Core;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -12,23 +11,20 @@ namespace AlienFarms.Input
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PlayerInput))]
-    [RequireComponent(typeof(PlayerIdentity))]
     public sealed class PlayerInputHandler : MonoBehaviour
     {
         [Header("References")]
         [SerializeField, Tooltip("PlayerInput that owns this player's devices and action asset.")]
         private PlayerInput _playerInput;
 
-        [SerializeField, Tooltip("Identity used as payload for global events.")]
-        private PlayerIdentity _identity;
-
         [Header("Actions (identifiers only, resolved on the PlayerInput clone)")]
         [SerializeField] private InputActionReference _move;
         [SerializeField] private InputActionReference _look;
         [SerializeField] private InputActionReference _sprint;
         [SerializeField] private InputActionReference _grab;
-        [SerializeField] private InputActionReference _pause;
-        [SerializeField] private InputActionReference _confirm;
+        [SerializeField, Tooltip("Pause button; held state is read by PlayerPauseInput (hold-to-pause).")]
+        private InputActionReference _pause;
+
         [SerializeField] private InputActionReference _aim;
 
         [Header("Cursor")]
@@ -40,11 +36,11 @@ namespace AlienFarms.Input
         private InputAction _sprintAction;
         private InputAction _grabAction;
         private InputAction _pauseAction;
-        private InputAction _confirmAction;
         private InputAction _aimAction;
 
         // Cursor.lockState is global: only the handler that locked it may release it.
         private bool _ownsCursorLock;
+        private bool _cursorLockSuppressed;
         private bool _started;
 
         public event Action GrabStarted;
@@ -55,6 +51,7 @@ namespace AlienFarms.Input
         public bool IsSprintHeld => _sprintAction != null && _sprintAction.IsPressed();
         public bool IsGrabHeld => _grabAction != null && _grabAction.IsPressed();
         public bool IsAimHeld => _aimAction != null && _aimAction.IsPressed();
+        public bool IsPauseHeld => _pauseAction != null && _pauseAction.IsPressed();
 
         /// <summary>True when Look is currently driven by a pointer delta (mouse) rather than a stick rate.</summary>
         public bool IsLookPointerDelta => _lookAction != null && _lookAction.activeControl?.device is Pointer;
@@ -66,17 +63,11 @@ namespace AlienFarms.Input
                 _playerInput = GetComponent<PlayerInput>();
             }
 
-            if (_identity == null)
-            {
-                Debug.LogError($"[{nameof(PlayerInputHandler)}] PlayerIdentity is not assigned on '{name}'; pause/confirm requests will be ignored.", this);
-            }
-
             _moveAction = Resolve(_move);
             _lookAction = Resolve(_look);
             _sprintAction = Resolve(_sprint);
             _grabAction = Resolve(_grab);
             _pauseAction = Resolve(_pause);
-            _confirmAction = Resolve(_confirm);
             _aimAction = Resolve(_aim);
         }
 
@@ -86,16 +77,6 @@ namespace AlienFarms.Input
             {
                 _grabAction.started += HandleGrabStarted;
                 _grabAction.canceled += HandleGrabCanceled;
-            }
-
-            if (_pauseAction != null)
-            {
-                _pauseAction.performed += HandlePausePerformed;
-            }
-
-            if (_confirmAction != null)
-            {
-                _confirmAction.performed += HandleConfirmPerformed;
             }
 
             if (_playerInput != null)
@@ -123,16 +104,6 @@ namespace AlienFarms.Input
             {
                 _grabAction.started -= HandleGrabStarted;
                 _grabAction.canceled -= HandleGrabCanceled;
-            }
-
-            if (_pauseAction != null)
-            {
-                _pauseAction.performed -= HandlePausePerformed;
-            }
-
-            if (_confirmAction != null)
-            {
-                _confirmAction.performed -= HandleConfirmPerformed;
             }
 
             if (_playerInput != null)
@@ -171,29 +142,27 @@ namespace AlienFarms.Input
 
         private void HandleGrabCanceled(InputAction.CallbackContext context) => GrabCanceled?.Invoke();
 
-        private void HandlePausePerformed(InputAction.CallbackContext context)
-        {
-            if (_identity != null)
-            {
-                GameEvents.RaisePauseRequested(_identity.Id);
-            }
-        }
-
-        private void HandleConfirmPerformed(InputAction.CallbackContext context)
-        {
-            if (_identity != null)
-            {
-                GameEvents.RaiseConfirmPressed(_identity.Id);
-            }
-        }
-
         private void HandleControlsChanged(PlayerInput playerInput) => RefreshCursorLock();
+
+        /// <summary>
+        /// While suppressed (this player navigates a menu), the cursor is never locked so the mouse can point at buttons.
+        /// </summary>
+        public void SetCursorLockSuppressed(bool suppressed)
+        {
+            if (_cursorLockSuppressed == suppressed)
+            {
+                return;
+            }
+
+            _cursorLockSuppressed = suppressed;
+            RefreshCursorLock();
+        }
 
         private void RefreshCursorLock()
         {
             bool usesKeyboardMouse = _playerInput != null && _playerInput.currentControlScheme == InputSchemeNames.KeyboardMouse;
 
-            if (usesKeyboardMouse && _lockCursorForMouse)
+            if (usesKeyboardMouse && _lockCursorForMouse && !_cursorLockSuppressed)
             {
                 _ownsCursorLock = true;
                 Cursor.lockState = CursorLockMode.Locked;
@@ -222,12 +191,7 @@ namespace AlienFarms.Input
                 Debug.LogWarning($"[{nameof(PlayerInputHandler)}] Missing PlayerInput reference on '{name}'.", this);
             }
 
-            if (_identity == null)
-            {
-                Debug.LogWarning($"[{nameof(PlayerInputHandler)}] Missing PlayerIdentity reference on '{name}'.", this);
-            }
-
-            if (_move == null || _look == null || _sprint == null || _grab == null || _pause == null || _confirm == null || _aim == null)
+            if (_move == null || _look == null || _sprint == null || _grab == null || _pause == null || _aim == null)
             {
                 Debug.LogWarning($"[{nameof(PlayerInputHandler)}] One or more InputActionReferences are not assigned on '{name}'.", this);
             }

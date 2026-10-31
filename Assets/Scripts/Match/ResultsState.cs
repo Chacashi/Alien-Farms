@@ -13,6 +13,24 @@ namespace AlienFarms.Match
 
         public override MatchPhase Phase => MatchPhase.Results;
 
+        /// <summary>
+        /// Both players present (a missing one means the next Tick aborts to Waiting) and the results input delay has
+        /// elapsed (scaled time, the match clock). Single source of truth for the rematch and the results menu.
+        /// </summary>
+        public override bool IsRematchReady
+        {
+            get
+            {
+                if (Context.JoinedPlayerCount < RequiredPlayers)
+                {
+                    return false;
+                }
+
+                float delay = Context.Settings != null ? Context.Settings.ResultsInputDelay : 0f;
+                return _elapsed >= delay;
+            }
+        }
+
         public override void Enter()
         {
             Context.SetPlayerControlsEnabled(false);
@@ -32,14 +50,7 @@ namespace AlienFarms.Match
 
         public override void OnConfirmPressed(PlayerId playerId)
         {
-            // A missing player means the next Tick aborts to Waiting; never restart a round that cannot be played.
-            if (Context.JoinedPlayerCount < RequiredPlayers)
-            {
-                return;
-            }
-
-            float delay = Context.Settings != null ? Context.Settings.ResultsInputDelay : 0f;
-            if (_elapsed >= delay)
+            if (IsRematchReady)
             {
                 Context.ChangeState(MatchPhase.Countdown);
             }

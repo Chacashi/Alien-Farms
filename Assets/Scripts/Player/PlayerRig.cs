@@ -1,4 +1,6 @@
 using AlienFarms.Core;
+using AlienFarms.Data;
+using AlienFarms.Input;
 using UnityEngine;
 
 namespace AlienFarms.Player
@@ -27,12 +29,17 @@ namespace AlienFarms.Player
         [SerializeField, Tooltip("Grabber on this root.")]
         private PlayerGrabber _grabber;
 
+        [SerializeField, Tooltip("Menu input on this root (pause and results menus).")]
+        private PlayerMenuInput _menu;
+
         public PlayerId Id => _identity != null ? _identity.Id : PlayerId.None;
 
         public PlayerGrabber Grabber => _grabber;
 
-        /// <summary>Assigns identity, places the player at the spawn, aligns its camera and applies its color.</summary>
-        public void Configure(PlayerId id, Transform spawn, Material material)
+        public PlayerMenuInput Menu => _menu;
+
+        /// <summary>Assigns identity, places the player at the spawn, aligns its camera and shows its character visual.</summary>
+        public void Configure(PlayerId id, Transform spawn, CharacterDefinition character)
         {
             if (_identity != null)
             {
@@ -43,7 +50,7 @@ namespace AlienFarms.Player
 
             if (_appearance != null)
             {
-                _appearance.ApplyMaterial(material);
+                _appearance.ApplyCharacter(character);
             }
         }
 
@@ -85,6 +92,17 @@ namespace AlienFarms.Player
             }
         }
 
+        /// <summary>
+        /// Game pause: carried objects survive the input map switch (Grab 'canceled' fired by disabling the map is ignored).
+        /// </summary>
+        public void SetPaused(bool paused)
+        {
+            if (_grabber != null)
+            {
+                _grabber.SetPaused(paused);
+            }
+        }
+
         private void OnValidate()
         {
             if (_identity == null)
@@ -111,6 +129,11 @@ namespace AlienFarms.Player
             if (_grabber == null)
             {
                 TryGetComponent(out _grabber);
+            }
+
+            if (_menu == null)
+            {
+                TryGetComponent(out _menu);
             }
         }
     }

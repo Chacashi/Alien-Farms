@@ -1,23 +1,29 @@
 using AlienFarms.Core;
+using AlienFarms.Data;
 using TMPro;
 using UnityEngine;
 
 namespace AlienFarms.UI
 {
     /// <summary>
-    /// Shows the round result (winner and score) while the match is in Results. Lives on an always-active object and
-    /// toggles <see cref="_panelRoot"/>. The restart hint is static text in the scene.
+    /// Shows the round result (winner by character name, both names and the score) while the match is in Results.
+    /// The winner text is tinted with the winner's Theme.Secondary. Lives on an always-active object and toggles
+    /// <see cref="_panelRoot"/>. Buttons (rematch, title) are wired in the scene; the menu owner is set by ResultsMenuController.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MatchResultsView : MonoBehaviour
     {
         [Header("Texts")]
-        [SerializeField] private string _player1WinsText = "¡Gana P1!";
-        [SerializeField] private string _player2WinsText = "¡Gana P2!";
+        [SerializeField, Tooltip("Winner format; {0} = winner's character name.")]
+        private string _winnerFormat = "¡Gana {0}!";
+
         [SerializeField] private string _drawText = "¡Empate!";
 
         [SerializeField, Tooltip("TMP format; {0} = Player 1 score, {1} = Player 2 score.")]
         private string _scoreFormat = "{0} - {1}";
+
+        [SerializeField, Tooltip("Names used when a player has no character (index 0 = Player 1).")]
+        private string[] _fallbackNames = { "J1", "J2" };
 
         [Header("References")]
         [SerializeField, Tooltip("Results panel (text lives in the scene). Must not contain this component.")]
@@ -26,26 +32,56 @@ namespace AlienFarms.UI
         [SerializeField] private TMP_Text _winnerText;
         [SerializeField] private TMP_Text _scoreText;
 
+        [SerializeField, Tooltip("Optional: Player 1 character name (left).")]
+        private TMP_Text _nameP1;
+
+        [SerializeField, Tooltip("Optional: Player 2 character name (right).")]
+        private TMP_Text _nameP2;
+
+        private readonly PlayerCharacterCache _characters = new PlayerCharacterCache();
+        private Color _winnerDefaultColor = Color.white;
+
+        private void Awake()
+        {
+            if (_winnerText != null)
+            {
+                _winnerDefaultColor = _winnerText.color;
+            }
+        }
+
         private void OnEnable()
         {
+            GameEvents.OnPlayerCharacterAssigned += HandlePlayerCharacterAssigned;
             GameEvents.OnMatchEnded += HandleMatchEnded;
             GameEvents.OnMatchPhaseChanged += HandleMatchPhaseChanged;
         }
 
         private void OnDisable()
         {
+            GameEvents.OnPlayerCharacterAssigned -= HandlePlayerCharacterAssigned;
             GameEvents.OnMatchEnded -= HandleMatchEnded;
             GameEvents.OnMatchPhaseChanged -= HandleMatchPhaseChanged;
         }
+
+        private void HandlePlayerCharacterAssigned(PlayerId playerId, CharacterDefinition character) =>
+            _characters.Set(playerId, character);
 
         private void HandleMatchEnded(MatchResult result)
         {
             if (_winnerText != null)
             {
-                string winner = result.IsDraw
-                    ? _drawText
-                    : result.Winner == PlayerId.Player1 ? _player1WinsText : _player2WinsText;
-                _winnerText.SetText(winner);
+                if (result.IsDraw)
+                {
+                    _winnerText.SetText(_drawText);
+                    _winnerText.color = _winnerDefaultColor;
+                }
+                else
+                {
+                    // One format per match (not per frame).
+                    _winnerText.SetText(string.Format(_winnerFormat, GetName(result.Winner)));
+                    CharacterDefinition winner = _characters.Get(result.Winner);
+                    _winnerText.color = winner != null ? winner.Theme.Secondary : _winnerDefaultColor;
+                }
             }
 
             if (_scoreText != null)
@@ -53,6 +89,8 @@ namespace AlienFarms.UI
                 _scoreText.SetText(_scoreFormat, result.Player1Score, result.Player2Score);
             }
 
+            SetName(_nameP1, PlayerId.Player1);
+            SetName(_nameP2, PlayerId.Player2);
             SetVisible(true);
         }
 
@@ -62,6 +100,33 @@ namespace AlienFarms.UI
             {
                 SetVisible(false);
             }
+        }
+
+        private void SetName(TMP_Text text, PlayerId id)
+        {
+            if (text == null)
+            {
+                return;
+            }
+
+            text.SetText(GetName(id));
+            CharacterDefinition character = _characters.Get(id);
+            if (character != null)
+            {
+                text.color = character.Theme.Secondary;
+            }
+        }
+
+        private string GetName(PlayerId id)
+        {
+            CharacterDefinition character = _characters.Get(id);
+            if (character != null)
+            {
+                return character.DisplayName;
+            }
+
+            int index = (int)id - 1;
+            return _fallbackNames != null && index >= 0 && index < _fallbackNames.Length ? _fallbackNames[index] : string.Empty;
         }
 
         private void SetVisible(bool visible)

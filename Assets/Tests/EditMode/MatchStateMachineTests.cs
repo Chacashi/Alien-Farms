@@ -221,6 +221,72 @@ namespace AlienFarms.Tests
             Assert.That(_context.ResetRoundWithRespawnCount, Is.EqualTo(resetsBefore + 1));
         }
 
+        [Test]
+        public void Playing_ChangeStateToCountdown_RestartsRoundWithRespawn()
+        {
+            // Covers the state-machine path used by MatchManager.RestartRound: Countdown.Enter resets the round itself.
+            EnterPlaying();
+            TestScores.AddAnimals(_context.Score, PlayerId.Player1, 2);
+            _context.Advance(10f);
+            int resetsBefore = _context.ResetRoundWithRespawnCount;
+            _context.CallLog.Clear();
+
+            _context.ChangeState(MatchPhase.Countdown);
+
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.Countdown));
+            Assert.That(_context.ResetRoundWithRespawnCount, Is.EqualTo(resetsBefore + 1));
+            Assert.That(_context.ControlsEnabled, Is.False);
+            Assert.That(_context.Score.Get(PlayerId.Player1), Is.EqualTo(0));
+            Assert.That(_context.Timer.Remaining, Is.EqualTo(MatchDuration));
+            Assert.That(_context.CallLog, Is.EqualTo(new[]
+            {
+                "Phase(Playing->Countdown)", "Controls(false)", "ResetRound(true)"
+            }));
+        }
+
+        [Test]
+        public void Countdown_ChangeStateToCountdown_RestartsCountdownWithRespawn()
+        {
+            EnterCountdown();
+            _context.Advance(2f);
+            int resetsBefore = _context.ResetRoundWithRespawnCount;
+            _countdownTicks.Clear();
+            _context.CallLog.Clear();
+
+            _context.ChangeState(MatchPhase.Countdown);
+
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.Countdown));
+            Assert.That(_context.ResetRoundWithRespawnCount, Is.EqualTo(resetsBefore + 1));
+            Assert.That(_countdownTicks, Is.EqualTo(new[] { CountdownSeconds }));
+            Assert.That(_context.CallLog, Is.EqualTo(new[]
+            {
+                "Phase(Countdown->Countdown)", "Controls(false)", "ResetRound(true)"
+            }));
+
+            // The countdown starts over: still counting just before the full duration.
+            _context.Advance(CountdownSeconds - 0.1f);
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.Countdown));
+        }
+
+        [Test]
+        public void IsRematchReady_OnlyInResults_AfterDelay_WithBothPlayers()
+        {
+            Assert.That(_context.Machine.IsRematchReady, Is.False);
+
+            EnterPlaying();
+            Assert.That(_context.Machine.IsRematchReady, Is.False);
+
+            _context.Advance(MatchDuration + 0.5f, 0.5f);
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.Results));
+            Assert.That(_context.Machine.IsRematchReady, Is.False);
+
+            _context.Advance(ResultsInputDelay + 0.1f);
+            Assert.That(_context.Machine.IsRematchReady, Is.True);
+
+            _context.JoinedPlayerCount = 1;
+            Assert.That(_context.Machine.IsRematchReady, Is.False);
+        }
+
         private void EnterCountdown()
         {
             _context.JoinedPlayerCount = 2;

@@ -20,6 +20,9 @@ namespace AlienFarms.Match
 
         protected IMatchContext Context { get; }
 
+        /// <summary>True when <see cref="OnConfirmPressed"/> would start a rematch right now.</summary>
+        public virtual bool IsRematchReady => false;
+
         public virtual void Enter()
         {
         }
