@@ -37,3 +37,9 @@ MonoBehaviour:
   _throwDistanceMultiplier: 1
   _maxAirborneTime: 4
   _penConfinementMargin: 0.5
+  _grabClips:
+  - {fileID: 8300000, guid: e6effab2435160645ae212f8dee03628, type: 3}
+  _throwClips:
+  - {fileID: 8300000, guid: bfa2e4813ad46a247b3eb26adc00ce26, type: 3}
+  _voiceVolume: 0.8
+  _voicePitchRange: {x: 0.92, y: 1.08}

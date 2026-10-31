@@ -1,4 +1,5 @@
 using AlienFarms.Animals;
+using AlienFarms.Audio;
 using UnityEngine;
 
 namespace AlienFarms.Data
@@ -92,6 +93,19 @@ namespace AlienFarms.Data
         [SerializeField, Min(0f), Tooltip("Distance kept from the pen edges while captured (m).")]
         private float _penConfinementMargin = 0.5f;
 
+        [Header("Audio")]
+        [SerializeField, Tooltip("Voice played when a player grabs it (one picked at random; empty = silent).")]
+        private AudioClip[] _grabClips;
+
+        [SerializeField, Tooltip("Alarm voice played when a player throws it (one picked at random; empty = silent).")]
+        private AudioClip[] _throwClips;
+
+        [SerializeField, Range(0f, 1f), Tooltip("Volume of this animal's voices.")]
+        private float _voiceVolume = 0.8f;
+
+        [SerializeField, Tooltip("Random pitch per voice so repeats do not sound identical: x = min, y = max.")]
+        private Vector2 _voicePitchRange = new Vector2(0.92f, 1.08f);
+
         public Animal Prefab => _prefab;
         public int Points => _points;
         public float Mass => _mass;
@@ -117,6 +131,10 @@ namespace AlienFarms.Data
         public float ThrowDistanceMultiplier => _throwDistanceMultiplier;
         public float MaxAirborneTime => _maxAirborneTime;
         public float PenConfinementMargin => _penConfinementMargin;
+        public AudioClip[] GrabClips => _grabClips;
+        public AudioClip[] ThrowClips => _throwClips;
+        public float VoiceVolume => _voiceVolume;
+        public Vector2 VoicePitchRange => _voicePitchRange;
 
         protected virtual void OnValidate()
         {
@@ -135,6 +153,9 @@ namespace AlienFarms.Data
             {
                 _idleTimeRange.y = _idleTimeRange.x;
             }
+
+            _voicePitchRange.x = Mathf.Clamp(_voicePitchRange.x, AudioVariation.MinPitch, AudioVariation.MaxPitch);
+            _voicePitchRange.y = Mathf.Clamp(_voicePitchRange.y, _voicePitchRange.x, AudioVariation.MaxPitch);
         }
     }
 }

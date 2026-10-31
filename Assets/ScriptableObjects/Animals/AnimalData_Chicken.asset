@@ -37,5 +37,11 @@ MonoBehaviour:
   _throwDistanceMultiplier: 1
   _maxAirborneTime: 4
   _penConfinementMargin: 0.5
+  _grabClips:
+  - {fileID: 8300000, guid: 0dc9cce7069f36c48988e56c39dda1a9, type: 3}
+  _throwClips:
+  - {fileID: 8300000, guid: 63e3b9238383ec54db8d0555ec04f964, type: 3}
+  _voiceVolume: 0.8
+  _voicePitchRange: {x: 0.92, y: 1.08}
   _zigzagAngle: 35
   _zigzagFrequency: 2
