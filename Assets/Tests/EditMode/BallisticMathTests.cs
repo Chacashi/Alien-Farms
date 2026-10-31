@@ -85,5 +85,48 @@ namespace AlienFarms.Tests
         {
             Assert.That(BallisticMath.PreviewPointCount(maxTime, dt, 1), Is.GreaterThanOrEqualTo(2));
         }
+
+        [TestCase(1f, 1f)]
+        [TestCase(0.25f, 0.5f)]
+        [TestCase(0.55f, 0.7416198f)]
+        public void SpeedScaleForDistance_IsSquareRoot(float multiplier, float expected)
+        {
+            Assert.That(BallisticMath.SpeedScaleForDistance(multiplier), Is.EqualTo(expected).Within(1e-4f));
+        }
+
+        [TestCase(0f)]
+        [TestCase(-1f)]
+        public void SpeedScaleForDistance_NonPositive_IsZero(float multiplier)
+        {
+            Assert.That(BallisticMath.SpeedScaleForDistance(multiplier), Is.EqualTo(0f));
+        }
+
+        [TestCase(0.55f)]
+        [TestCase(0.3f)]
+        public void SpeedScaleForDistance_ScalesFlatGroundRange(float multiplier)
+        {
+            float fullRange = SimulateFlatRange(13f, 30f);
+            float scaledRange = SimulateFlatRange(13f * BallisticMath.SpeedScaleForDistance(multiplier), 30f);
+
+            Assert.That(scaledRange / fullRange, Is.EqualTo(multiplier).Within(0.02f));
+        }
+
+        private static float SimulateFlatRange(float speed, float elevationDeg)
+        {
+            Vector3 position = Vector3.zero;
+            Vector3 velocity = BallisticMath.LaunchVelocity(Vector3.forward, elevationDeg, speed);
+            Vector3 gravity = new Vector3(0f, -9.81f, 0f);
+            const float dt = 0.001f;
+            for (int i = 0; i < 100000; i++)
+            {
+                BallisticMath.Step(ref position, ref velocity, gravity, dt);
+                if (position.y <= 0f)
+                {
+                    break;
+                }
+            }
+
+            return position.z;
+        }
     }
 }

@@ -11,7 +11,7 @@ namespace AlienFarms.Match
     /// <summary>
     /// Scene composition root of the match: owns the phase state machine, score and timer, and bridges them to the
     /// players (via <see cref="PlayerJoinCoordinator"/>) and the animals (via <see cref="AnimalSpawner"/>).
-    /// The score mirrors zone occupancy from <see cref="GameEvents.OnAnimalCaptured"/> / <see cref="GameEvents.OnAnimalLeftZone"/>;
+    /// The score (sum of each captured animal's points) mirrors zone occupancy from <see cref="GameEvents.OnAnimalCaptured"/> / <see cref="GameEvents.OnAnimalLeftZone"/>;
     /// it is tracked in every phase but only published while playing.
     /// </summary>
     [DisallowMultipleComponent]
@@ -170,7 +170,7 @@ namespace AlienFarms.Match
                 return;
             }
 
-            if (_score.TryAdd(zoneOwner, animal, out PlayerId movedFrom))
+            if (_score.TryAdd(zoneOwner, animal, animal.Points, out PlayerId movedFrom))
             {
                 PublishScore(zoneOwner);
                 if (movedFrom != PlayerId.None)

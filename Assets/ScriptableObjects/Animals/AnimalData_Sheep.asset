@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: AnimalData_Sheep
   m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Data.AnimalData
   _prefab: {fileID: 7198010795306605508, guid: e7db628e5bb5a3a46a9592d869baec41, type: 3}
+  _points: 1
   _mass: 3
   _wanderSpeed: 0.8
   _fleeSpeed: 3
@@ -26,9 +27,13 @@ MonoBehaviour:
   _idleTimeRange: {x: 1, y: 3}
   _maxWanderLegTime: 5
   _confinementMargin: 2
+  _obstacleLookahead: 1
+  _obstacleSideHoldTime: 0.6
+  _wanderTargetRetries: 3
   _carrySpeedMultiplier: 0.7
   _holdOffset: {x: 0, y: 0.5, z: 0}
   _grabCooldown: 0.25
   _throwSettings: {fileID: 0}
+  _throwDistanceMultiplier: 1
   _maxAirborneTime: 4
   _penConfinementMargin: 0.5

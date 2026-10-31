@@ -14,6 +14,9 @@ namespace AlienFarms.Core
         /// <summary>Per-object throw tuning, or null to use the thrower's default.</summary>
         ThrowSettings ThrowSettings { get; }
 
+        /// <summary>Scales the throw distance (1 = unchanged). Applied to the launch speed via its square root.</summary>
+        float ThrowDistanceMultiplier { get; }
+
         /// <summary>Planar radius of the body (m). The preview sweeps a sphere this wide (capped by the half height).</summary>
         float CollisionRadius { get; }
 

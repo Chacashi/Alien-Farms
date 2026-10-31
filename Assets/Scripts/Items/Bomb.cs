@@ -68,6 +68,7 @@ namespace AlienFarms.Items
         public PlayerId Holder => _holder;
         public Vector3 Position => transform.position;
         public float CarrySpeedMultiplier => _data != null ? _data.CarrySpeedMultiplier : 1f;
+        public float ThrowDistanceMultiplier => 1f;
 
         private void Awake()
         {

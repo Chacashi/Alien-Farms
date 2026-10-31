@@ -61,7 +61,7 @@ namespace AlienFarms.Core
         /// <summary>A captured animal left the given player's zone (grabbed by anyone or despawned).</summary>
         public static event Action<PlayerId, Animal> OnAnimalLeftZone;
 
-        /// <summary>The given player's score changed to the new total.</summary>
+        /// <summary>The given player's score changed to the new total (sum of the points of the animals in its zone).</summary>
         public static event Action<PlayerId, int> OnScoreChanged;
 
         /// <summary>Global: the match moved from the first phase (previous) to the second (current).</summary>

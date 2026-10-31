@@ -38,6 +38,16 @@ namespace AlienFarms.Utilities
             return direction * speed;
         }
 
+        /// <summary>
+        /// Launch speed factor that scales the flight distance by <paramref name="distanceMultiplier"/>: range grows with
+        /// speed squared, so the factor is its square root (exact on flat ground, close when launched from a height).
+        /// Non-positive multipliers return 0.
+        /// </summary>
+        public static float SpeedScaleForDistance(float distanceMultiplier)
+        {
+            return distanceMultiplier > 0f ? Mathf.Sqrt(distanceMultiplier) : 0f;
+        }
+
         /// <summary>One semi-implicit Euler step: velocity first, then position with the new velocity.</summary>
         public static void Step(ref Vector3 position, ref Vector3 velocity, Vector3 gravity, float dt)
         {

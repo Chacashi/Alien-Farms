@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Data.AnimalSpawnSettings
   _entries:
   - _data: {fileID: 11400000, guid: bbbc51666aa78974084ddf30aaa6bad0, type: 2}
-    _weight: 1
+    _weight: 3
   - _data: {fileID: 11400000, guid: da4f19ffb28a97b4f950ae784f79440f, type: 2}
+    _weight: 3
+  - _data: {fileID: 11400000, guid: aad2116b8d85f58448d2536f2f31c525, type: 2}
     _weight: 1
   _initialCount: 12
   _targetFreePopulation: 12

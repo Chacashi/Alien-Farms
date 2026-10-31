@@ -11,6 +11,10 @@ namespace AlienFarms.Data
         [SerializeField, Tooltip("Pooled prefab spawned for this type (root must have an Animal component).")]
         private Animal _prefab;
 
+        [Header("Score")]
+        [SerializeField, Min(1), Tooltip("Points this animal is worth while it sits inside a player's zone.")]
+        private int _points = 1;
+
         [Header("Physics")]
         [SerializeField, Min(0.01f), Tooltip("Rigidbody mass applied on initialization (kg).")]
         private float _mass = 1f;
@@ -65,8 +69,8 @@ namespace AlienFarms.Data
         private int _wanderTargetRetries = 3;
 
         [Header("Carry")]
-        [SerializeField, Range(0.3f, 1f), Tooltip("Multiplier applied to the holder's walk speed.")]
-        private float _carrySpeedMultiplier = 0.9f;
+        [SerializeField, Range(0.1f, 1f), Tooltip("Multiplier applied to the holder's walk speed while carrying it (carrying already forbids sprinting).")]
+        private float _carrySpeedMultiplier = 1f;
 
         [SerializeField, Tooltip("Offset from the hold point, in hold point space.")]
         private Vector3 _holdOffset = new Vector3(0f, 0.3f, 0f);
@@ -78,6 +82,9 @@ namespace AlienFarms.Data
         [SerializeField, Tooltip("Optional throw tuning for this type; empty uses the thrower's default.")]
         private ThrowSettings _throwSettings;
 
+        [SerializeField, Range(0.1f, 1f), Tooltip("Scales the throw distance on flat ground (launch speed is scaled by its square root). The aim preview reflects it.")]
+        private float _throwDistanceMultiplier = 1f;
+
         [SerializeField, Min(0.5f), Tooltip("Safety timeout: an airborne animal is forced to land after this long (s).")]
         private float _maxAirborneTime = 4f;
 
@@ -86,6 +93,7 @@ namespace AlienFarms.Data
         private float _penConfinementMargin = 0.5f;
 
         public Animal Prefab => _prefab;
+        public int Points => _points;
         public float Mass => _mass;
         public float WanderSpeed => _wanderSpeed;
         public float FleeSpeed => _fleeSpeed;
@@ -106,6 +114,7 @@ namespace AlienFarms.Data
         public Vector3 HoldOffset => _holdOffset;
         public float GrabCooldown => _grabCooldown;
         public ThrowSettings ThrowSettings => _throwSettings;
+        public float ThrowDistanceMultiplier => _throwDistanceMultiplier;
         public float MaxAirborneTime => _maxAirborneTime;
         public float PenConfinementMargin => _penConfinementMargin;
 

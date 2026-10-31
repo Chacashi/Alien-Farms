@@ -158,6 +158,10 @@ namespace AlienFarms.Animals
         public PlayerId Holder => _holder;
         public Vector3 Position => transform.position;
         public float CarrySpeedMultiplier => _data != null ? _data.CarrySpeedMultiplier : 1f;
+        public float ThrowDistanceMultiplier => _data != null ? _data.ThrowDistanceMultiplier : 1f;
+
+        /// <summary>Points this animal is worth while captured in a player's zone.</summary>
+        public int Points => _data != null ? _data.Points : 1;
 
         protected virtual void Awake()
         {

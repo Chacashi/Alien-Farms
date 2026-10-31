@@ -114,7 +114,9 @@ namespace AlienFarms.Player
             }
 
             origin = launchOrigin;
-            velocity = BallisticMath.LaunchVelocity(_camera.PlanarForward, elevation, settings.LaunchSpeed);
+            // Heavy objects fly shorter; the preview uses this same launch, so it shows the real distance.
+            float speed = settings.LaunchSpeed * BallisticMath.SpeedScaleForDistance(_heldThrowable.ThrowDistanceMultiplier);
+            velocity = BallisticMath.LaunchVelocity(_camera.PlanarForward, elevation, speed);
             if (_movement != null)
             {
                 velocity += _movement.Velocity * settings.InheritVelocityFactor;
