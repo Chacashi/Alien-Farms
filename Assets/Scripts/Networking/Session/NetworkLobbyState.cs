@@ -110,6 +110,11 @@ namespace AlienFarms.Networking.Session
 
         public override void OnNetworkDespawn()
         {
+            if (IsServer)
+            {
+                Debug.Log($"[{nameof(NetworkLobbyState)}] Room despawned.", this);
+            }
+
             Unsubscribe();
             if (_lobbyChannel == null)
             {
@@ -278,8 +283,12 @@ namespace AlienFarms.Networking.Session
                 return;
             }
 
-            Debug.Log($"[{nameof(NetworkLobbyState)}] Match starting; room despawned.", this);
-            NetworkObject.Despawn(true);
+            // The Single scene load may already have despawned this object (destroyWithScene); only despawn it otherwise.
+            Debug.Log($"[{nameof(NetworkLobbyState)}] Match starting.", this);
+            if (IsSpawned)
+            {
+                NetworkObject.Despawn(true);
+            }
         }
 
         // ---------------------------------------------------------------- Every peer

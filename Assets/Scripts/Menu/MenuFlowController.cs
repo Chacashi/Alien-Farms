@@ -75,6 +75,9 @@ namespace AlienFarms.Menu
             // R1: a MainMenu (re)loaded while in an online session keeps the session's MatchSession (online mode).
             bool inOnlineSession = _onlineSession != null && _onlineSession.Status == OnlineSessionStatus.InSession;
 
+            // An online match ended (left, host gone): reopen the online hub instead of the title. Read before Clear.
+            bool returnToOnline = _session != null && _session.ConsumeReturnToOnlineMenu();
+
             // Back on the title: whatever was picked before is gone.
             if (_session != null && !inOnlineSession)
             {
@@ -102,9 +105,9 @@ namespace AlienFarms.Menu
                 _title.SetPlayerJoined(false);
             }
 
-            if (inOnlineSession && _online != null)
+            if (OnlineMenuRules.OpensOnlineOnLoad(inOnlineSession, returnToOnline) && _online != null)
             {
-                // Straight back to the room; the first player to join becomes its owner.
+                // Straight back to the room / hub; the first player to join becomes its owner.
                 _phase = MenuPhase.Online;
                 if (_title != null)
                 {

@@ -21,6 +21,7 @@ namespace AlienFarms.Data
         [NonSerialized] private int _generation = -1;
         [NonSerialized] private GameMode _mode = GameMode.Local;
         [NonSerialized] private CharacterDefinition _localCharacter;
+        [NonSerialized] private bool _returnToOnlineMenu;
 
         /// <summary>Both players have a slot written during this play session.</summary>
         public bool IsReady => IsCurrent && _data.IsComplete(RequiredPlayers);
@@ -30,6 +31,12 @@ namespace AlienFarms.Data
 
         /// <summary>Online: character picked by the player on this machine (null when none was picked).</summary>
         public CharacterDefinition LocalCharacter => IsCurrent ? _localCharacter : null;
+
+        /// <summary>
+        /// True when the next MainMenu must open on the online panel (an online match ended). Read and cleared by
+        /// <see cref="ConsumeReturnToOnlineMenu"/>; <see cref="Clear"/> also drops it.
+        /// </summary>
+        public bool ReturnToOnlineMenu => IsCurrent && _returnToOnlineMenu;
 
         private bool IsCurrent => _generation == s_generation;
 
@@ -57,6 +64,21 @@ namespace AlienFarms.Data
             _localCharacter = character;
         }
 
+        /// <summary>Online match exit: asks the next MainMenu to open on the online hub. Call after <see cref="Clear"/>.</summary>
+        public void RequestReturnToOnlineMenu()
+        {
+            EnsureCurrent();
+            _returnToOnlineMenu = true;
+        }
+
+        /// <summary>Returns <see cref="ReturnToOnlineMenu"/> and clears it (one menu load only).</summary>
+        public bool ConsumeReturnToOnlineMenu()
+        {
+            bool value = ReturnToOnlineMenu;
+            _returnToOnlineMenu = false;
+            return value;
+        }
+
         public bool TryGetSlot(PlayerId id, out SessionSlot slot)
         {
             if (!IsCurrent)
@@ -73,6 +95,7 @@ namespace AlienFarms.Data
             _data.Clear();
             _mode = GameMode.Local;
             _localCharacter = null;
+            _returnToOnlineMenu = false;
             _generation = s_generation;
         }
 

@@ -140,6 +140,8 @@ namespace AlienFarms.Networking.Match
             if (_session != null)
             {
                 _session.Clear();
+                // Back on the online hub (it shows why the session ended), not on the title.
+                _session.RequestReturnToOnlineMenu();
             }
 
             NetworkRootLifetime root = _anchor != null ? _anchor.Root : null;

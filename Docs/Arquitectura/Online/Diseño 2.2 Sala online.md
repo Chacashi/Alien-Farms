@@ -243,9 +243,14 @@ UI_OnlinePanel            [RectTransform, OnlinePanelView]   (siempre activo)
   - Seleccionar una carta mueve el cursor local, P1 o P2 según el asiento.
   - Submit pide ese personaje.
   - La navegación se salta Start mientras no esté interactuable.
-- **Busy:** muestra una etiqueta según el estado y un botón Cancelar.
-- **Errores:** el ErrorBanner muestra `LastErrorKey`/`LastRejectKey` hasta la siguiente acción. El error que queda al volver al Hub (por ejemplo `host_left`) se muestra al entrar.
+  - Las cartas tomadas por el otro jugador quedan no interactuables (la navegación las salta; el candado se sigue viendo). El foco inicial y el que queda al soltar el personaje va a la primera carta libre, o a Leave si no hay ninguna.
+  - Si el foco queda en un Selectable que deja de ser interactuable (Start deshabilitado, carta tomada), vuelve al foco por defecto. El host con personaje espera en Leave hasta que Start se habilita y entonces el foco pasa a Start.
+  - Submit en `INP_Code` (Enter, o Submit del mando mientras se edita) confirma el Join.
+- **Busy:** muestra una etiqueta según el estado y un botón Cancelar. Cancelar un Join en curso vuelve al Hub (no a la pantalla de código).
+- **Errores:** el ErrorBanner muestra `LastErrorKey`/`LastRejectKey` hasta la siguiente acción. El error que queda al volver al Hub (por ejemplo `host_left`) se muestra al entrar. Abrir Join, Crear sala o Volver limpian el error mostrado.
 - **Avisos:** "Sincronizando…" si hay sesión pero el lobby todavía no apareció, y "Cargando partida…" con `Starting`. El texto guía muestra "Esperando jugador", "Esperando al anfitrión" o "Elijan personaje".
+
+- **Volver de una partida online:** al terminar una partida online (el cliente cae por `host_left`/`host_disconnected` en `OnlineMatchBootstrap`, host o cliente salen con `OnlineMatchExitHandler.ReturnToTitle`, o el fin de partida), MainMenu abre directamente el **Hub online** (con el error de sesión, si lo hay), no el Title. El lado de red llama `MatchSession.RequestReturnToOnlineMenu()` justo después de `Clear()` y antes de cargar MainMenu; `MenuFlowController.Awake` lo consume (`ConsumeReturnToOnlineMenu`, antes de su `Clear()`) y, si `OnlineMenuRules.OpensOnlineOnLoad(inSession, returnRequested)`, usa el mismo camino que R1 (`_online.Enter(null)`; el primer jugador que se une es el dueño y luego se deshabilita el join). El flag es runtime (generación de `MatchSession`), no se pone en partidas locales ni al salir al Title desde el Hub online.
 
 ## 5. Sub-tareas
 

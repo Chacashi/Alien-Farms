@@ -102,6 +102,42 @@ namespace AlienFarms.Tests
             Assert.That(OnlineMenuRules.CanCancelBusy(status), Is.EqualTo(expected));
         }
 
+        [TestCase(OnlineSessionStatus.Joining, true, false)]
+        [TestCase(OnlineSessionStatus.Joining, false, false)]
+        [TestCase(OnlineSessionStatus.Creating, true, false)]
+        [TestCase(OnlineSessionStatus.SigningIn, true, false)]
+        [TestCase(OnlineSessionStatus.Ready, true, true)]
+        [TestCase(OnlineSessionStatus.SignedOut, true, true)]
+        [TestCase(OnlineSessionStatus.Ready, false, false)]
+        public void WantsJoinAfterCancelBusy_ClearsOnCancelledOperations(OnlineSessionStatus status, bool wantsJoin, bool expected)
+        {
+            Assert.That(OnlineMenuRules.WantsJoinAfterCancelBusy(status, wantsJoin), Is.EqualTo(expected));
+        }
+
+        [TestCase(false, false, false)]
+        [TestCase(true, false, true)]
+        [TestCase(false, true, true)]
+        [TestCase(true, true, true)]
+        public void OpensOnlineOnLoad_InSessionOrAfterOnlineMatch(bool inSession, bool returnRequested, bool expected)
+        {
+            Assert.That(OnlineMenuRules.OpensOnlineOnLoad(inSession, returnRequested), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void ReturnFromOnlineMatch_LandsOnHub()
+        {
+            // The NetworkRoot was torn down: signed in but out of the session.
+            Assert.That(OnlineMenuRules.Resolve(OnlineSessionStatus.Ready, Unavailable, false), Is.EqualTo(OnlineScreen.Hub));
+        }
+
+        [Test]
+        public void CancelJoin_ReturnsToHub()
+        {
+            // Join screen -> Joining (busy) -> Cancel -> the service leaves back to Ready.
+            bool wantsJoin = OnlineMenuRules.WantsJoinAfterCancelBusy(OnlineSessionStatus.Joining, true);
+            Assert.That(OnlineMenuRules.Resolve(OnlineSessionStatus.Ready, Unavailable, wantsJoin), Is.EqualTo(OnlineScreen.Hub));
+        }
+
         [TestCase(Unavailable, 2, true, true, false, LocalizationKeys.OnlineRoomSyncing)]
         [TestCase(Unavailable, 0, false, false, true, LocalizationKeys.OnlineRoomSyncing)]
         [TestCase(Open, 2, true, false, true, LocalizationKeys.OnlineRoomSpectator)]

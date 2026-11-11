@@ -3,6 +3,7 @@ using AlienFarms.Core;
 using AlienFarms.Data;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace AlienFarms.UI
 {
@@ -17,6 +18,12 @@ namespace AlienFarms.UI
         [SerializeField, Tooltip("Seat shown by this view.")]
         private PlayerId _player = PlayerId.Player1;
 
+        [SerializeField, Tooltip("Name shown for Player 1 when the seat has no display name.")]
+        private LocalizedString _player1Label = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.CommonP1);
+
+        [SerializeField, Tooltip("Name shown for Player 2 when the seat has no display name.")]
+        private LocalizedString _player2Label = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.CommonP2);
+
         [Header("References")]
         [SerializeField, Tooltip("Status and frame of the seat (its empty entry should be online.room.waiting_player).")]
         private PlayerSlotStatusView _status;
@@ -30,10 +37,27 @@ namespace AlienFarms.UI
         [SerializeField, Tooltip("Badge shown when the seat belongs to this machine.")]
         private GameObject _youBadge;
 
+        private LocalizedStringBinding _labelBinding;
         private string _renderedName;
         private bool _hasRenderedName;
+        private bool _usesLabel;
 
         public PlayerId Player => _player;
+
+        private void Awake()
+        {
+            _labelBinding = new LocalizedStringBinding(_player == PlayerId.Player2 ? _player2Label : _player1Label, RefreshLabel);
+        }
+
+        private void OnEnable()
+        {
+            _labelBinding.Enable();
+        }
+
+        private void OnDisable()
+        {
+            _labelBinding.Disable();
+        }
 
         /// <summary>
         /// Shows <paramref name="seat"/> (ignored when not <paramref name="occupied"/>); <paramref name="character"/>
@@ -49,7 +73,15 @@ namespace AlienFarms.UI
                 _status.Render(state, character);
             }
 
-            SetName(occupied ? seat.DisplayName : null);
+            // An occupied seat without a display name shows the localized player label (J1 / P1).
+            bool usesLabel = occupied && string.IsNullOrEmpty(seat.DisplayName);
+            if (usesLabel != _usesLabel)
+            {
+                _usesLabel = usesLabel;
+                _hasRenderedName = false;
+            }
+
+            SetName(usesLabel ? _labelBinding?.Value : occupied ? seat.DisplayName : null);
             SetActive(_hostBadge, occupied && seat.IsHost);
             SetActive(_youBadge, occupied && seat.IsLocal);
         }
@@ -66,6 +98,15 @@ namespace AlienFarms.UI
             _name.SetText(displayName ?? string.Empty);
         }
 
+        // Language change only: re-renders the label while the seat uses it.
+        private void RefreshLabel()
+        {
+            if (_usesLabel)
+            {
+                SetName(_labelBinding.Value);
+            }
+        }
+
         private static void SetActive(GameObject target, bool active)
         {
             if (target != null && target.activeSelf != active)
@@ -79,6 +120,11 @@ namespace AlienFarms.UI
             if (_status == null)
             {
                 TryGetComponent(out _status);
+            }
+
+            if (_player1Label == null || _player1Label.IsEmpty || _player2Label == null || _player2Label.IsEmpty)
+            {
+                Debug.LogWarning($"[{nameof(OnlineSeatView)}] Empty localized player label on '{name}'.", this);
             }
 
             if (_player == PlayerId.None)

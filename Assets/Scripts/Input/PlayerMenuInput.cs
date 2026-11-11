@@ -67,6 +67,25 @@ namespace AlienFarms.Input
         public bool IsInMenu => _isInMenu;
         public bool IsBlocked => _isBlocked;
 
+        /// <summary>Object this player's menu focus is on (or about to be on); null outside a menu.</summary>
+        public GameObject CurrentSelection
+        {
+            get
+            {
+                if (!_isInMenu)
+                {
+                    return null;
+                }
+
+                if (_pendingSelection != null)
+                {
+                    return _pendingSelection;
+                }
+
+                return _eventSystem != null ? _eventSystem.currentSelectedGameObject : null;
+            }
+        }
+
         private void Awake()
         {
             if (_playerInput == null)

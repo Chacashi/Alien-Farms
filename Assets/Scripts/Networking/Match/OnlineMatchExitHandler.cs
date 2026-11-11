@@ -9,7 +9,7 @@ namespace AlienFarms.Networking.Match
 {
     /// <summary>
     /// Online match exit. Back to title: clears the session, tears the NetworkRoot down (shutdown + destroy; the
-    /// MainMenu brings a fresh one) and loads the main menu. Rematch: marks the local player ready; the server's
+    /// MainMenu brings a fresh one) and loads the main menu, which opens on the online hub. Rematch: marks the local player ready; the server's
     /// <see cref="NetworkMatchExit"/> restarts the match when both players are.
     /// </summary>
     public sealed class OnlineMatchExitHandler : IMatchExitHandler
@@ -41,6 +41,8 @@ namespace AlienFarms.Networking.Match
             if (_session != null)
             {
                 _session.Clear();
+                // Leaving an online match lands on the online hub, not on the title.
+                _session.RequestReturnToOnlineMenu();
             }
 
             NetworkRootLifetime root = _anchor != null ? _anchor.Root : null;

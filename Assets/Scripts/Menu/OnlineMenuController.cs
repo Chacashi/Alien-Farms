@@ -4,6 +4,7 @@ using AlienFarms.Data;
 using AlienFarms.Input;
 using AlienFarms.UI;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace AlienFarms.Menu
 {
@@ -45,6 +46,7 @@ namespace AlienFarms.Menu
         private bool _hasShownScreen;
         private bool _shownReadOnly;
         private bool _shownLocked;
+        private bool _shownCanStart;
 
         /// <summary>The player backed out of the hub (Back / Cancel): the menu flow returns to the title.</summary>
         public event Action ExitRequested;
@@ -79,6 +81,7 @@ namespace AlienFarms.Menu
             {
                 _view.CardClicked += HandleCardClicked;
                 _view.CardSelected += HandleCardSelected;
+                _view.CodeSubmitted += HandleCodeSubmitted;
             }
 
             // Changes may have happened while disabled (or before this scene loaded): rebuild everything.
@@ -102,6 +105,7 @@ namespace AlienFarms.Menu
             {
                 _view.CardClicked -= HandleCardClicked;
                 _view.CardSelected -= HandleCardSelected;
+                _view.CodeSubmitted -= HandleCodeSubmitted;
             }
         }
 
@@ -220,6 +224,8 @@ namespace AlienFarms.Menu
                 return;
             }
 
+            // A stale error (e.g. host left) must not stay on screen after a new action.
+            _session.ClearError();
             if (Status == OnlineSessionStatus.SignedOut)
             {
                 _session.RequestSignIn();
@@ -238,6 +244,11 @@ namespace AlienFarms.Menu
             }
 
             _wantsJoin = true;
+            if (_session != null)
+            {
+                _session.ClearError();
+            }
+
             MarkDirty();
         }
 
@@ -285,6 +296,11 @@ namespace AlienFarms.Menu
             }
 
             OnlineScreen screen = CurrentScreen;
+            if ((screen == OnlineScreen.Join || screen == OnlineScreen.Hub) && _session != null)
+            {
+                _session.ClearError();
+            }
+
             if (screen == OnlineScreen.Join)
             {
                 _wantsJoin = false;
@@ -325,6 +341,9 @@ namespace AlienFarms.Menu
                 _session.RequestLeave();
             }
 
+            // A cancelled join lands on the hub, not back on the code screen.
+            _wantsJoin = OnlineMenuRules.WantsJoinAfterCancelBusy(status, _wantsJoin);
+            MarkDirty();
             return true;
         }
 
@@ -343,6 +362,15 @@ namespace AlienFarms.Menu
 
             _focusOverride = _view.LeaveSelectable;
             RefreshFocus();
+        }
+
+        // Enter / Submit inside the code input confirms the join (with a pad the field would otherwise keep the focus).
+        private void HandleCodeSubmitted()
+        {
+            if (_isActive && CurrentScreen == OnlineScreen.Join)
+            {
+                ConfirmJoin();
+            }
         }
 
         private void HandleCardClicked(CharacterDefinition character)
@@ -397,6 +425,7 @@ namespace AlienFarms.Menu
 
             bool readOnly = false;
             bool locked = false;
+            bool canStart = false;
             switch (screen)
             {
                 case OnlineScreen.Hub:
@@ -406,7 +435,7 @@ namespace AlienFarms.Menu
                     _view.SetBusy(OnlineMenuRules.BusyKey(status, phase), OnlineMenuRules.CanCancelBusy(status));
                     break;
                 case OnlineScreen.Room:
-                    readOnly = RenderRoom(phase, out locked);
+                    readOnly = RenderRoom(phase, out locked, out canStart);
                     break;
             }
 
@@ -414,11 +443,40 @@ namespace AlienFarms.Menu
             bool roleChanged = screen == OnlineScreen.Room && (readOnly != _shownReadOnly || locked != _shownLocked);
             if (screenChanged || roleChanged || _focusPending)
             {
-                ApplyFocus(screen, readOnly, locked, screenChanged || roleChanged);
+                ApplyFocus(screen, readOnly, locked, canStart, screenChanged || roleChanged);
             }
+            else if (screen == OnlineScreen.Room && ShouldMoveRoomFocus(locked, canStart))
+            {
+                // The focused button / card stopped being usable (Start disabled, card taken): pick the default again.
+                ApplyFocus(screen, readOnly, locked, canStart, true);
+            }
+
+            _shownCanStart = canStart;
         }
 
-        private void ApplyFocus(OnlineScreen screen, bool readOnly, bool locked, bool screenChanged)
+        /// <summary>
+        /// True when the owner's focus sits on a Selectable that is no longer interactable, or when Start just became
+        /// available for a locked host still waiting on Leave. Only runs on channel changes (never per frame).
+        /// </summary>
+        private bool ShouldMoveRoomFocus(bool locked, bool canStart)
+        {
+            GameObject selected = _owner != null ? _owner.CurrentSelection : null;
+            if (selected == null)
+            {
+                return false;
+            }
+
+            if (selected.TryGetComponent(out Selectable selectable) && !selectable.IsInteractable())
+            {
+                return true;
+            }
+
+            return locked && canStart && !_shownCanStart && IsHost && selected == _view.LeaveSelectable;
+        }
+
+        private bool IsHost => _session != null && _session.IsHost;
+
+        private void ApplyFocus(OnlineScreen screen, bool readOnly, bool locked, bool canStart, bool screenChanged)
         {
             if (_owner == null)
             {
@@ -437,9 +495,15 @@ namespace AlienFarms.Menu
             }
             else if (screen == OnlineScreen.Room && locked)
             {
-                // Picked = ready: the cards are locked, the host waits on Start and the guest on Leave (Cancel releases).
-                GameObject start = _session != null && _session.IsHost ? _view.StartSelectable : null;
+                // Picked = ready: the cards are locked, the host waits on Start (once usable) and the guest on Leave.
+                GameObject start = IsHost && canStart ? _view.StartSelectable : null;
                 target = start != null ? start : _view.LeaveSelectable;
+            }
+            else if (screen == OnlineScreen.Room)
+            {
+                // First card the other player has not taken; all taken -> Leave.
+                GameObject card = _view.GetFirstFreeCard();
+                target = card != null ? card : _view.LeaveSelectable;
             }
             else
             {
@@ -459,7 +523,7 @@ namespace AlienFarms.Menu
         /// Renders cards, seats, spectator, code, start and hint. Returns true when the room is read-only here;
         /// <paramref name="locked"/> is true when the local seat holds a pick (cards locked until it is released).
         /// </summary>
-        private bool RenderRoom(OnlineLobbyPhase phase, out bool locked)
+        private bool RenderRoom(OnlineLobbyPhase phase, out bool locked, out bool canStart)
         {
             PlayerId localId = _lobby != null ? _lobby.LocalPlayerId : PlayerId.None;
             OnlineLobbySeat localSeat = default;
@@ -468,12 +532,18 @@ namespace AlienFarms.Menu
             bool isSpectator = _lobby != null && _lobby.IsLocalSpectator;
             bool open = phase == OnlineLobbyPhase.Open;
 
+            // Picking is being ready: the cards stay locked until Cancel releases the pick (as in the local selection).
+            bool cardsOpen = seated && open && !localHasCharacter;
             int count = _roster != null ? _roster.Count : 0;
             for (int i = 0; i < count; i++)
             {
                 // Only the local cursor is known; a picked player shows its lock instead of a cursor (as locally).
                 bool hover = seated && !localHasCharacter && _hoverIndex == i;
-                _view.RenderCard(_roster.Get(i), hover && localId == PlayerId.Player1, hover && localId == PlayerId.Player2, LockedBy(i));
+                PlayerId lockedBy = LockedBy(i);
+                CharacterDefinition character = _roster.Get(i);
+                _view.RenderCard(character, hover && localId == PlayerId.Player1, hover && localId == PlayerId.Player2, lockedBy);
+                // A card taken by the other player is skipped by navigation; its lock still renders.
+                _view.SetCardInteractable(character, cardsOpen && lockedBy == PlayerId.None);
             }
 
             bool p1Picked = RenderSeat(PlayerId.Player1);
@@ -481,11 +551,10 @@ namespace AlienFarms.Menu
             bool allPicked = p1Picked && p2Picked;
             _view.SetSpectator(isSpectator, GetSpectatorName());
             _view.SetCode(_session != null ? _session.Code : null);
-            // Picking is being ready: the cards stay locked until Cancel releases the pick (as in the local selection).
-            _view.SetCardsInteractable(seated && open && !localHasCharacter);
 
-            bool isHost = _session != null && _session.IsHost;
-            _view.SetStart(isHost && !isSpectator, open && _lobby != null && _lobby.CanStart);
+            bool isHost = IsHost;
+            canStart = open && _lobby != null && _lobby.CanStart;
+            _view.SetStart(isHost && !isSpectator, canStart);
             int seatCount = _lobby != null ? _lobby.SeatCount : 0;
             _view.SetHint(OnlineMenuRules.HintKey(phase, seatCount, allPicked, isHost, isSpectator));
 

@@ -54,6 +54,37 @@ namespace AlienFarms.Tests
         }
 
         [Test]
+        public void ReturnToOnlineMenu_IsConsumedOnce()
+        {
+            Assert.That(_session.ReturnToOnlineMenu, Is.False);
+            _session.Clear();
+            _session.RequestReturnToOnlineMenu();
+
+            Assert.That(_session.ConsumeReturnToOnlineMenu(), Is.True);
+            Assert.That(_session.ConsumeReturnToOnlineMenu(), Is.False);
+        }
+
+        [Test]
+        public void Clear_DropsReturnToOnlineMenu()
+        {
+            _session.RequestReturnToOnlineMenu();
+            _session.Clear();
+
+            Assert.That(_session.ReturnToOnlineMenu, Is.False);
+        }
+
+        [Test]
+        public void AfterResetStatics_ReturnToOnlineMenu_IsDiscarded()
+        {
+            _session.RequestReturnToOnlineMenu();
+
+            MethodInfo reset = typeof(MatchSession).GetMethod("ResetStatics", BindingFlags.NonPublic | BindingFlags.Static);
+            reset.Invoke(null, null);
+
+            Assert.That(_session.ReturnToOnlineMenu, Is.False);
+        }
+
+        [Test]
         public void AfterResetStatics_ModeFromPreviousPlaySession_IsDiscarded()
         {
             _session.SetMode(GameMode.Online);

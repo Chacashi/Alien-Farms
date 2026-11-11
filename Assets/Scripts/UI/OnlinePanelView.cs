@@ -105,6 +105,7 @@ namespace AlienFarms.UI
         private LocalizedStringBinding _hintBinding;
         private Action<CharacterDefinition> _cardClickedHandler;
         private Action<CharacterDefinition> _cardSelectedHandler;
+        private UnityEngine.Events.UnityAction<string> _codeSubmitHandler;
         private string _signedInName;
         private string _codeText;
         private string _spectatorText;
@@ -117,6 +118,9 @@ namespace AlienFarms.UI
 
         /// <summary>A card received the local player's focus (cursor).</summary>
         public event Action<CharacterDefinition> CardSelected;
+
+        /// <summary>The join code input was submitted (Enter / pad Submit while editing).</summary>
+        public event Action CodeSubmitted;
 
         /// <summary>Text typed in the join code input (null without input).</summary>
         public string CodeText => _codeInput != null ? _codeInput.text : null;
@@ -135,6 +139,7 @@ namespace AlienFarms.UI
             _hintBinding = new LocalizedStringBinding(_hintEntry, RefreshHint);
             _cardClickedHandler = HandleCardClicked;
             _cardSelectedHandler = HandleCardSelected;
+            _codeSubmitHandler = HandleCodeSubmitted;
         }
 
         private void OnEnable()
@@ -143,6 +148,11 @@ namespace AlienFarms.UI
             _busyBinding.Enable();
             _signedInBinding.Enable();
             _hintBinding.Enable();
+            if (_codeInput != null)
+            {
+                _codeInput.onSubmit.AddListener(_codeSubmitHandler);
+            }
+
             for (int i = 0; i < _cardButtons.Length; i++)
             {
                 if (_cardButtons[i] != null)
@@ -159,6 +169,11 @@ namespace AlienFarms.UI
             _busyBinding.Disable();
             _signedInBinding.Disable();
             _hintBinding.Disable();
+            if (_codeInput != null)
+            {
+                _codeInput.onSubmit.RemoveListener(_codeSubmitHandler);
+            }
+
             for (int i = 0; i < _cardButtons.Length; i++)
             {
                 if (_cardButtons[i] != null)
@@ -350,7 +365,36 @@ namespace AlienFarms.UI
             }
         }
 
+        /// <summary>Enables or disables the button of the card showing <paramref name="character"/> (its render is untouched).</summary>
+        public void SetCardInteractable(CharacterDefinition character, bool interactable)
+        {
+            for (int i = 0; i < _cardButtons.Length; i++)
+            {
+                if (_cardButtons[i] != null && _cardButtons[i].Character == character)
+                {
+                    _cardButtons[i].Interactable = interactable;
+                }
+            }
+        }
+
+        /// <summary>First interactable card button in panel order (null when none): the room's default focus.</summary>
+        public GameObject GetFirstFreeCard()
+        {
+            for (int i = 0; i < _cardButtons.Length; i++)
+            {
+                CharacterCardButton button = _cardButtons[i];
+                if (button != null && button.Interactable)
+                {
+                    return button.gameObject;
+                }
+            }
+
+            return null;
+        }
+
         // ---- Internals ----
+
+        private void HandleCodeSubmitted(string text) => CodeSubmitted?.Invoke();
 
         private void HandleCardClicked(CharacterDefinition character) => CardClicked?.Invoke(character);
 

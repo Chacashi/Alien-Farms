@@ -62,6 +62,24 @@ namespace AlienFarms.Menu
         }
 
         /// <summary>
+        /// Whether a MainMenu that just loaded opens on the online panel instead of the title: while still in a session
+        /// (R1, room) or when an online match ended and asked to come back (hub, with the session error if any).
+        /// </summary>
+        public static bool OpensOnlineOnLoad(bool inOnlineSession, bool returnToOnlineRequested)
+        {
+            return inOnlineSession || returnToOnlineRequested;
+        }
+
+        /// <summary>
+        /// Whether the join screen is still wanted after cancelling the busy <paramref name="status"/>: cancelling a join
+        /// (or any other pending operation) goes back to the hub, never to the code screen.
+        /// </summary>
+        public static bool WantsJoinAfterCancelBusy(OnlineSessionStatus status, bool wantsJoin)
+        {
+            return wantsJoin && !CanCancelBusy(status);
+        }
+
+        /// <summary>
         /// Room hint key: syncing until the lobby appears, the spectator notice, then waiting for a player, for both picks
         /// or for the host. Null when nothing is missing for the host (Start is available).
         /// </summary>
