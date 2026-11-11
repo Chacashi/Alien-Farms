@@ -31,7 +31,11 @@ namespace AlienFarms.Networking.Session
             }
         }
 
-        /// <summary>Gives <paramref name="clientId"/> the first free seat (Player1 first). False when it already has one or all are taken.</summary>
+        /// <summary>
+        /// Gives <paramref name="clientId"/> the first free seat (Player1 first). False when it already has one or all are
+        /// taken. Since 2.2 the seat starts without a character (<see cref="ConnectionPayload.NoCharacter"/>): the payload
+        /// pick is ignored and the online room sets it through <see cref="TrySetCharacter"/>.
+        /// </summary>
         public bool TryAssign(ulong clientId, in ConnectionPayload payload, out PlayerId id)
         {
             id = PlayerId.None;
@@ -53,7 +57,7 @@ namespace AlienFarms.Networking.Session
                     Id = id,
                     ClientId = clientId,
                     DisplayName = payload.DisplayName,
-                    CharacterIndex = payload.CharacterIndex,
+                    CharacterIndex = ConnectionPayload.NoCharacter,
                     Connected = true,
                     UgsPlayerId = payload.UgsPlayerId
                 };
@@ -61,6 +65,19 @@ namespace AlienFarms.Networking.Session
             }
 
             return false;
+        }
+
+        /// <summary>Sets the character of the seat <paramref name="id"/>. False when that seat is empty.</summary>
+        public bool TrySetCharacter(PlayerId id, byte characterIndex)
+        {
+            int index = (int)id - 1;
+            if (index < 0 || index >= _slots.Length || !_slots[index].IsOccupied)
+            {
+                return false;
+            }
+
+            _slots[index].CharacterIndex = characterIndex;
+            return true;
         }
 
         public bool TryGetByClient(ulong clientId, out PlayerSlot slot)

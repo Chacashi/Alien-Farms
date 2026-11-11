@@ -23,5 +23,15 @@ namespace AlienFarms.Core
         public const string Busy = "online.error.busy";
         public const string NotConfigured = "online.error.not_configured";
         public const string Unknown = "online.error.unknown";
+
+        // Online room (lobby).
+        /// <summary>The requested character is already picked by the other player.</summary>
+        public const string CharacterTaken = "online.error.character_taken";
+        /// <summary>The request came from a participant without a player seat (spectator).</summary>
+        public const string NotSeated = "online.error.not_seated";
+        /// <summary>Start requested while the room does not allow it (missing player or pick).</summary>
+        public const string CannotStart = "online.error.cannot_start";
+        /// <summary>The gameplay scene could not be loaded after starting.</summary>
+        public const string StartFailed = "online.error.start_failed";
     }
 }

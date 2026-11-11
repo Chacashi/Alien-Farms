@@ -57,6 +57,9 @@ namespace AlienFarms.Networking.Diagnostics
         [SerializeField, Tooltip("Optional join code field read by JoinSession.")]
         private TMP_InputField _codeField;
 
+        [SerializeField, Tooltip("Optional: online room channel. When a room is listening, Start match goes through it (picks validated, characters carried to the match).")]
+        private OnlineLobbyChannel _lobbyChannel;
+
         private NetworkManager _subscribedManager;
         private Status _shownStatus = (Status)(-1);
         private int _shownPlayers = -1;
@@ -126,13 +129,32 @@ namespace AlienFarms.Networking.Diagnostics
             }
         }
 
-        /// <summary>Button (session host): loads the gameplay scene for everyone in the session.</summary>
+        /// <summary>
+        /// Button (session host): starts the match through the online room when one is listening (it validates the
+        /// picks and loads the gameplay scene); otherwise loads the gameplay scene for everyone directly.
+        /// </summary>
         public void StartSessionMatch()
         {
             if (_sessionChannel == null || !_sessionChannel.IsHost || _sessionChannel.Status != OnlineSessionStatus.InSession)
             {
                 ShowError("Not hosting a session.");
                 return;
+            }
+
+            if (_lobbyChannel != null)
+            {
+                if (_lobbyChannel.RequestStart())
+                {
+                    if (_lobbyChannel.HasReject)
+                    {
+                        ShowError($"Room refused to start: {_lobbyChannel.LastRejectKey}");
+                    }
+
+                    return;
+                }
+
+                // No room listening (e.g. a scene without LobbyStateSpawner): fall back to the direct load.
+                _lobbyChannel.ClearReject();
             }
 
             NetworkSceneLoader loader = _anchor != null ? _anchor.SceneLoader : null;

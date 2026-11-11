@@ -14,7 +14,8 @@ namespace AlienFarms.Menu
     /// cancels. When both have confirmed, their devices, scheme and character go to the <see cref="MatchSession"/> and the
     /// gameplay scene is loaded. Input state changes are always applied outside input callbacks (next frame on join,
     /// or from PlayerMenuInput's Update dispatch). Title sub-menus (<see cref="SubMenuPanel"/>) are navigated by the
-    /// title owner; Cancel or the panel's Back button returns to the title.
+    /// title owner; Cancel or the panel's Back button returns to the title. 'Play online' hands the title owner to the
+    /// <see cref="OnlineMenuController"/> (Online phase); there the match scene is loaded by the network, never here.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MenuFlowController : MonoBehaviour
@@ -42,6 +43,16 @@ namespace AlienFarms.Menu
         [SerializeField, Tooltip("Overlay shown while the gameplay scene is about to load.")]
         private GameObject _loadingOverlay;
 
+        [Header("Online")]
+        [SerializeField, Tooltip("Online panel controller (--- Managers ---/OnlineMenu).")]
+        private OnlineMenuController _online;
+
+        [SerializeField, Tooltip("Runtime online session channel. In a session the MatchSession is not cleared on load and the online panel reopens (R1).")]
+        private OnlineSessionChannel _onlineSession;
+
+        [SerializeField, Tooltip("Title button focused when backing out of the online panel (BTN_PlayOnline).")]
+        private GameObject _playOnlineButton;
+
         // Index = (int)PlayerId - 1. Handlers are created once (Awake) so they can be unsubscribed.
         private readonly PlayerMenuInput[] _players = new PlayerMenuInput[MaxPlayers];
         private readonly Action<int>[] _horizontalHandlers = new Action<int>[MaxPlayers];
@@ -53,6 +64,7 @@ namespace AlienFarms.Menu
         private SubMenuPanel _activeSubMenu;
         private GameObject _titleReturnSelection;
         private MenuPhase _phase = MenuPhase.Title;
+        private PlayerId _onlineOwner = PlayerId.None;
         private float _loadAt;
         private bool _isLeaving;
 
@@ -60,8 +72,11 @@ namespace AlienFarms.Menu
 
         private void Awake()
         {
+            // R1: a MainMenu (re)loaded while in an online session keeps the session's MatchSession (online mode).
+            bool inOnlineSession = _onlineSession != null && _onlineSession.Status == OnlineSessionStatus.InSession;
+
             // Back on the title: whatever was picked before is gone.
-            if (_session != null)
+            if (_session != null && !inOnlineSession)
             {
                 _session.Clear();
             }
@@ -86,10 +101,27 @@ namespace AlienFarms.Menu
                 _title.Show();
                 _title.SetPlayerJoined(false);
             }
+
+            if (inOnlineSession && _online != null)
+            {
+                // Straight back to the room; the first player to join becomes its owner.
+                _phase = MenuPhase.Online;
+                if (_title != null)
+                {
+                    _title.Hide();
+                }
+
+                _online.Enter(null);
+            }
         }
 
         private void OnEnable()
         {
+            if (_online != null)
+            {
+                _online.ExitRequested += HandleOnlineExitRequested;
+            }
+
             if (_lobby == null)
             {
                 return;
@@ -101,6 +133,11 @@ namespace AlienFarms.Menu
 
         private void OnDisable()
         {
+            if (_online != null)
+            {
+                _online.ExitRequested -= HandleOnlineExitRequested;
+            }
+
             if (_lobby != null)
             {
                 _lobby.Joined -= HandleJoined;
@@ -123,6 +160,12 @@ namespace AlienFarms.Menu
                     _applyFrame[i] = NoPendingFrame;
                     ApplyPlayerState((PlayerId)(i + 1));
                 }
+            }
+
+            if (_phase == MenuPhase.Online)
+            {
+                // The network loads the match scene: only block the menu while it does (back to normal if it fails).
+                _isLeaving = _online != null && _online.IsLoadingMatch;
             }
 
             if (_phase == MenuPhase.Loading && !_isLeaving && Time.unscaledTime >= _loadAt)
@@ -166,6 +209,32 @@ namespace AlienFarms.Menu
             // Called from a button onClick (inside an event system update): input changes go to the next frame.
             RequestApplyAll();
             Render();
+        }
+
+        /// <summary>Title 'Play online' button: the title owner opens the online panel (one local player per machine).</summary>
+        public void PlayOnline()
+        {
+            PlayerId owner = GetTitleOwner();
+            if (_phase != MenuPhase.Title || _isLeaving || _online == null || owner == PlayerId.None)
+            {
+                return;
+            }
+
+            _phase = MenuPhase.Online;
+            _onlineOwner = owner;
+            if (_title != null)
+            {
+                _title.Hide();
+            }
+
+            if (_lobby != null)
+            {
+                _lobby.SetJoiningEnabled(false);
+            }
+
+            _online.Enter(_players[(int)owner - 1]);
+            // Called from a button onClick: input routing goes to the next frame.
+            RequestApplyAll();
         }
 
         /// <summary>Title sub-menu buttons (Options, How to play): opens <paramref name="panel"/> for the title owner.</summary>
@@ -242,6 +311,16 @@ namespace AlienFarms.Menu
                 _selection.Join(menu.Id);
                 Render();
             }
+            else if (_phase == MenuPhase.Online && _onlineOwner == PlayerId.None && _online != null)
+            {
+                // MainMenu reloaded in a session (R1): the first player to join owns the online panel.
+                _onlineOwner = menu.Id;
+                _online.Enter(menu);
+                if (_lobby != null)
+                {
+                    _lobby.SetJoiningEnabled(false);
+                }
+            }
 
             if (_title != null)
             {
@@ -298,6 +377,15 @@ namespace AlienFarms.Menu
                     break;
                 case MenuPhase.Loading:
                     CancelLoading();
+                    break;
+                case MenuPhase.Online:
+                    if (id == _onlineOwner)
+                    {
+                        // The owner's device is gone: close the panel (leaves the session) and go back to the title.
+                        ExitOnline();
+                        EnterTitle();
+                    }
+
                     break;
                 default:
                     if (_lobby != null && _lobby.JoinedCount == 0)
@@ -383,6 +471,54 @@ namespace AlienFarms.Menu
                     }
 
                     break;
+                case MenuPhase.Online:
+                    // The owner navigates the online panel; another local player backs out and frees its device.
+                    if (id == _onlineOwner && _online != null)
+                    {
+                        _online.HandleCancel();
+                    }
+                    else
+                    {
+                        RemovePlayer(id);
+                    }
+
+                    break;
+            }
+        }
+
+        /// <summary>The online panel backed out of its hub (Back / Cancel): back to the title, on 'Play online'.</summary>
+        private void HandleOnlineExitRequested()
+        {
+            if (_phase != MenuPhase.Online || _isLeaving)
+            {
+                return;
+            }
+
+            ExitOnline();
+            _phase = MenuPhase.Title;
+            if (_title != null)
+            {
+                _title.Show();
+                _title.SetPlayerJoined(_lobby != null && _lobby.JoinedCount > 0);
+            }
+
+            _titleReturnSelection = _playOnlineButton;
+            // May come from a button onClick: input routing goes to the next frame.
+            RequestApplyAll();
+        }
+
+        /// <summary>Closes the online panel and lets players join again.</summary>
+        private void ExitOnline()
+        {
+            _onlineOwner = PlayerId.None;
+            if (_online != null)
+            {
+                _online.Exit();
+            }
+
+            if (_lobby != null)
+            {
+                _lobby.SetJoiningEnabled(true);
             }
         }
 
@@ -575,6 +711,22 @@ namespace AlienFarms.Menu
                 return;
             }
 
+            if (_phase == MenuPhase.Online)
+            {
+                if (id == _onlineOwner && _online != null)
+                {
+                    // The online controller owns this player's scope and focus (applied on its next frame).
+                    _online.RefreshFocus();
+                }
+                else
+                {
+                    // Not the owner: scoped to the (inactive) select panel, so only its Cancel arrives (to leave).
+                    menu.EnterMenu(_select != null ? _select.MenuRoot : null, null);
+                }
+
+                return;
+            }
+
             // Character select and loading: code-driven (no focused Selectable), each player with its own cursor.
             menu.EnterMenu(_select != null ? _select.MenuRoot : null, null);
         }
@@ -649,6 +801,11 @@ namespace AlienFarms.Menu
             if (_title == null || _select == null)
             {
                 Debug.LogWarning($"[{nameof(MenuFlowController)}] Missing TitleScreenView or CharacterSelectView on '{name}'.", this);
+            }
+
+            if (_online == null || _onlineSession == null || _playOnlineButton == null)
+            {
+                Debug.LogWarning($"[{nameof(MenuFlowController)}] Missing OnlineMenuController, OnlineSessionChannel or Play online button on '{name}'.", this);
             }
         }
     }

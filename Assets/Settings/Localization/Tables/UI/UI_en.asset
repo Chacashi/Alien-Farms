@@ -158,6 +158,214 @@ MonoBehaviour:
     m_Localized: Thanks for playing!
     m_Metadata:
       m_Items: []
+  - m_Id: 3979076713566208
+    m_Localized: Play Online
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120640
+    m_Localized: Online Play
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120641
+    m_Localized: Signed in as {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120642
+    m_Localized: Create Room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120643
+    m_Localized: Join with Code
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120644
+    m_Localized: Type the room code (use the keyboard)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120645
+    m_Localized: Join
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120646
+    m_Localized: Room Code
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120647
+    m_Localized: Start Match
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120648
+    m_Localized: Leave Room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120649
+    m_Localized: "Waiting for player\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120650
+    m_Localized: "Waiting for the host\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120651
+    m_Localized: Pick your characters
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120652
+    m_Localized: You are spectating
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120653
+    m_Localized: "Syncing\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120654
+    m_Localized: Host
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120655
+    m_Localized: You
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120656
+    m_Localized: "Signing in\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120657
+    m_Localized: "Creating room\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120658
+    m_Localized: "Joining room\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120659
+    m_Localized: "Leaving room\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120660
+    m_Localized: "Loading match\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120661
+    m_Localized: Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120662
+    m_Localized: Your Stats
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120663
+    m_Localized: Matches
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120664
+    m_Localized: Wins
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120665
+    m_Localized: Draws
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120666
+    m_Localized: Losses
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120667
+    m_Localized: Animals Scored
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120668
+    m_Localized: Tackles Landed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120669
+    m_Localized: Play online to save your stats
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120670
+    m_Localized: Saved
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120671
+    m_Localized: Could not sign in.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120672
+    m_Localized: Online services are unavailable.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120673
+    m_Localized: No internet connection.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120674
+    m_Localized: Too many attempts. Please wait a moment.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120675
+    m_Localized: Invalid code.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120676
+    m_Localized: No room found with that code.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120677
+    m_Localized: The room is full.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120678
+    m_Localized: Your game version does not match the host.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120679
+    m_Localized: The host closed the room.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120680
+    m_Localized: Could not set up the connection (Relay).
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120681
+    m_Localized: Connection to the room failed.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120682
+    m_Localized: Could not join the room.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120683
+    m_Localized: You are already in a room.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120684
+    m_Localized: Wait for the current operation to finish.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120685
+    m_Localized: Online mode is not available.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120686
+    m_Localized: An unexpected error occurred.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120687
+    m_Localized: That character is already taken.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120688
+    m_Localized: Spectators cannot pick a character.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120689
+    m_Localized: Players or characters are missing to start.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120690
+    m_Localized: Could not load the match.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

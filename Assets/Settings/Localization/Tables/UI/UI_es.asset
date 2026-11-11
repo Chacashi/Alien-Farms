@@ -158,6 +158,214 @@ MonoBehaviour:
     m_Localized: "\xA1Gracias por jugar!"
     m_Metadata:
       m_Items: []
+  - m_Id: 3979076713566208
+    m_Localized: "Jugar en l\xEDnea"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120640
+    m_Localized: "Partida en l\xEDnea"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120641
+    m_Localized: Conectado como {0}
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120642
+    m_Localized: Crear sala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120643
+    m_Localized: "Unirse con c\xF3digo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120644
+    m_Localized: "Escribe el c\xF3digo de la sala (usa el teclado)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120645
+    m_Localized: Unirse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120646
+    m_Localized: "C\xF3digo de sala"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120647
+    m_Localized: Empezar partida
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120648
+    m_Localized: Salir de la sala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120649
+    m_Localized: "Esperando jugador\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120650
+    m_Localized: "Esperando al anfitri\xF3n\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120651
+    m_Localized: Elijan personaje
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120652
+    m_Localized: "Est\xE1s mirando"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120653
+    m_Localized: "Sincronizando\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120654
+    m_Localized: "Anfitri\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120655
+    m_Localized: "T\xFA"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120656
+    m_Localized: "Conectando\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120657
+    m_Localized: "Creando sala\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120658
+    m_Localized: "Uni\xE9ndose a la sala\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120659
+    m_Localized: "Saliendo de la sala\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120660
+    m_Localized: "Cargando partida\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120661
+    m_Localized: Cancelar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120662
+    m_Localized: "Tus estad\xEDsticas"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120663
+    m_Localized: Partidas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120664
+    m_Localized: Victorias
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120665
+    m_Localized: Empates
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120666
+    m_Localized: Derrotas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120667
+    m_Localized: Animales anotados
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120668
+    m_Localized: Tackles conectados
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120669
+    m_Localized: "Juega en l\xEDnea para guardar tus estad\xEDsticas"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120670
+    m_Localized: Guardado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120671
+    m_Localized: "No se pudo iniciar sesi\xF3n."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120672
+    m_Localized: "Los servicios en l\xEDnea no est\xE1n disponibles."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120673
+    m_Localized: "Sin conexi\xF3n a internet."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120674
+    m_Localized: Demasiados intentos. Espera un momento.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120675
+    m_Localized: "C\xF3digo no v\xE1lido."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120676
+    m_Localized: "No existe una sala con ese c\xF3digo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120677
+    m_Localized: "La sala est\xE1 llena."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120678
+    m_Localized: "Tu versi\xF3n del juego no coincide con la del anfitri\xF3n."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120679
+    m_Localized: "El anfitri\xF3n cerr\xF3 la sala."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120680
+    m_Localized: "No se pudo establecer la conexi\xF3n (Relay)."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120681
+    m_Localized: "Fall\xF3 la conexi\xF3n con la sala."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120682
+    m_Localized: No se pudo unir a la sala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120683
+    m_Localized: "Ya est\xE1s en una sala."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120684
+    m_Localized: "Espera a que termine la operaci\xF3n actual."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120685
+    m_Localized: "El modo en l\xEDnea no est\xE1 disponible."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120686
+    m_Localized: "Ocurri\xF3 un error inesperado."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120687
+    m_Localized: Ese personaje ya fue elegido.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120688
+    m_Localized: Los espectadores no pueden elegir personaje.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120689
+    m_Localized: Faltan jugadores o personajes para empezar.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 3979076747120690
+    m_Localized: No se pudo cargar la partida.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

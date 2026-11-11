@@ -8,6 +8,9 @@ namespace AlienFarms.Menu
         Loading = 2,
 
         /// <summary>A sub-menu opened from the title (Options, How to play); the title owner navigates it.</summary>
-        SubMenu = 3
+        SubMenu = 3,
+
+        /// <summary>Online panel (hub, join, room); driven by <see cref="OnlineMenuController"/> for the title owner.</summary>
+        Online = 4
     }
 }

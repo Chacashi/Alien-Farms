@@ -3194,6 +3194,7 @@ MonoBehaviour:
   _addressField: {fileID: 5645346442573971402}
   _sessionChannel: {fileID: 11400000, guid: e886cd36434b8b84582b8c99c48ae0c1, type: 2}
   _codeField: {fileID: 3464495212963849399}
+  _lobbyChannel: {fileID: 11400000, guid: 67f61a2f450de3341a7ce9c7faea7e09, type: 2}
 --- !u!1 &9005447587450404222
 GameObject:
   m_ObjectHideFlags: 0

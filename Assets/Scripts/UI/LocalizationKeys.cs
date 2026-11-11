@@ -1,3 +1,5 @@
+using AlienFarms.Core;
+
 namespace AlienFarms.UI
 {
     /// <summary>
@@ -51,6 +53,64 @@ namespace AlienFarms.UI
         public const string OptionsSfx = "options.sfx";
         public const string OptionsMuteAll = "options.mute_all";
         public const string OptionsLanguage = "options.language";
+
+        // UI table: online room (task 2.2).
+        public const string TitlePlayOnline = "title.play_online";
+        public const string OnlineHeader = "online.header";
+        public const string OnlineHubSignedInAs = "online.hub.signed_in_as";
+        public const string OnlineHubCreate = "online.hub.create";
+        public const string OnlineHubJoin = "online.hub.join";
+        public const string OnlineJoinPrompt = "online.join.prompt";
+        public const string OnlineJoinConfirm = "online.join.confirm";
+        public const string OnlineRoomCode = "online.room.code";
+        public const string OnlineRoomStart = "online.room.start";
+        public const string OnlineRoomLeave = "online.room.leave";
+        public const string OnlineRoomWaitingPlayer = "online.room.waiting_player";
+        public const string OnlineRoomWaitingHost = "online.room.waiting_host";
+        public const string OnlineRoomNeedPicks = "online.room.need_picks";
+        public const string OnlineRoomSpectator = "online.room.spectator";
+        public const string OnlineRoomSyncing = "online.room.syncing";
+        public const string OnlineBadgeHost = "online.badge.host";
+        public const string OnlineBadgeYou = "online.badge.you";
+        public const string OnlineBusySigningIn = "online.busy.signing_in";
+        public const string OnlineBusyCreating = "online.busy.creating";
+        public const string OnlineBusyJoining = "online.busy.joining";
+        public const string OnlineBusyLeaving = "online.busy.leaving";
+        public const string OnlineBusyStarting = "online.busy.starting";
+        public const string OnlineBusyCancel = "online.busy.cancel";
+
+        // UI table: title stats (task 2.2, written from 2.8).
+        public const string StatsHeader = "stats.header";
+        public const string StatsMatches = "stats.matches";
+        public const string StatsWins = "stats.wins";
+        public const string StatsDraws = "stats.draws";
+        public const string StatsLosses = "stats.losses";
+        public const string StatsAnimals = "stats.animals";
+        public const string StatsTackles = "stats.tackles";
+        public const string StatsEmptyHint = "stats.empty_hint";
+        public const string StatsSaved = "stats.saved";
+
+        // UI table: online errors. Values come from OnlineSessionErrorKeys (single source of truth).
+        public const string OnlineErrorSignInFailed = OnlineSessionErrorKeys.SignInFailed;
+        public const string OnlineErrorServicesUnavailable = OnlineSessionErrorKeys.ServicesUnavailable;
+        public const string OnlineErrorNoConnection = OnlineSessionErrorKeys.NoConnection;
+        public const string OnlineErrorRateLimited = OnlineSessionErrorKeys.RateLimited;
+        public const string OnlineErrorInvalidCode = OnlineSessionErrorKeys.InvalidCode;
+        public const string OnlineErrorSessionNotFound = OnlineSessionErrorKeys.SessionNotFound;
+        public const string OnlineErrorSessionFull = OnlineSessionErrorKeys.SessionFull;
+        public const string OnlineErrorProtocolMismatch = OnlineSessionErrorKeys.ProtocolMismatch;
+        public const string OnlineErrorHostLeft = OnlineSessionErrorKeys.HostLeft;
+        public const string OnlineErrorRelayFailed = OnlineSessionErrorKeys.RelayFailed;
+        public const string OnlineErrorConnectionFailed = OnlineSessionErrorKeys.ConnectionFailed;
+        public const string OnlineErrorJoinFailed = OnlineSessionErrorKeys.JoinFailed;
+        public const string OnlineErrorAlreadyInSession = OnlineSessionErrorKeys.AlreadyInSession;
+        public const string OnlineErrorBusy = OnlineSessionErrorKeys.Busy;
+        public const string OnlineErrorNotConfigured = OnlineSessionErrorKeys.NotConfigured;
+        public const string OnlineErrorUnknown = OnlineSessionErrorKeys.Unknown;
+        public const string OnlineErrorCharacterTaken = OnlineSessionErrorKeys.CharacterTaken;
+        public const string OnlineErrorNotSeated = OnlineSessionErrorKeys.NotSeated;
+        public const string OnlineErrorCannotStart = OnlineSessionErrorKeys.CannotStart;
+        public const string OnlineErrorStartFailed = OnlineSessionErrorKeys.StartFailed;
 
         // HowToPlay table.
         public const string HowToGoal = "howto.goal";

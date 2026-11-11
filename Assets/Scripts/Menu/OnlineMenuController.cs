@@ -1,0 +1,596 @@
+using System;
+using AlienFarms.Core;
+using AlienFarms.Data;
+using AlienFarms.Input;
+using AlienFarms.UI;
+using UnityEngine;
+
+namespace AlienFarms.Menu
+{
+    /// <summary>
+    /// Online phase of the MainMenu (hub, join, room) for the title owner. Talks to the network only through the
+    /// <see cref="OnlineSessionChannel"/> and <see cref="OnlineLobbyChannel"/>: buttons call their <c>Request*</c> methods
+    /// and every channel change only marks the panel dirty. The panel is rebuilt from the channels in the next frame's
+    /// Update (never inside a button click), so the owner's input scope changes outside the event system and nothing is
+    /// redrawn per frame. A full rebuild also covers a MainMenu reloaded while in a session (R1).
+    /// </summary>
+    [DisallowMultipleComponent]
+    public sealed class OnlineMenuController : MonoBehaviour
+    {
+        private const int NoHover = -1;
+
+        [Header("Config")]
+        [SerializeField, Tooltip("Runtime online session channel (OnlineSessionChannel.asset).")]
+        private OnlineSessionChannel _session;
+
+        [SerializeField, Tooltip("Runtime online lobby channel (OnlineLobbyChannel.asset).")]
+        private OnlineLobbyChannel _lobby;
+
+        [SerializeField, Tooltip("Selectable characters; lobby character indices are roster indices.")]
+        private CharacterRoster _roster;
+
+        [Header("References")]
+        [SerializeField, Tooltip("Online panel view (UI_OnlinePanel).")]
+        private OnlinePanelView _view;
+
+        private PlayerMenuInput _owner;
+        private GameObject _focusOverride;
+        private OnlineScreen _shownScreen;
+        private int _dirtyFrame;
+        private int _hoverIndex = NoHover;
+        private bool _isActive;
+        private bool _wantsJoin;
+        private bool _dirty;
+        private bool _focusPending;
+        private bool _hasShownScreen;
+        private bool _shownReadOnly;
+        private bool _shownLocked;
+
+        /// <summary>The player backed out of the hub (Back / Cancel): the menu flow returns to the title.</summary>
+        public event Action ExitRequested;
+
+        /// <summary>True while the online panel is entered.</summary>
+        public bool IsActive => _isActive;
+
+        /// <summary>True while the host is loading the match (lobby Starting): the scene is loaded by the network.</summary>
+        public bool IsLoadingMatch => _isActive
+            && _session != null && _session.Status == OnlineSessionStatus.InSession
+            && _lobby != null && _lobby.Phase == OnlineLobbyPhase.Starting;
+
+        private OnlineSessionStatus Status => _session != null ? _session.Status : OnlineSessionStatus.SignedOut;
+
+        private OnlineLobbyPhase LobbyPhase => _lobby != null ? _lobby.Phase : OnlineLobbyPhase.Unavailable;
+
+        private OnlineScreen CurrentScreen => OnlineMenuRules.Resolve(Status, LobbyPhase, _wantsJoin);
+
+        private void OnEnable()
+        {
+            if (_session != null)
+            {
+                _session.Changed += MarkDirty;
+            }
+
+            if (_lobby != null)
+            {
+                _lobby.Changed += MarkDirty;
+            }
+
+            if (_view != null)
+            {
+                _view.CardClicked += HandleCardClicked;
+                _view.CardSelected += HandleCardSelected;
+            }
+
+            // Changes may have happened while disabled (or before this scene loaded): rebuild everything.
+            _hasShownScreen = false;
+            MarkDirty();
+        }
+
+        private void OnDisable()
+        {
+            if (_session != null)
+            {
+                _session.Changed -= MarkDirty;
+            }
+
+            if (_lobby != null)
+            {
+                _lobby.Changed -= MarkDirty;
+            }
+
+            if (_view != null)
+            {
+                _view.CardClicked -= HandleCardClicked;
+                _view.CardSelected -= HandleCardSelected;
+            }
+        }
+
+        private void Update()
+        {
+            // Strictly after the frame that marked it: changes may come from a button click inside the event system.
+            if (!_isActive || !_dirty || Time.frameCount <= _dirtyFrame)
+            {
+                return;
+            }
+
+            _dirty = false;
+            Refresh();
+        }
+
+        /// <summary>
+        /// Opens the online panel for <paramref name="owner"/> and asks to sign in. <paramref name="owner"/> may be null
+        /// (MainMenu reloaded in a session before any player joined): the panel renders and focus waits for an owner.
+        /// </summary>
+        public void Enter(PlayerMenuInput owner)
+        {
+            if (!_isActive)
+            {
+                _isActive = true;
+                _wantsJoin = false;
+                _hoverIndex = NoHover;
+                if (_view != null)
+                {
+                    _view.Show();
+                }
+
+                if (_session != null)
+                {
+                    _session.RequestSignIn();
+                }
+            }
+
+            _owner = owner;
+            _hasShownScreen = false;
+            MarkDirty();
+        }
+
+        /// <summary>Closes the panel. Leaves a session in progress (unless the match is loading).</summary>
+        public void Exit()
+        {
+            if (!_isActive)
+            {
+                return;
+            }
+
+            if (_session != null && LobbyPhase != OnlineLobbyPhase.Starting && OnlineSessionStatusRules.CanLeave(Status))
+            {
+                _session.RequestLeave();
+            }
+
+            _isActive = false;
+            _owner = null;
+            _dirty = false;
+            _focusPending = false;
+            _focusOverride = null;
+            if (_view != null)
+            {
+                _view.Hide();
+            }
+        }
+
+        /// <summary>Re-applies the owner's input scope and focus on the next frame (menu flow ApplyPlayerState).</summary>
+        public void RefreshFocus()
+        {
+            _focusPending = true;
+            MarkDirty();
+        }
+
+        /// <summary>
+        /// Owner's Cancel: Join -> hub; Room -> release the pick, or focus Leave without one; Hub -> exit to the title;
+        /// Busy -> cancel the pending create / join (or leave the panel while signing in). False when ignored.
+        /// </summary>
+        public bool HandleCancel()
+        {
+            if (!_isActive)
+            {
+                return false;
+            }
+
+            switch (CurrentScreen)
+            {
+                case OnlineScreen.Join:
+                    Back();
+                    return true;
+                case OnlineScreen.Room:
+                    if (HasLocalCharacter())
+                    {
+                        _lobby.RequestCharacter(OnlineLobbyChannel.ReleaseCharacter);
+                    }
+                    else
+                    {
+                        FocusLeave();
+                    }
+
+                    return true;
+                case OnlineScreen.Busy:
+                    return CancelBusyInternal();
+                default:
+                    ExitRequested?.Invoke();
+                    return true;
+            }
+        }
+
+        // ---- Buttons (OnClick) ----
+
+        /// <summary>Hub 'Create room'. Signed out (sign-in failed): retries the sign-in instead.</summary>
+        public void CreateRoom()
+        {
+            if (!_isActive || _session == null)
+            {
+                return;
+            }
+
+            if (Status == OnlineSessionStatus.SignedOut)
+            {
+                _session.RequestSignIn();
+                return;
+            }
+
+            _session.RequestCreate();
+        }
+
+        /// <summary>Hub 'Join room': opens the code screen.</summary>
+        public void OpenJoin()
+        {
+            if (!_isActive || CurrentScreen != OnlineScreen.Hub)
+            {
+                return;
+            }
+
+            _wantsJoin = true;
+            MarkDirty();
+        }
+
+        /// <summary>Join screen 'Join': joins with the typed code (validated by the channel).</summary>
+        public void ConfirmJoin()
+        {
+            if (!_isActive || _session == null || _view == null)
+            {
+                return;
+            }
+
+            if (Status == OnlineSessionStatus.SignedOut)
+            {
+                _session.RequestSignIn();
+                return;
+            }
+
+            _session.RequestJoin(_view.CodeText);
+        }
+
+        /// <summary>Room 'Leave'.</summary>
+        public void LeaveRoom()
+        {
+            if (_isActive && _session != null)
+            {
+                _session.RequestLeave();
+            }
+        }
+
+        /// <summary>Room 'Start' (host): the lobby validates and loads the match.</summary>
+        public void StartMatch()
+        {
+            if (_isActive && _session != null && _session.IsHost && _lobby != null)
+            {
+                _lobby.RequestStart();
+            }
+        }
+
+        /// <summary>'Back' on the hub (exit to the title) or on the join screen (back to the hub).</summary>
+        public void Back()
+        {
+            if (!_isActive)
+            {
+                return;
+            }
+
+            OnlineScreen screen = CurrentScreen;
+            if (screen == OnlineScreen.Join)
+            {
+                _wantsJoin = false;
+                MarkDirty();
+            }
+            else if (screen == OnlineScreen.Hub)
+            {
+                ExitRequested?.Invoke();
+            }
+        }
+
+        /// <summary>Busy 'Cancel'.</summary>
+        public void CancelBusy()
+        {
+            if (_isActive && CurrentScreen == OnlineScreen.Busy)
+            {
+                CancelBusyInternal();
+            }
+        }
+
+        // ---- Internals ----
+
+        private bool CancelBusyInternal()
+        {
+            OnlineSessionStatus status = Status;
+            if (!OnlineMenuRules.CanCancelBusy(status))
+            {
+                return false;
+            }
+
+            if (status == OnlineSessionStatus.SigningIn)
+            {
+                // Sign-in cannot be aborted; it keeps going in the background.
+                ExitRequested?.Invoke();
+            }
+            else if (_session != null)
+            {
+                _session.RequestLeave();
+            }
+
+            return true;
+        }
+
+        private void MarkDirty()
+        {
+            _dirty = true;
+            _dirtyFrame = Time.frameCount;
+        }
+
+        private void FocusLeave()
+        {
+            if (_view == null)
+            {
+                return;
+            }
+
+            _focusOverride = _view.LeaveSelectable;
+            RefreshFocus();
+        }
+
+        private void HandleCardClicked(CharacterDefinition character)
+        {
+            if (!_isActive || _lobby == null || _roster == null || CurrentScreen != OnlineScreen.Room)
+            {
+                return;
+            }
+
+            int index = _roster.IndexOf(character);
+            if (index >= 0)
+            {
+                _hoverIndex = index;
+                _lobby.RequestCharacter(index);
+            }
+        }
+
+        private void HandleCardSelected(CharacterDefinition character)
+        {
+            if (!_isActive || _roster == null)
+            {
+                return;
+            }
+
+            int index = _roster.IndexOf(character);
+            if (index != _hoverIndex)
+            {
+                _hoverIndex = index;
+                MarkDirty();
+            }
+        }
+
+        /// <summary>Rebuilds the whole panel from the channels and moves the owner's focus when the screen changed.</summary>
+        private void Refresh()
+        {
+            if (_view == null)
+            {
+                return;
+            }
+
+            OnlineSessionStatus status = Status;
+            OnlineLobbyPhase phase = LobbyPhase;
+            if (status == OnlineSessionStatus.InSession)
+            {
+                // Reached the room: the next time the hub shows, it is the hub (not the code screen).
+                _wantsJoin = false;
+            }
+
+            OnlineScreen screen = OnlineMenuRules.Resolve(status, phase, _wantsJoin);
+            _view.ShowScreen(screen);
+            _view.ShowError(GetErrorKey(screen));
+
+            bool readOnly = false;
+            bool locked = false;
+            switch (screen)
+            {
+                case OnlineScreen.Hub:
+                    _view.SetSignedInAs(GetLocalDisplayName());
+                    break;
+                case OnlineScreen.Busy:
+                    _view.SetBusy(OnlineMenuRules.BusyKey(status, phase), OnlineMenuRules.CanCancelBusy(status));
+                    break;
+                case OnlineScreen.Room:
+                    readOnly = RenderRoom(phase, out locked);
+                    break;
+            }
+
+            bool screenChanged = !_hasShownScreen || screen != _shownScreen;
+            bool roleChanged = screen == OnlineScreen.Room && (readOnly != _shownReadOnly || locked != _shownLocked);
+            if (screenChanged || roleChanged || _focusPending)
+            {
+                ApplyFocus(screen, readOnly, locked, screenChanged || roleChanged);
+            }
+        }
+
+        private void ApplyFocus(OnlineScreen screen, bool readOnly, bool locked, bool screenChanged)
+        {
+            if (_owner == null)
+            {
+                // No owner yet: keep the request until one enters.
+                return;
+            }
+
+            GameObject target;
+            if (_focusOverride != null && !screenChanged)
+            {
+                target = _focusOverride;
+            }
+            else if (screen == OnlineScreen.Room && readOnly)
+            {
+                target = _view.LeaveSelectable;
+            }
+            else if (screen == OnlineScreen.Room && locked)
+            {
+                // Picked = ready: the cards are locked, the host waits on Start and the guest on Leave (Cancel releases).
+                GameObject start = _session != null && _session.IsHost ? _view.StartSelectable : null;
+                target = start != null ? start : _view.LeaveSelectable;
+            }
+            else
+            {
+                target = _view.GetFirstSelected(screen);
+            }
+
+            _owner.EnterMenu(_view.GetRoot(screen), target);
+            _hasShownScreen = true;
+            _shownScreen = screen;
+            _shownReadOnly = readOnly;
+            _shownLocked = locked;
+            _focusPending = false;
+            _focusOverride = null;
+        }
+
+        /// <summary>
+        /// Renders cards, seats, spectator, code, start and hint. Returns true when the room is read-only here;
+        /// <paramref name="locked"/> is true when the local seat holds a pick (cards locked until it is released).
+        /// </summary>
+        private bool RenderRoom(OnlineLobbyPhase phase, out bool locked)
+        {
+            PlayerId localId = _lobby != null ? _lobby.LocalPlayerId : PlayerId.None;
+            OnlineLobbySeat localSeat = default;
+            bool seated = _lobby != null && _lobby.TryGetSeat(localId, out localSeat);
+            bool localHasCharacter = seated && localSeat.HasCharacter;
+            bool isSpectator = _lobby != null && _lobby.IsLocalSpectator;
+            bool open = phase == OnlineLobbyPhase.Open;
+
+            int count = _roster != null ? _roster.Count : 0;
+            for (int i = 0; i < count; i++)
+            {
+                // Only the local cursor is known; a picked player shows its lock instead of a cursor (as locally).
+                bool hover = seated && !localHasCharacter && _hoverIndex == i;
+                _view.RenderCard(_roster.Get(i), hover && localId == PlayerId.Player1, hover && localId == PlayerId.Player2, LockedBy(i));
+            }
+
+            bool p1Picked = RenderSeat(PlayerId.Player1);
+            bool p2Picked = RenderSeat(PlayerId.Player2);
+            bool allPicked = p1Picked && p2Picked;
+            _view.SetSpectator(isSpectator, GetSpectatorName());
+            _view.SetCode(_session != null ? _session.Code : null);
+            // Picking is being ready: the cards stay locked until Cancel releases the pick (as in the local selection).
+            _view.SetCardsInteractable(seated && open && !localHasCharacter);
+
+            bool isHost = _session != null && _session.IsHost;
+            _view.SetStart(isHost && !isSpectator, open && _lobby != null && _lobby.CanStart);
+            int seatCount = _lobby != null ? _lobby.SeatCount : 0;
+            _view.SetHint(OnlineMenuRules.HintKey(phase, seatCount, allPicked, isHost, isSpectator));
+
+            // Spectating, or the lobby has not appeared yet: nothing to pick, focus goes to Leave.
+            locked = localHasCharacter;
+            return !seated;
+        }
+
+        /// <summary>Renders one seat; true when it is occupied and has a pick.</summary>
+        private bool RenderSeat(PlayerId id)
+        {
+            OnlineLobbySeat seat = default;
+            bool occupied = _lobby != null && _lobby.TryGetSeat(id, out seat);
+            CharacterDefinition character = null;
+            if (occupied && _roster != null)
+            {
+                int index = seat.HasCharacter ? seat.CharacterIndex : seat.IsLocal ? _hoverIndex : NoHover;
+                character = _roster.Get(index);
+            }
+
+            _view.RenderSeat(id, seat, occupied, character);
+            return occupied && seat.HasCharacter;
+        }
+
+        private PlayerId LockedBy(int characterIndex)
+        {
+            int count = _lobby != null ? _lobby.SeatCount : 0;
+            for (int i = 0; i < count; i++)
+            {
+                OnlineLobbySeat seat = _lobby.GetSeat(i);
+                if (seat.CharacterIndex == characterIndex)
+                {
+                    return seat.Id;
+                }
+            }
+
+            return PlayerId.None;
+        }
+
+        private bool HasLocalCharacter()
+        {
+            return _lobby != null
+                && _lobby.TryGetSeat(_lobby.LocalPlayerId, out OnlineLobbySeat seat)
+                && seat.HasCharacter;
+        }
+
+        private string GetErrorKey(OnlineScreen screen)
+        {
+            // Room refusals only belong to the room: elsewhere a stale one would hide the session error.
+            string reject = screen == OnlineScreen.Room && _lobby != null ? _lobby.LastRejectKey : null;
+            if (!string.IsNullOrEmpty(reject))
+            {
+                return reject;
+            }
+
+            return _session != null ? _session.LastErrorKey : null;
+        }
+
+        private string GetSpectatorName()
+        {
+            int count = _session != null ? _session.ParticipantCount : 0;
+            for (int i = 0; i < count; i++)
+            {
+                OnlineParticipant participant = _session.GetParticipant(i);
+                if (participant.IsSpectator)
+                {
+                    return participant.DisplayName ?? string.Empty;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>Local participant's name when known, else the signed-in player id (null when signed out).</summary>
+        private string GetLocalDisplayName()
+        {
+            if (_session == null)
+            {
+                return null;
+            }
+
+            int count = _session.ParticipantCount;
+            for (int i = 0; i < count; i++)
+            {
+                OnlineParticipant participant = _session.GetParticipant(i);
+                if (participant.IsLocal && !string.IsNullOrEmpty(participant.DisplayName))
+                {
+                    return participant.DisplayName;
+                }
+            }
+
+            return _session.LocalPlayerId;
+        }
+
+        private void OnValidate()
+        {
+            if (_session == null || _lobby == null)
+            {
+                Debug.LogWarning($"[{nameof(OnlineMenuController)}] Missing OnlineSessionChannel or OnlineLobbyChannel on '{name}'.", this);
+            }
+
+            if (_roster == null || _view == null)
+            {
+                Debug.LogWarning($"[{nameof(OnlineMenuController)}] Missing CharacterRoster or OnlinePanelView on '{name}'.", this);
+            }
+        }
+    }
+}
