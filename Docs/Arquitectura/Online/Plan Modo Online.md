@@ -323,6 +323,8 @@ GP = gameplay-programmer · SB = scene-builder · QA = qa-tester · CR = code-re
 
 > Progreso 2026-11-11: 1.4 y 1.5 ✅. Host + cliente probados en MPPM: se mueven los dos jugadores (≈0,10 s de interpolación), `room_full`, desconexión y reconexión, `host_disconnected`. 413/413 tests. Método de prueba: los clones MPPM aparecen como instancias del MCP. Siguiente: 1.6.
 
+> Progreso 2026-11-11 (tarde): 1.6 ✅. CR aplicado (bomba despawneada mientras se carga ya no queda emparentada al avatar: `NetworkCarriable.ServerDetach` + `PooledParenting`; `RequestThrowRpc` con permiso Everyone y validación manual; bit `Paused` en `PlayerInputCommand`; `ReadyForRematch` limpio tras reconexión). Gate MPPM host + cliente: movimiento, agarre/lanzamiento/puntaje, ledger, bomba + stun, pausa cargando, fin de ronda cargando, Results y revancha OK (timer acortado en runtime, no se jugó un 5:00 real). Shutdown/salir de Play sin warnings (simulación a Replica en `OnNetworkDespawn`). `MaxPacketQueueSize` 512. 432/432 tests. Siguiente: 1.7.
+
 ### Semana 1 (11-10 → 11-16) · N1: núcleo online jugable (conexión directa)
 | # | Tarea | Agente | Verificación |
 |---|---|---|---|
@@ -331,7 +333,7 @@ GP = gameplay-programmer · SB = scene-builder · QA = qa-tester · CR = code-re
 | 1.3 ✅ | Refactor de los seams (Player, Animal, Bomb, ObstacleField, MatchManager, MatchExit, PauseController) | GP | **Gate:** los tests EditMode pasan y una partida local completa funciona |
 | 1.4 ✅ | (1.4a ✅ prefabs de red sobre los mismos prefabs, gate local OK; los animales sincronizan Rot Y porque la raíz rota al cargarlos. 1.4b = router, roots de modo, MatchNetwork y botones dev, después de 1.5) Prefabs `NetworkRoot` y `Player_Net`, red en animales y bomba, `NetworkPrefabs.asset`, roots de modo, `GameModeRouter`, `MatchNetwork`, botones dev Host/Cliente | SB | El modo local sigue funcionando |
 | 1.5 ✅ | `NetworkPlayer`, `NetworkPlayerInput`, `NetworkPlayerMotion` (sin predicción), `NetworkPlayerRoster`, `DirectConnection`, `NetworkSceneLoader` | GP | MPPM: 2 avatares se mueven |
-| 1.6 | `NetworkAnimal`/`NetworkBomb`, `NetworkCarry`, `NetworkMatchState`, la regla de GameEvents, `NetworkMatchExit` | GP | Partida de 5:00 completa en MPPM + revancha |
+| 1.6 ✅ | `NetworkAnimal`/`NetworkBomb`, `NetworkCarry`, `NetworkMatchState`, la regla de GameEvents, `NetworkMatchExit` | GP | Partida de 5:00 completa en MPPM + revancha |
 | 1.7 | Tests EditMode (buffer, interpolador, serialización) | GP + QA | En verde |
 
 ### Semana 2 (11-17 → 11-23) · N2: sesiones, ciclo de vida y colecciones
@@ -391,3 +393,5 @@ GP = gameplay-programmer · SB = scene-builder · QA = qa-tester · CR = code-re
 | `FixedString32Bytes` admite solo 29 bytes | El servidor trunca el nombre |
 | Escribir el código con gamepad | Se necesita teclado o pegar el código (6 caracteres) |
 | No hay host migration | Mensaje claro y vuelta al título |
+| Límite conocido (1.6): el reloj de los clientes sigue corriendo mientras el servidor tiene el match en `MatchManager.SetSuspended` | Resolver en 2.7: al reanudar, el servidor reescribe `RoundEndTime` con el tiempo restante |
+| Límite conocido (1.6): lanzar antes de recibir el ownership del objeto (< 1 RTT tras agarrarlo) no envía el pedido de lanzamiento | Termina en una suelta normal tras el timeout de 0,5 s (`ThrowRequestTimeout`); aceptado hasta la predicción del Hito N3 |

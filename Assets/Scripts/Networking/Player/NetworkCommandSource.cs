@@ -15,6 +15,7 @@ namespace AlienFarms.Networking.Player
         private bool _sprint;
         private bool _grab;
         private bool _aim;
+        private bool _paused;
 
         public event Action GrabStarted;
         public event Action GrabCanceled;
@@ -31,6 +32,9 @@ namespace AlienFarms.Networking.Player
 
         public bool IsAimHeld => _aim;
 
+        /// <summary>The last applied command came from a paused owner (see <see cref="PlayerInputCommand.IsPaused"/>).</summary>
+        public bool IsPaused => _paused;
+
         /// <summary>Makes <paramref name="command"/> the current input; Grab edges are raised after the state is updated.</summary>
         public void Apply(in PlayerInputCommand command)
         {
@@ -38,6 +42,7 @@ namespace AlienFarms.Networking.Player
             _move = command.Move;
             _sprint = command.IsSprintHeld;
             _aim = command.IsAimHeld;
+            _paused = command.IsPaused;
             _grab = command.IsGrabHeld;
 
             if (_grab && !wasGrabbing)
@@ -57,6 +62,7 @@ namespace AlienFarms.Networking.Player
             _sprint = false;
             _grab = false;
             _aim = false;
+            _paused = false;
         }
     }
 }

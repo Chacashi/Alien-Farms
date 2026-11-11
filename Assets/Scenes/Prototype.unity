@@ -10938,6 +10938,95 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 338047723}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &338905655
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 338905657}
+  - component: {fileID: 338905656}
+  - component: {fileID: 338905659}
+  - component: {fileID: 338905658}
+  m_Layer: 0
+  m_Name: MatchNetwork
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &338905656
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 338905655}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 2115112903
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  m_InScenePlacedDisabledByDefault: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  m_InScenePlaced: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 0
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!4 &338905657
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 338905655}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &338905658
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 338905655}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66c9591883de7ee449f59a7164f74ca2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Networking::AlienFarms.Networking.Match.NetworkPenLedger
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &338905659
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 338905655}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0646e8e485a4644582edbb92235e7aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Networking::AlienFarms.Networking.Match.NetworkMatchState
+  ShowTopMostFoldoutHeaderGroup: 1
+  _match: {fileID: 1011480437}
+  _obstacles: {fileID: 2132848145}
 --- !u!1 &339827712
 GameObject:
   m_ObjectHideFlags: 0
@@ -23514,6 +23603,52 @@ Transform:
   - {fileID: 1102785097}
   m_Father: {fileID: 1980325151}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &523516275
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 523516276}
+  - component: {fileID: 523516277}
+  m_Layer: 0
+  m_Name: NetworkMatchExit
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &523516276
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 523516275}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1404037737}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &523516277
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 523516275}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ccf642bebaa7ed4d85c473463227247, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Networking::AlienFarms.Networking.Match.NetworkMatchExit
+  _anchor: {fileID: 11400000, guid: 73498404eacadb24f9a4e5c637046ab3, type: 2}
+  _match: {fileID: 1011480437}
 --- !u!1 &523978390
 GameObject:
   m_ObjectHideFlags: 0
@@ -24257,6 +24392,55 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 545777312}
   m_CullTransparentMesh: 1
+--- !u!1 &546833743
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 546833744}
+  - component: {fileID: 546833745}
+  m_Layer: 0
+  m_Name: NetworkSpawnRegistry
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &546833744
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 546833743}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1404037737}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &546833745
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 546833743}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aca9118c32daca147b31ea2a05fbc2ea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Networking::AlienFarms.Networking.Pooling.NetworkSpawnRegistry
+  _anchor: {fileID: 11400000, guid: 73498404eacadb24f9a4e5c637046ab3, type: 2}
+  _animalSettings: {fileID: 11400000, guid: 288f1709df0336f4ea569c964a66e272, type: 2}
+  _bombData: {fileID: 11400000, guid: e196b9e3263ec96438029ffd2a5a4a45, type: 2}
+  _animalSpawner: {fileID: 188548379}
+  _bombSpawner: {fileID: 617870294}
 --- !u!1 &547744846
 GameObject:
   m_ObjectHideFlags: 0
@@ -56990,6 +57174,8 @@ Transform:
   m_Children:
   - {fileID: 138388042}
   - {fileID: 1705764387}
+  - {fileID: 546833744}
+  - {fileID: 523516276}
   m_Father: {fileID: 2022652060}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1404037738
@@ -87433,6 +87619,7 @@ SceneRoots:
   - {fileID: 223866923}
   - {fileID: 2022652060}
   - {fileID: 1278694690}
+  - {fileID: 338905657}
   - {fileID: 188548380}
   - {fileID: 1011480438}
   - {fileID: 617870295}

@@ -52,6 +52,9 @@ namespace AlienFarms.Networking.Player
         [SerializeField, Tooltip("Snapshot sync on this root (the roster flags teleports through it).")]
         private NetworkPlayerMotion _motion;
 
+        [SerializeField, Tooltip("Network carry on this root (server-side release and throw validation).")]
+        private NetworkCarry _carry;
+
         [Header("Owner-only (saved disabled in Player_Net)")]
         [SerializeField, Tooltip("PlayerInput on this root.")]
         private PlayerInput _playerInput;
@@ -74,7 +77,12 @@ namespace AlienFarms.Networking.Player
         private readonly NetworkVariable<FixedString32Bytes> _displayName = new NetworkVariable<FixedString32Bytes>(
             default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
+        // Written by the owner only (the server reads both players' flags to start the rematch).
+        private readonly NetworkVariable<bool> _readyForRematch = new NetworkVariable<bool>(
+            false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
         private PlayerId _raisedJoinFor = PlayerId.None;
+        private bool _watchingPhase;
         private bool _hasPendingInit;
         private PlayerId _pendingId;
         private byte _pendingCharacter = ConnectionPayload.NoCharacter;
@@ -87,6 +95,11 @@ namespace AlienFarms.Networking.Player
         public FixedString32Bytes DisplayName => _displayName.Value;
 
         public NetworkPlayerMotion Motion => _motion;
+
+        public NetworkCarry Carry => _carry;
+
+        /// <summary>This player asked for a rematch on the current results screen.</summary>
+        public bool IsReadyForRematch => _readyForRematch.Value;
 
         public PlayerRig Rig => _rig;
 
@@ -113,6 +126,20 @@ namespace AlienFarms.Networking.Player
             {
                 TryGetComponent(out _rig);
             }
+
+            if (_carry == null)
+            {
+                TryGetComponent(out _carry);
+            }
+        }
+
+        /// <summary>Owner only: marks (or clears) this player as ready for a rematch. Ignored on other instances.</summary>
+        public void SetReadyForRematch(bool ready)
+        {
+            if (IsSpawned && IsOwner && _readyForRematch.Value != ready)
+            {
+                _readyForRematch.Value = ready;
+            }
         }
 
         public override void OnNetworkSpawn()
@@ -138,6 +165,21 @@ namespace AlienFarms.Networking.Player
             {
                 _anchor.SetLocalPlayer(this);
             }
+
+            if (IsOwner)
+            {
+                // The flag only means something on the results screen: the owner clears it when the phase moves on,
+                // and never starts a session with a stale one (reconnect, pooled instance).
+                SetReadyForRematch(false);
+                GameEvents.OnMatchPhaseChanged += HandleMatchPhaseChanged;
+                _watchingPhase = true;
+            }
+        }
+
+        public override void OnGainedOwnership()
+        {
+            base.OnGainedOwnership();
+            SetReadyForRematch(false);
         }
 
         public override void OnNetworkDespawn()
@@ -145,6 +187,13 @@ namespace AlienFarms.Networking.Player
             if (_anchor != null)
             {
                 _anchor.ClearLocalPlayer(this);
+                _anchor.UnregisterPlayer(this);
+            }
+
+            if (_watchingPhase)
+            {
+                GameEvents.OnMatchPhaseChanged -= HandleMatchPhaseChanged;
+                _watchingPhase = false;
             }
 
             _playerId.OnValueChanged -= HandlePlayerIdChanged;
@@ -156,6 +205,14 @@ namespace AlienFarms.Networking.Player
             }
 
             _raisedJoinFor = PlayerId.None;
+        }
+
+        private void HandleMatchPhaseChanged(MatchPhase previous, MatchPhase current)
+        {
+            if (current != MatchPhase.Results)
+            {
+                SetReadyForRematch(false);
+            }
         }
 
         private void HandlePlayerIdChanged(PlayerId previous, PlayerId current)
@@ -242,9 +299,19 @@ namespace AlienFarms.Networking.Player
 
         private void ApplyIdentity()
         {
-            if (_identity != null && _playerId.Value != PlayerId.None)
+            if (_playerId.Value == PlayerId.None)
+            {
+                return;
+            }
+
+            if (_identity != null)
             {
                 _identity.Initialize(_playerId.Value);
+            }
+
+            if (_anchor != null)
+            {
+                _anchor.RegisterPlayer(this);
             }
         }
 
@@ -322,6 +389,11 @@ namespace AlienFarms.Networking.Player
             if (_motion == null)
             {
                 TryGetComponent(out _motion);
+            }
+
+            if (_carry == null)
+            {
+                TryGetComponent(out _carry);
             }
 
             if (_playerInput == null)

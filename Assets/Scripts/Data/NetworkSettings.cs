@@ -55,6 +55,9 @@ namespace AlienFarms.Data
         [SerializeField, Range(0f, 90f), Tooltip("Maximum difference between the reported throw view and the server's view (deg).")]
         private float _throwViewTolerance = 15f;
 
+        [SerializeField, Range(0.05f, 2f), Tooltip("Server: a remote player that released Grab while aiming is dropped (no throw) if its throw request does not arrive within this time (s).")]
+        private float _throwRequestTimeout = 0.5f;
+
         [SerializeField, Tooltip("Lag compensation enabled by default.")]
         private bool _lagCompDefault = true;
 
@@ -72,6 +75,7 @@ namespace AlienFarms.Data
         public float MaxRewindSeconds => _maxRewindSeconds;
         public float TackleRewindTolerance => _tackleRewindTolerance;
         public float ThrowViewTolerance => _throwViewTolerance;
+        public float ThrowRequestTimeout => _throwRequestTimeout;
         public bool LagCompDefault => _lagCompDefault;
 
         private void OnValidate()

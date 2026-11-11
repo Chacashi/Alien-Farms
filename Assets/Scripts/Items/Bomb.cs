@@ -62,6 +62,12 @@ namespace AlienFarms.Items
         /// </summary>
         public event Action<Bomb> StateChanged;
 
+        /// <summary>
+        /// Authority only: raised when the bomb explodes, right before <see cref="GameEvents.OnBombDetonated"/> and the
+        /// stuns. Payload: this bomb, blast center and blast radius (m).
+        /// </summary>
+        public event Action<Bomb, Vector3, float> Detonated;
+
         public BombState State => _state;
 
         public SimulationRole Role => _role;
@@ -428,6 +434,7 @@ namespace AlienFarms.Items
             Vector3 center = _rb.position + Vector3.up * _radius;
             float blastRadius = _data.BlastRadius;
 
+            Detonated?.Invoke(this, center, blastRadius);
             GameEvents.RaiseBombDetonated(thrower, center, blastRadius);
 
             if (_playerMask != 0 && blastRadius > 0f)

@@ -41,6 +41,9 @@ namespace AlienFarms.Match
         private int _pendingRouteFrame = NoPendingRoute;
         private bool _freezesTime = true;
 
+        // Last phase announced by GameEvents: an online client mirrors the server's match (its MatchManager is disabled).
+        private MatchPhase _announcedPhase = MatchPhase.None;
+
         public bool IsPaused => _isPaused;
 
         /// <summary>True (default) when pausing sets <see cref="Time.timeScale"/> to 0 and pauses audio.</summary>
@@ -62,6 +65,7 @@ namespace AlienFarms.Match
             GameEvents.OnPlayerLeft += HandlePlayerLeft;
             GameEvents.OnPlayerDeviceLost += HandlePlayerDeviceLost;
             GameEvents.OnPlayerDeviceRegained += HandlePlayerDeviceRegained;
+            GameEvents.OnMatchPhaseChanged += HandleMatchPhaseChanged;
         }
 
         private void OnDisable()
@@ -71,6 +75,7 @@ namespace AlienFarms.Match
             GameEvents.OnPlayerLeft -= HandlePlayerLeft;
             GameEvents.OnPlayerDeviceLost -= HandlePlayerDeviceLost;
             GameEvents.OnPlayerDeviceRegained -= HandlePlayerDeviceRegained;
+            GameEvents.OnMatchPhaseChanged -= HandleMatchPhaseChanged;
 
             // Disabled (or torn down) while paused: give input back to whoever is still alive and restore time.
             Resume();
@@ -98,7 +103,7 @@ namespace AlienFarms.Match
 
         public void Pause(PlayerId owner)
         {
-            if (_isPaused || owner == PlayerId.None || _match == null || _menus == null || !PauseRules.CanPause(_match.CurrentPhase))
+            if (_isPaused || owner == PlayerId.None || _match == null || _menus == null || !PauseRules.CanPause(CurrentPhase))
             {
                 return;
             }
@@ -231,6 +236,12 @@ namespace AlienFarms.Match
         }
 
         private void HandlePauseRequested(PlayerId playerId) => Pause(playerId);
+
+        private void HandleMatchPhaseChanged(MatchPhase previous, MatchPhase current) => _announcedPhase = current;
+
+        /// <summary>The running match's phase; the announced one when the match does not run here (online client).</summary>
+        private MatchPhase CurrentPhase =>
+            _match != null && _match.isActiveAndEnabled && _match.CurrentPhase != MatchPhase.None ? _match.CurrentPhase : _announcedPhase;
 
         private void HandleMenuCancelPressed(PlayerId playerId)
         {

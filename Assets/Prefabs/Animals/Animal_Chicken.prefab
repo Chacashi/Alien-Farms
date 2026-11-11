@@ -105,6 +105,7 @@ GameObject:
   - component: {fileID: 6981634406607193201}
   - component: {fileID: 4099215506734177277}
   - component: {fileID: 1570461971030354963}
+  - component: {fileID: 4909134401325824027}
   m_Layer: 9
   m_Name: Animal_Chicken
   m_TagString: Untagged
@@ -281,6 +282,22 @@ MonoBehaviour:
   UseRigidBodyForMotion: 0
   AutoUpdateKinematicState: 1
   AutoSetKinematicOnDespawn: 1
+--- !u!114 &4909134401325824027
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2696931323283496375}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4afc01352d07d434b9fff22bf7d3c2a3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Networking::AlienFarms.Networking.Animals.NetworkAnimal
+  ShowTopMostFoldoutHeaderGroup: 1
+  _networkTransform: {fileID: 4099215506734177277}
+  _logOwnership: 1
+  _animal: {fileID: 7587689622338779946}
 --- !u!1 &4512394323207076008
 GameObject:
   m_ObjectHideFlags: 0

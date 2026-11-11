@@ -31,6 +31,9 @@ namespace AlienFarms.UI
         private PlayerId _owner = PlayerId.None;
         private bool _routed;
 
+        // Mirrored match (online client, MatchManager disabled): the menu opens after the results input delay.
+        private float _replicaReadyTime;
+
         private void OnEnable()
         {
             GameEvents.OnMatchEnded += HandleMatchEnded;
@@ -51,7 +54,7 @@ namespace AlienFarms.UI
 
         private void Update()
         {
-            if (_pendingOwner == PlayerId.None || _match == null || !_match.IsRematchReady)
+            if (_pendingOwner == PlayerId.None || _match == null || !IsRematchReady)
             {
                 return;
             }
@@ -67,7 +70,12 @@ namespace AlienFarms.UI
         private void HandleMatchEnded(MatchResult result)
         {
             _pendingOwner = result.IsDraw ? PlayerId.Player1 : result.Winner;
+            float delay = _match != null && _match.Settings != null ? _match.Settings.ResultsInputDelay : 0f;
+            _replicaReadyTime = Time.time + delay;
         }
+
+        /// <summary>The match's own gate; when the match does not run here (online client) the same delay, timed locally.</summary>
+        private bool IsRematchReady => _match.isActiveAndEnabled ? _match.IsRematchReady : Time.time >= _replicaReadyTime;
 
         private void HandleMatchPhaseChanged(MatchPhase previous, MatchPhase current)
         {

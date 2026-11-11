@@ -55,6 +55,15 @@ namespace AlienFarms.Items
 
         public SimulationRole Role => _role;
 
+        /// <summary>Bombs of the pool currently taken (in play, or handed to a network hook).</summary>
+        public int PoolCountActive => _pool != null ? _pool.CountActive : 0;
+
+        /// <summary>Bombs waiting in the pool.</summary>
+        public int PoolCountInactive => _pool != null ? _pool.CountInactive : 0;
+
+        /// <summary>Bombs the pool ever created.</summary>
+        public int PoolCountAll => _pool != null ? _pool.CountAll : 0;
+
         private void Awake()
         {
             if (_settings == null || _data == null || _data.Prefab == null || _animalZone == null)
@@ -334,6 +343,12 @@ namespace AlienFarms.Items
             bomb.IsInPool = true;
             _active.Remove(bomb);
             bomb.gameObject.SetActive(false);
+
+            // Defensive: a bomb that was carried online may come back unparented (scene root) or still under a player.
+            if (bomb.transform.parent != _bombsContainer)
+            {
+                bomb.transform.SetParent(_bombsContainer, false);
+            }
         }
 
         private void OnDestroyBomb(Bomb bomb)

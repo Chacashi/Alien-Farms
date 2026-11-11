@@ -1,3 +1,4 @@
+using AlienFarms.Core;
 using AlienFarms.Data;
 using AlienFarms.Input;
 using AlienFarms.Player;
@@ -52,6 +53,12 @@ namespace AlienFarms.Networking.Player
         private Mode _mode = Mode.Idle;
         private uint _nextSeq;
         private bool _grabLatched;
+
+        /// <summary>Server, remote avatar: the network-fed commands its gameplay reads (null anywhere else).</summary>
+        public IPlayerCommandSource ServerCommands => _mode == Mode.ServerReceiver ? _source : null;
+
+        /// <summary>Server, remote avatar: the owner reports being paused in its last applied command.</summary>
+        public bool IsRemotePaused => _mode == Mode.ServerReceiver && _source.IsPaused;
 
         /// <summary>Server: sequence of the last command applied to this avatar (0 = none, or the host's own avatar).</summary>
         public uint LastAppliedSeq => _buffer != null ? _buffer.LastConsumedSeq : 0u;
@@ -185,8 +192,11 @@ namespace AlienFarms.Networking.Player
                 _nextSeq = 1;
             }
 
+            // The grabber knows the local pause (menu open, or just resumed): the server must not read the Grab release
+            // it causes as a drop.
+            bool paused = _grabber != null && _grabber.IsPaused;
             PlayerInputCommand command = PlayerInputCommand.Create(
-                seq, _localInput.Move, _camera.Yaw, _camera.Pitch, _localInput.IsSprintHeld, grab, _localInput.IsAimHeld);
+                seq, _localInput.Move, _camera.Yaw, _camera.Pitch, _localInput.IsSprintHeld, grab, _localInput.IsAimHeld, paused);
             _history.Push(command);
 
             int redundancy = _settings != null ? _settings.InputRedundancy : InputCommandBatch.MaxCommands;

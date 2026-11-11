@@ -60,7 +60,7 @@ namespace AlienFarms.Networking.Match
         {
             if (_exit != null)
             {
-                _exit.SetHandler(new OnlineMatchExitHandler(_anchor, _match, _session));
+                _exit.SetHandler(new OnlineMatchExitHandler(_anchor, _session));
             }
 
             if (_anchor == null || !_anchor.HasRoot)

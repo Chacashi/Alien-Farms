@@ -138,6 +138,9 @@ namespace AlienFarms.Animals
         private CornerEscape _cornerEscape;
         private SimulationRole _role = SimulationRole.Authority;
 
+        // Replica: its body is kinematic (no velocity), so the visual turns towards the synchronized motion instead.
+        private Vector3 _lastReplicaPosition;
+
         /// <summary>
         /// Raised after each completed transition (state, owner or holder changed), before the matching GameEvent.
         /// </summary>
@@ -252,6 +255,8 @@ namespace AlienFarms.Animals
             {
                 _visual.rotation = rotation;
             }
+
+            _lastReplicaPosition = position;
 
             if (_collider != null)
             {
@@ -392,6 +397,7 @@ namespace AlienFarms.Animals
             }
 
             CacheLayers();
+            _lastReplicaPosition = transform.position;
             _state = state;
             _owner = state == AnimalState.Captured ? owner : PlayerId.None;
             _holder = state == AnimalState.Carried ? holder : PlayerId.None;
@@ -1029,7 +1035,19 @@ namespace AlienFarms.Animals
                 return;
             }
 
-            Vector3 velocity = _rb.linearVelocity;
+            Vector3 velocity;
+            if (_role == SimulationRole.Replica)
+            {
+                Vector3 position = transform.position;
+                float deltaTime = Time.deltaTime;
+                velocity = deltaTime > Epsilon ? (position - _lastReplicaPosition) / deltaTime : Vector3.zero;
+                _lastReplicaPosition = position;
+            }
+            else
+            {
+                velocity = _rb.linearVelocity;
+            }
+
             velocity.y = 0f;
             if (velocity.sqrMagnitude < MinVisualSpeedSqr)
             {

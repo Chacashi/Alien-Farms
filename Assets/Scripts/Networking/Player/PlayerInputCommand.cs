@@ -5,13 +5,16 @@ namespace AlienFarms.Networking.Player
 {
     /// <summary>
     /// One physics step of a player's input, quantized for the wire (11 bytes): sequence, move (sbyte per axis), camera
-    /// view (yaw as ushort over 360 deg, pitch in centidegrees) and the held buttons as bits.
+    /// view (yaw as ushort over 360 deg, pitch in centidegrees) and the held buttons and the pause flag as bits.
     /// </summary>
     public struct PlayerInputCommand : INetworkSerializable
     {
         public const byte SprintBit = 1 << 0;
         public const byte GrabBit = 1 << 1;
         public const byte AimBit = 1 << 2;
+
+        /// <summary>The owner is paused (menu open): the server keeps what it carries even though Grab reads released.</summary>
+        public const byte PausedBit = 1 << 3;
 
         private const float MoveScale = 127f;
         private const float YawSteps = 65536f;
@@ -26,7 +29,7 @@ namespace AlienFarms.Networking.Player
         public short PitchCentidegrees;
         public byte Buttons;
 
-        public static PlayerInputCommand Create(uint seq, Vector2 move, float yaw, float pitch, bool sprint, bool grab, bool aim)
+        public static PlayerInputCommand Create(uint seq, Vector2 move, float yaw, float pitch, bool sprint, bool grab, bool aim, bool paused = false)
         {
             move = Vector2.ClampMagnitude(move, 1f);
             float normalizedYaw = Mathf.Repeat(yaw, 360f) / 360f;
@@ -41,6 +44,11 @@ namespace AlienFarms.Networking.Player
             if (grab)
             {
                 buttons |= GrabBit;
+            }
+
+            if (paused)
+            {
+                buttons |= PausedBit;
             }
 
             if (aim)
@@ -72,6 +80,8 @@ namespace AlienFarms.Networking.Player
         public bool IsGrabHeld => (Buttons & GrabBit) != 0;
 
         public bool IsAimHeld => (Buttons & AimBit) != 0;
+
+        public bool IsPaused => (Buttons & PausedBit) != 0;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {

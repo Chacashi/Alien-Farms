@@ -84,6 +84,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7117857313156260007, guid: 2c30a88daf39cca418ba26bb390b7c15, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3212187423886887061}
+    - targetCorrespondingSourceObject: {fileID: 7117857313156260007, guid: 2c30a88daf39cca418ba26bb390b7c15, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5058437762114465487}
   m_SourcePrefab: {fileID: 100100000, guid: 2c30a88daf39cca418ba26bb390b7c15, type: 3}
 --- !u!114 &615788039614066623 stripped
 MonoBehaviour:
@@ -226,6 +229,7 @@ MonoBehaviour:
   _grabber: {fileID: 5564713193388022112}
   _stunReceiver: {fileID: 7509975417557859155}
   _motion: {fileID: 3212187423886887061}
+  _carry: {fileID: 5058437762114465487}
   _playerInput: {fileID: 4488919719130079714}
   _camera: {fileID: 6925511456755949186}
   _audioListener: {fileID: 0}
@@ -268,6 +272,25 @@ MonoBehaviour:
   _movement: {fileID: 3229649023762372778}
   _rb: {fileID: 4503723583755825842}
   _input: {fileID: 6506193274263326134}
+--- !u!114 &5058437762114465487
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6989017777545953249}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 825d549ccc7836449b05b09bbc4667a4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Networking::AlienFarms.Networking.Player.NetworkCarry
+  ShowTopMostFoldoutHeaderGroup: 1
+  _settings: {fileID: 11400000, guid: bbd39eff9786ae94ba8c4ad1657bab45, type: 2}
+  _grabber: {fileID: 5564713193388022112}
+  _aim: {fileID: 1595764173870511351}
+  _camera: {fileID: 8886566712334162555}
+  _input: {fileID: 6506193274263326134}
+  _localInput: {fileID: 615788039614066623}
 --- !u!114 &7509975417557859155 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 7638815227910284309, guid: 2c30a88daf39cca418ba26bb390b7c15, type: 3}

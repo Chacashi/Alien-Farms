@@ -1,4 +1,5 @@
 using System;
+using AlienFarms.Core;
 using AlienFarms.Networking.Player;
 using AlienFarms.Networking.Session;
 using Unity.Netcode;
@@ -20,6 +21,9 @@ namespace AlienFarms.Networking.Data
         [NonSerialized] private NetworkRootLifetime _root;
         [NonSerialized] private NetworkPlayer _localPlayer;
         [NonSerialized] private string _disconnectReason;
+
+        // Spawned avatars by seat on this machine (index = (int)PlayerId - 1), on server and clients alike.
+        [NonSerialized] private readonly NetworkPlayer[] _players = new NetworkPlayer[2];
 
         /// <summary>The published root, or null when none is alive in this play session.</summary>
         public NetworkRootLifetime Root => IsCurrent && _root != null ? _root : null;
@@ -74,6 +78,7 @@ namespace AlienFarms.Networking.Data
             {
                 _localPlayer = null;
                 _disconnectReason = null;
+                ClearPlayers();
             }
 
             _generation = s_generation;
@@ -87,9 +92,58 @@ namespace AlienFarms.Networking.Data
             {
                 _generation = s_generation;
                 _root = null;
+                ClearPlayers();
             }
 
             _localPlayer = player;
+        }
+
+        /// <summary>Registers a spawned avatar under its seat (called by NetworkPlayer once its PlayerId is known).</summary>
+        public void RegisterPlayer(NetworkPlayer player)
+        {
+            if (player == null)
+            {
+                return;
+            }
+
+            if (!IsCurrent)
+            {
+                _generation = s_generation;
+                _root = null;
+                _localPlayer = null;
+                _disconnectReason = null;
+                ClearPlayers();
+            }
+
+            int index = (int)player.PlayerId - 1;
+            if (index < 0 || index >= _players.Length)
+            {
+                return;
+            }
+
+            // A seat holds one avatar: drop any stale registration of this instance under another seat.
+            UnregisterPlayer(player);
+            _players[index] = player;
+        }
+
+        /// <summary>Removes <paramref name="player"/> from whatever seat it is registered under.</summary>
+        public void UnregisterPlayer(NetworkPlayer player)
+        {
+            for (int i = 0; i < _players.Length; i++)
+            {
+                if (_players[i] == player)
+                {
+                    _players[i] = null;
+                }
+            }
+        }
+
+        /// <summary>Spawned avatar of <paramref name="id"/> on this machine.</summary>
+        public bool TryGetPlayer(PlayerId id, out NetworkPlayer player)
+        {
+            int index = (int)id - 1;
+            player = IsCurrent && index >= 0 && index < _players.Length && _players[index] != null ? _players[index] : null;
+            return player != null;
         }
 
         /// <summary>Unregisters <paramref name="player"/> when it is the registered local avatar.</summary>
@@ -109,6 +163,7 @@ namespace AlienFarms.Networking.Data
                 _generation = s_generation;
                 _root = null;
                 _localPlayer = null;
+                ClearPlayers();
             }
 
             _disconnectReason = reason;
@@ -133,6 +188,14 @@ namespace AlienFarms.Networking.Data
             if (_root == root)
             {
                 _root = null;
+            }
+        }
+
+        private void ClearPlayers()
+        {
+            for (int i = 0; i < _players.Length; i++)
+            {
+                _players[i] = null;
             }
         }
 

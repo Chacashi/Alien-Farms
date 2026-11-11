@@ -108,6 +108,37 @@ namespace AlienFarms.Networking.Tests
             Assert.That(source.Look, Is.EqualTo(Vector2.zero));
         }
 
+        [Test]
+        public void Command_PausedBitIsIndependentAndRoundTrips()
+        {
+            PlayerInputCommand paused = PlayerInputCommand.Create(4, Vector2.zero, 0f, 0f, false, false, true, true);
+            PlayerInputCommand notPaused = PlayerInputCommand.Create(5, Vector2.zero, 0f, 0f, true, true, true);
+
+            PlayerInputCommand result = RoundTrip(paused);
+
+            Assert.That(result.IsPaused, Is.True);
+            Assert.That(result.IsGrabHeld, Is.False);
+            Assert.That(result.IsAimHeld, Is.True);
+            Assert.That(result.IsSprintHeld, Is.False);
+            Assert.That(notPaused.IsPaused, Is.False);
+        }
+
+        [Test]
+        public void CommandSource_TracksPausedAndResets()
+        {
+            var source = new NetworkCommandSource();
+
+            source.Apply(PlayerInputCommand.Create(1, Vector2.zero, 0f, 0f, false, false, false, true));
+            Assert.That(source.IsPaused, Is.True);
+
+            source.Apply(PlayerInputCommand.Create(2, Vector2.zero, 0f, 0f, false, false, false));
+            Assert.That(source.IsPaused, Is.False);
+
+            source.Apply(PlayerInputCommand.Create(3, Vector2.zero, 0f, 0f, false, false, false, true));
+            source.Reset();
+            Assert.That(source.IsPaused, Is.False);
+        }
+
         private static T RoundTrip<T>(T value) where T : INetworkSerializable, new()
         {
             using (var writer = new FastBufferWriter(256, Allocator.Temp))

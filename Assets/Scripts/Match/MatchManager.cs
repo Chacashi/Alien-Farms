@@ -54,7 +54,8 @@ namespace AlienFarms.Match
         /// <summary>True when <see cref="RequestRematch"/> would start a new round now.</summary>
         public bool IsRematchReady => _machine != null && _machine.IsRematchReady;
 
-        MatchSettings IMatchContext.Settings => _settings;
+        /// <summary>Round timing this match uses (also read by replicas that only mirror the match).</summary>
+        public MatchSettings Settings => _settings;
 
         int IMatchContext.JoinedPlayerCount => _roster != null ? _roster.JoinedCount : 0;
 
@@ -156,7 +157,8 @@ namespace AlienFarms.Match
         /// </summary>
         public void RestartRound()
         {
-            if (_machine == null)
+            // Disabled (online client: the server owns the match): nothing to restart here.
+            if (_machine == null || !isActiveAndEnabled)
             {
                 return;
             }
@@ -176,8 +178,14 @@ namespace AlienFarms.Match
         /// <summary>Asks the Results state for a rematch; it honors <see cref="MatchSettings.ResultsInputDelay"/> and needs both players.</summary>
         public void RequestRematch()
         {
-            _machine?.OnConfirmPressed(PlayerId.None);
+            if (isActiveAndEnabled)
+            {
+                _machine?.OnConfirmPressed(PlayerId.None);
+            }
         }
+
+        /// <summary>Points currently in <paramref name="playerId"/>'s pen (published to the HUD only while playing).</summary>
+        public int GetScore(PlayerId playerId) => _score != null ? _score.Get(playerId) : 0;
 
         public void ResetRound(bool respawnPlayers)
         {

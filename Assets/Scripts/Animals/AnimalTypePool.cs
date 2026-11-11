@@ -48,6 +48,9 @@ namespace AlienFarms.Animals
         public int CountActive => _pool.CountActive;
         public int CountInactive => _pool.CountInactive;
 
+        /// <summary>Instances this pool ever created (active + inactive).</summary>
+        public int CountAll => _pool.CountAll;
+
         /// <summary>Network hook the authority's animals of this pool report to (null in local mode).</summary>
         public IAnimalNetworkHook NetworkHook { get; private set; }
 
@@ -114,10 +117,16 @@ namespace AlienFarms.Animals
 
         private static void OnGetAnimal(Animal animal) => animal.IsInPool = false;
 
-        private static void OnReleaseAnimal(Animal animal)
+        private void OnReleaseAnimal(Animal animal)
         {
             animal.IsInPool = true;
             animal.gameObject.SetActive(false);
+
+            // Defensive: an animal that was carried online may come back unparented (scene root) or still under a player.
+            if (animal.transform.parent != _container)
+            {
+                animal.transform.SetParent(_container, false);
+            }
         }
 
         private static void OnDestroyAnimal(Animal animal)

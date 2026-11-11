@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 515998107949604700}
   - component: {fileID: 3718757871526268556}
   - component: {fileID: 2047194093174784512}
+  - component: {fileID: 7902964415998902188}
   m_Layer: 13
   m_Name: Bomb_Stunner
   m_TagString: Untagged
@@ -192,6 +193,22 @@ MonoBehaviour:
   UseRigidBodyForMotion: 0
   AutoUpdateKinematicState: 1
   AutoSetKinematicOnDespawn: 1
+--- !u!114 &7902964415998902188
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 222722208307494591}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ae002f3a2446be488f3f3a36528762c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Networking::AlienFarms.Networking.Items.NetworkBomb
+  ShowTopMostFoldoutHeaderGroup: 1
+  _networkTransform: {fileID: 3718757871526268556}
+  _logOwnership: 0
+  _bomb: {fileID: 8359414346262549598}
 --- !u!1 &4918345419724880220
 GameObject:
   m_ObjectHideFlags: 0

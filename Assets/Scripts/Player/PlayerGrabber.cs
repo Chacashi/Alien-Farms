@@ -71,6 +71,12 @@ namespace AlienFarms.Player
         /// <summary>False while the match freezes this player: nothing can be grabbed.</summary>
         public bool IsInputEnabled => _inputEnabled;
 
+        /// <summary>
+        /// True while the game is paused (<see cref="SetPaused"/>) and right after resuming, until Grab reports its held
+        /// state again: a released Grab must not drop the carried object in this window.
+        /// </summary>
+        public bool IsPaused => _paused || IsInResumeGrace();
+
         public ReleaseMode ReleaseMode => _releaseMode;
 
         public SimulationRole Role => _role;
@@ -263,6 +269,18 @@ namespace AlienFarms.Player
 
             Drop(DropReason.Released, Vector3.zero);
             return false;
+        }
+
+        /// <summary>
+        /// Grabbing stays blocked until Grab is released (only if it is held now). Used after an external release whose
+        /// Grab press is still reported held for a few steps (e.g. a network throw), so it does not grab again at once.
+        /// </summary>
+        public void RequireGrabRepress()
+        {
+            if (_commands != null && _commands.IsGrabHeld)
+            {
+                _requiresRepress = true;
+            }
         }
 
         /// <summary>
