@@ -4,6 +4,7 @@ using AlienFarms.Networking.Session;
 using NUnit.Framework;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
+using Unity.Services.Lobbies;
 using Unity.Services.Multiplayer;
 using Unity.Services.Relay;
 
@@ -49,8 +50,10 @@ namespace AlienFarms.Networking.Tests
 
         [TestCase(DisconnectReasons.RoomFull, OnlineSessionErrorKeys.SessionFull)]
         [TestCase(DisconnectReasons.ProtocolMismatch, OnlineSessionErrorKeys.ProtocolMismatch)]
+        [TestCase(DisconnectReasons.AlreadyConnected, OnlineSessionErrorKeys.AlreadyConnected)]
         [TestCase(DisconnectReasons.HostDisconnected, OnlineSessionErrorKeys.HostLeft)]
         [TestCase(DisconnectReasons.InvalidPayload, OnlineSessionErrorKeys.ConnectionFailed)]
+        [TestCase(DisconnectReasons.NotSessionMember, OnlineSessionErrorKeys.NotSessionMember)]
         public void FromDisconnectReason_KnownReason_MapsToKey(string reason, string expected)
         {
             Assert.That(OnlineSessionErrorMapper.FromDisconnectReason(reason), Is.EqualTo(expected));
@@ -162,6 +165,37 @@ namespace AlienFarms.Networking.Tests
 
             Assert.That(OnlineSessionErrorMapper.FromJoinException(exception), Is.EqualTo(OnlineSessionErrorKeys.JoinFailed));
             Assert.That(OnlineSessionErrorMapper.FromJoinException(new InvalidOperationException()), Is.EqualTo(OnlineSessionErrorKeys.JoinFailed));
+        }
+
+        [TestCase("session is full")]
+        [TestCase("Lobby is FULL")]
+        public void FromJoinException_UnknownSessionErrorSayingFull_IsSessionFull(string message)
+        {
+            // What Sessions SDK 2.x throws for a full lobby: LobbyFull converted to Unknown, only the message survives.
+            var exception = new SessionException(message, SessionError.Unknown, null);
+
+            Assert.That(OnlineSessionErrorMapper.FromJoinException(exception), Is.EqualTo(OnlineSessionErrorKeys.SessionFull));
+            Assert.That(OnlineSessionErrorMapper.FromJoinException(new AggregateException(exception)), Is.EqualTo(OnlineSessionErrorKeys.SessionFull));
+        }
+
+        [Test]
+        public void FromJoinException_LobbyFullReason_IsSessionFull()
+        {
+            var lobby = new LobbyServiceException(LobbyExceptionReason.LobbyFull, "whatever");
+            var wrapped = new SessionException("start failed", SessionError.Unknown, lobby);
+
+            Assert.That(OnlineSessionErrorMapper.FromJoinException(lobby), Is.EqualTo(OnlineSessionErrorKeys.SessionFull));
+            Assert.That(OnlineSessionErrorMapper.FromJoinException(wrapped), Is.EqualTo(OnlineSessionErrorKeys.SessionFull));
+        }
+
+        [Test]
+        public void FromJoinException_FullInASpecificError_KeepsItsKey()
+        {
+            // Text is only trusted for the unspecific error.
+            var exception = new SessionException("rate limit full", SessionError.RateLimitExceeded, null);
+
+            Assert.That(OnlineSessionErrorMapper.FromJoinException(exception), Is.EqualTo(OnlineSessionErrorKeys.RateLimited));
+            Assert.That(OnlineSessionErrorMapper.IsSessionFull(null), Is.False);
         }
 
         [Test]

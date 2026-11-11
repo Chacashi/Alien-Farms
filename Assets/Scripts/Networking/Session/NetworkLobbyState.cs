@@ -144,8 +144,8 @@ namespace AlienFarms.Networking.Session
 
             // Out-of-range values stay out of range (254) instead of turning into a release (255).
             byte wire = characterIndex < 0
-                ? ConnectionPayload.NoCharacter
-                : (byte)Math.Min(characterIndex, ConnectionPayload.NoCharacter - 1);
+                ? PlayerSlot.NoCharacter
+                : (byte)Math.Min(characterIndex, PlayerSlot.NoCharacter - 1);
             RequestCharacterRpc(wire);
         }
 
@@ -153,7 +153,7 @@ namespace AlienFarms.Networking.Session
         private void RequestCharacterRpc(byte characterIndex, RpcParams rpcParams = default)
         {
             ulong sender = rpcParams.Receive.SenderClientId;
-            int requested = characterIndex == ConnectionPayload.NoCharacter ? LobbyRules.Release : characterIndex;
+            int requested = characterIndex == PlayerSlot.NoCharacter ? LobbyRules.Release : characterIndex;
             LobbyRequestResult result = LobbyRules.ApplyRequest(_mirror, _mirrorCount, sender, requested, RosterCount,
                 _phase.Value == OnlineLobbyPhase.Open);
 
@@ -321,7 +321,8 @@ namespace AlienFarms.Networking.Session
                 if (_names[i] == null || !_nameSources[i].Equals(entry.DisplayName))
                 {
                     _nameSources[i] = entry.DisplayName;
-                    _names[i] = entry.DisplayName.ToString();
+                    // Already cleaned by the host's approval; cleaned again here since it comes from another machine.
+                    _names[i] = DisplayNameSanitizer.Sanitize(entry.DisplayName.ToString());
                 }
 
                 bool isLocal = entry.ClientId == localClientId;

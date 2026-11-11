@@ -37,7 +37,7 @@ namespace AlienFarms.Networking.Session
                 return entry.HasCharacter ? LobbyRequestResult.Released : LobbyRequestResult.Unchanged;
             }
 
-            if (requestedIndex >= rosterCount || requestedIndex >= ConnectionPayload.NoCharacter)
+            if (requestedIndex >= rosterCount || requestedIndex >= PlayerSlot.NoCharacter)
             {
                 return LobbyRequestResult.RejectedOutOfRange;
             }
@@ -71,7 +71,7 @@ namespace AlienFarms.Networking.Session
             }
 
             int seat = IndexOfClient(entries, count, senderClientId);
-            byte character = result == LobbyRequestResult.Accepted ? (byte)requestedIndex : ConnectionPayload.NoCharacter;
+            byte character = result == LobbyRequestResult.Accepted ? (byte)requestedIndex : PlayerSlot.NoCharacter;
             entries[seat] = entries[seat].WithCharacter(character);
             return result;
         }
@@ -79,7 +79,7 @@ namespace AlienFarms.Networking.Session
         /// <summary>True when a seat other than <paramref name="except"/> already holds character <paramref name="index"/>.</summary>
         public static bool IsTaken(LobbySlotEntry[] entries, int count, byte index, PlayerId except)
         {
-            if (index == ConnectionPayload.NoCharacter || entries == null)
+            if (index == PlayerSlot.NoCharacter || entries == null)
             {
                 return false;
             }
@@ -153,7 +153,7 @@ namespace AlienFarms.Networking.Session
                     continue;
                 }
 
-                byte character = ConnectionPayload.NoCharacter;
+                byte character = PlayerSlot.NoCharacter;
                 for (int j = 0; j < count; j++)
                 {
                     if (current[j].Id == seat.Id && current[j].ClientId == seat.ClientId)

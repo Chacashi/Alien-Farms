@@ -7,7 +7,7 @@ namespace AlienFarms.Networking.Session
 {
     /// <summary>
     /// One seat of the online room as replicated by <see cref="NetworkLobbyState"/>. Element of a NetworkList, so it is
-    /// unmanaged and equatable. <see cref="CharacterIndex"/> is <see cref="ConnectionPayload.NoCharacter"/> while the seat
+    /// unmanaged and equatable. <see cref="CharacterIndex"/> is <see cref="PlayerSlot.NoCharacter"/> while the seat
     /// has no pick; picking counts as ready.
     /// </summary>
     public struct LobbySlotEntry : INetworkSerializable, IEquatable<LobbySlotEntry>
@@ -29,14 +29,14 @@ namespace AlienFarms.Networking.Session
 
         public ulong ClientId => _clientId;
 
-        /// <summary>Roster index of the pick, <see cref="ConnectionPayload.NoCharacter"/> when none.</summary>
+        /// <summary>Roster index of the pick, <see cref="PlayerSlot.NoCharacter"/> when none.</summary>
         public byte CharacterIndex => _characterIndex;
 
         public FixedString32Bytes DisplayName => _displayName;
 
-        public bool HasCharacter => _characterIndex != ConnectionPayload.NoCharacter;
+        public bool HasCharacter => _characterIndex != PlayerSlot.NoCharacter;
 
-        /// <summary>Copy of this entry with another pick (<see cref="ConnectionPayload.NoCharacter"/> releases it).</summary>
+        /// <summary>Copy of this entry with another pick (<see cref="PlayerSlot.NoCharacter"/> releases it).</summary>
         public LobbySlotEntry WithCharacter(byte characterIndex)
         {
             return new LobbySlotEntry(Id, _clientId, characterIndex, _displayName);

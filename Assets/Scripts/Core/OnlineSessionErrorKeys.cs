@@ -14,10 +14,14 @@ namespace AlienFarms.Core
         public const string SessionNotFound = "online.error.session_not_found";
         public const string SessionFull = "online.error.session_full";
         public const string ProtocolMismatch = "online.error.protocol_mismatch";
+        /// <summary>The host refused this player because the same account is already connected to the room.</summary>
+        public const string AlreadyConnected = "online.error.already_connected";
+        /// <summary>The host could not confirm this player as a member of its online session.</summary>
+        public const string NotSessionMember = "online.error.not_session_member";
         public const string HostLeft = "online.error.host_left";
         public const string RelayFailed = "online.error.relay_failed";
         public const string ConnectionFailed = "online.error.connection_failed";
-        /// <summary>Join refused without a specific reason (invalid code or full session).</summary>
+        /// <summary>Join refused without a specific reason (e.g. invalid code).</summary>
         public const string JoinFailed = "online.error.join_failed";
         public const string AlreadyInSession = "online.error.already_in_session";
         public const string Busy = "online.error.busy";

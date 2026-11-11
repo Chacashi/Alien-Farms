@@ -9,48 +9,40 @@ namespace AlienFarms.Tests
     public sealed class MatchSessionModeTests
     {
         private MatchSession _session;
-        private CharacterDefinition _character;
 
         [SetUp]
         public void SetUp()
         {
             _session = ScriptableObject.CreateInstance<MatchSession>();
-            _character = ScriptableObject.CreateInstance<CharacterDefinition>();
         }
 
         [TearDown]
         public void TearDown()
         {
             Object.DestroyImmediate(_session);
-            Object.DestroyImmediate(_character);
         }
 
         [Test]
-        public void New_IsLocalWithoutCharacter()
+        public void New_IsLocal()
         {
             Assert.That(_session.Mode, Is.EqualTo(GameMode.Local));
-            Assert.That(_session.LocalCharacter, Is.Null);
         }
 
         [Test]
-        public void SetMode_And_SetLocalCharacter_AreKept()
+        public void SetMode_IsKept()
         {
             _session.SetMode(GameMode.Online);
-            _session.SetLocalCharacter(_character);
 
             Assert.That(_session.Mode, Is.EqualTo(GameMode.Online));
-            Assert.That(_session.LocalCharacter, Is.SameAs(_character));
         }
 
         [Test]
         public void Clear_RestoresLocal()
         {
             _session.SetMode(GameMode.Online);
-            _session.SetLocalCharacter(_character);
             _session.Clear();
 
             Assert.That(_session.Mode, Is.EqualTo(GameMode.Local));
-            Assert.That(_session.LocalCharacter, Is.Null);
         }
 
         [Test]

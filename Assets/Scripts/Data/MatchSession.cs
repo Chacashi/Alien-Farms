@@ -8,7 +8,7 @@ namespace AlienFarms.Data
     /// Runtime-only ScriptableObject that carries the players' choices (devices, scheme, character) from the
     /// MainMenu to the gameplay scene. Nothing is serialized: data written during a previous play session is
     /// discarded through a generation counter bumped on every play start (works without domain reload).
-    /// Online, <see cref="Mode"/> is <see cref="GameMode.Online"/> and the local player's pick is <see cref="LocalCharacter"/>.
+    /// Online, <see cref="Mode"/> is <see cref="GameMode.Online"/> (characters are picked in the online room, server side).
     /// </summary>
     [CreateAssetMenu(fileName = "MatchSession", menuName = "Alien Farms/Match Session (Runtime)")]
     public sealed class MatchSession : ScriptableObject
@@ -20,7 +20,6 @@ namespace AlienFarms.Data
         [NonSerialized] private readonly SessionData _data = new SessionData();
         [NonSerialized] private int _generation = -1;
         [NonSerialized] private GameMode _mode = GameMode.Local;
-        [NonSerialized] private CharacterDefinition _localCharacter;
         [NonSerialized] private bool _returnToOnlineMenu;
 
         /// <summary>Both players have a slot written during this play session.</summary>
@@ -28,9 +27,6 @@ namespace AlienFarms.Data
 
         /// <summary>How the gameplay scene must be driven. Local unless set during this play session.</summary>
         public GameMode Mode => IsCurrent ? _mode : GameMode.Local;
-
-        /// <summary>Online: character picked by the player on this machine (null when none was picked).</summary>
-        public CharacterDefinition LocalCharacter => IsCurrent ? _localCharacter : null;
 
         /// <summary>
         /// True when the next MainMenu must open on the online panel (an online match ended). Read and cleared by
@@ -56,12 +52,6 @@ namespace AlienFarms.Data
         {
             EnsureCurrent();
             _mode = mode;
-        }
-
-        public void SetLocalCharacter(CharacterDefinition character)
-        {
-            EnsureCurrent();
-            _localCharacter = character;
         }
 
         /// <summary>Online match exit: asks the next MainMenu to open on the online hub. Call after <see cref="Clear"/>.</summary>
@@ -94,7 +84,6 @@ namespace AlienFarms.Data
         {
             _data.Clear();
             _mode = GameMode.Local;
-            _localCharacter = null;
             _returnToOnlineMenu = false;
             _generation = s_generation;
         }

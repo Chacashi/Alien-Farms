@@ -31,14 +31,11 @@ namespace AlienFarms.Networking.Diagnostics
         [SerializeField, Tooltip("Runtime anchor of the NetworkRoot.")]
         private NetworkRuntimeAnchor _anchor;
 
-        [SerializeField, Tooltip("Runtime session: Mode is set to Online here; LocalCharacter is sent as the pick.")]
+        [SerializeField, Tooltip("Runtime session: Mode is set to Online here.")]
         private MatchSession _session;
 
         [SerializeField, Tooltip("Protocol version written in the connection payload.")]
         private NetworkSettings _settings;
-
-        [SerializeField, Tooltip("Optional: maps the session's LocalCharacter to its index.")]
-        private CharacterRoster _characters;
 
         [SerializeField, Tooltip("Name sent in the payload (truncated to 29 bytes).")]
         private string _displayName = "Player";
@@ -307,6 +304,12 @@ namespace AlienFarms.Networking.Diagnostics
             _lastError = null;
             _errorDirty = true;
 
+            // A failure of an earlier online attempt no longer applies to this direct start.
+            if (_sessionChannel != null && _sessionChannel.HasError)
+            {
+                _sessionChannel.ClearError();
+            }
+
             if (_session != null)
             {
                 _session.SetMode(GameMode.Online);
@@ -316,15 +319,10 @@ namespace AlienFarms.Networking.Diagnostics
             return true;
         }
 
+        // Direct dev connection: no UGS player id (no reconnection by id); the roster gives each seat its default character.
         private ConnectionPayload BuildPayload()
         {
-            int characterIndex = -1;
-            if (_session != null && _characters != null)
-            {
-                characterIndex = _characters.IndexOf(_session.LocalCharacter);
-            }
-
-            return ConnectionPayload.Create(_settings.ProtocolVersion, _displayName, characterIndex);
+            return ConnectionPayload.Create(_settings.ProtocolVersion, _displayName);
         }
 
         private void Fail(string message)

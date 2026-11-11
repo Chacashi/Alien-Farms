@@ -43,12 +43,12 @@ namespace AlienFarms.Networking.Tests
         [Test]
         public void RoundTrip_NoCharacter()
         {
-            var entry = new LobbySlotEntry(PlayerId.Player1, 3, ConnectionPayload.NoCharacter, new FixedString32Bytes("Host"));
+            var entry = new LobbySlotEntry(PlayerId.Player1, 3, PlayerSlot.NoCharacter, new FixedString32Bytes("Host"));
 
             LobbySlotEntry result = RoundTrip(entry);
 
             Assert.That(result.HasCharacter, Is.False);
-            Assert.That(result.CharacterIndex, Is.EqualTo(ConnectionPayload.NoCharacter));
+            Assert.That(result.CharacterIndex, Is.EqualTo(PlayerSlot.NoCharacter));
         }
 
         [Test]
@@ -78,7 +78,7 @@ namespace AlienFarms.Networking.Tests
         [Test]
         public void WithCharacter_ChangesOnlyThePick()
         {
-            var entry = new LobbySlotEntry(PlayerId.Player2, 5, ConnectionPayload.NoCharacter, new FixedString32Bytes("Ana"));
+            var entry = new LobbySlotEntry(PlayerId.Player2, 5, PlayerSlot.NoCharacter, new FixedString32Bytes("Ana"));
 
             LobbySlotEntry picked = entry.WithCharacter(3);
 

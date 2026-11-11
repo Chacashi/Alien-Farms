@@ -14,6 +14,13 @@ namespace AlienFarms.Networking.Session
     /// manager and transport are used, the connection payload/approval written by the caller stay in charge, and the
     /// root can shut NGO down itself (host disconnect reasons). One instance per session start; it only ever shuts down
     /// an NGO run it started itself, so a stale handler never stops a newer session.
+    /// <para>
+    /// Single use: once a start failed, was cancelled, or NGO was stopped, the handler is <see cref="Retired"/> and any
+    /// later <see cref="StartAsync(NetworkConfiguration, CancellationToken)"/> returns without starting NGO. SDK 2.x
+    /// (NetworkModule) clears its network property when a client join fails and, on the next <c>ISession.Changed</c>
+    /// raised while the failed session is torn down, joins the network again with this same handler from an
+    /// <c>async void</c>: that start must neither run (ghost connection to the host) nor throw (unobserved exception).
+    /// </para>
     /// </summary>
     internal sealed class NgoSessionNetworkHandler : INetworkHandler
     {
@@ -23,6 +30,8 @@ namespace AlienFarms.Networking.Session
 
         private string _disconnectReason;
         private bool _started;
+        private bool _retired;
+        private bool _retiredStartLogged;
 
         public NgoSessionNetworkHandler(NetworkManager manager, UnityTransport transport, float connectTimeoutSeconds)
         {
@@ -37,12 +46,41 @@ namespace AlienFarms.Networking.Session
         /// <summary>True from a successful StartHost / StartClient of this handler until it shuts NGO down.</summary>
         public bool Started => _started;
 
+        /// <summary>True once this handler's start failed or was cancelled, or its NGO run was stopped: it never starts NGO again.</summary>
+        public bool Retired => _retired;
+
         public Task StartAsync(NetworkConfiguration configuration)
         {
             return StartAsync(configuration, CancellationToken.None);
         }
 
         public async Task StartAsync(NetworkConfiguration configuration, CancellationToken cancellationToken)
+        {
+            if (_retired)
+            {
+                // Completes without error: a throw here would end in the SDK's async void (unobserved exception).
+                LogRetiredStartOnce(configuration);
+                return;
+            }
+
+            try
+            {
+                await StartCoreAsync(configuration, cancellationToken);
+            }
+            catch
+            {
+                Retire();
+                throw;
+            }
+        }
+
+        /// <summary>Marks the handler as used up: later starts are ignored (see <see cref="Retired"/>). Idempotent.</summary>
+        public void Retire()
+        {
+            _retired = true;
+        }
+
+        private async Task StartCoreAsync(NetworkConfiguration configuration, CancellationToken cancellationToken)
         {
             if (_manager == null || _transport == null)
             {
@@ -96,6 +134,7 @@ namespace AlienFarms.Networking.Session
 
         public async Task StopAsync()
         {
+            // Shutdown retires the handler even when it never started NGO (the SDK resets the network after a failure).
             if (!Shutdown())
             {
                 return;
@@ -111,10 +150,11 @@ namespace AlienFarms.Networking.Session
 
         /// <summary>
         /// Shuts NGO down if this handler started it (synchronous part of <see cref="StopAsync"/>). False when this
-        /// handler never started NGO (or already stopped it): the manager is then left alone.
+        /// handler never started NGO (or already stopped it): the manager is then left alone. Always retires the handler.
         /// </summary>
         public bool Shutdown()
         {
+            Retire();
             if (!_started)
             {
                 return false;
@@ -184,10 +224,24 @@ namespace AlienFarms.Networking.Session
             }
         }
 
-        // NGO stopped from outside (root shutdown, dropped client): this run is over, so a later Stop leaves NGO alone.
+        // NGO stopped from outside (root shutdown, dropped client): this run is over, so a later Stop leaves NGO alone
+        // and a later start of the SDK is ignored.
         private void HandleClientStopped(bool wasHost)
         {
             MarkStopped();
+            Retire();
+        }
+
+        private void LogRetiredStartOnce(NetworkConfiguration configuration)
+        {
+            if (_retiredStartLogged)
+            {
+                return;
+            }
+
+            _retiredStartLogged = true;
+            string role = configuration != null ? configuration.Role.ToString() : "unknown";
+            Debug.Log($"[{nameof(NgoSessionNetworkHandler)}] Ignoring a network start ({role}) of a session whose start already failed or ended.");
         }
 
         private void HandleClientDisconnected(ulong clientId)

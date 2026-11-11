@@ -2,6 +2,7 @@ using System;
 using AlienFarms.Core;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
+using Unity.Services.Lobbies;
 using Unity.Services.Multiplayer;
 using Unity.Services.Relay;
 
@@ -10,11 +11,15 @@ namespace AlienFarms.Networking.Session
     /// <summary>
     /// Maps Unity Gaming Services failures and NGO disconnect reasons to <see cref="OnlineSessionErrorKeys"/>. Pure.
     /// Note: the Sessions SDK reports some lobby failures (session full, malformed code) as
-    /// <see cref="SessionError.Unknown"/> without an inner exception; for a join they surface as
-    /// <see cref="OnlineSessionErrorKeys.JoinFailed"/> (see <see cref="FromJoinException"/>).
+    /// <see cref="SessionError.Unknown"/> without an inner exception; for a join a full session is recognized by its
+    /// message (<see cref="IsSessionFull"/>) and anything else surfaces as <see cref="OnlineSessionErrorKeys.JoinFailed"/>
+    /// (see <see cref="FromJoinException"/>).
     /// </summary>
     public static class OnlineSessionErrorMapper
     {
+        // Text fallback for a full session (see IsSessionFull).
+        private const string FullMarker = "full";
+
         public static string FromSessionError(SessionError error)
         {
             switch (error)
@@ -94,13 +99,44 @@ namespace AlienFarms.Networking.Session
         }
 
         /// <summary>
-        /// Key for a failed join by code: as <see cref="FromException"/>, except that an unspecific failure is
-        /// <see cref="OnlineSessionErrorKeys.JoinFailed"/> (the SDK reports a malformed code or a full session that way).
+        /// Key for a failed join by code: <see cref="OnlineSessionErrorKeys.SessionFull"/> for a full session
+        /// (<see cref="IsSessionFull"/>); otherwise as <see cref="FromException"/>, except that an unspecific failure is
+        /// <see cref="OnlineSessionErrorKeys.JoinFailed"/> (the SDK reports a malformed code that way).
         /// </summary>
         public static string FromJoinException(Exception exception)
         {
+            if (IsSessionFull(exception))
+            {
+                return OnlineSessionErrorKeys.SessionFull;
+            }
+
             string key = FromException(exception, OnlineSessionErrorKeys.JoinFailed);
             return key == OnlineSessionErrorKeys.Unknown ? OnlineSessionErrorKeys.JoinFailed : key;
+        }
+
+        /// <summary>
+        /// The join was refused because the session is full. Structured first: a <see cref="LobbyServiceException"/>
+        /// with <see cref="LobbyExceptionReason.LobbyFull"/> anywhere in the chain. The Sessions SDK (2.x) converts it to
+        /// a <see cref="SessionError.Unknown"/> <see cref="SessionException"/> without inner exception, keeping only the
+        /// service message ("... is full"), so only for that unspecific error the message is checked for "full".
+        /// </summary>
+        public static bool IsSessionFull(Exception exception)
+        {
+            for (Exception current = exception; current != null; current = current.InnerException)
+            {
+                if (current is LobbyServiceException lobby && lobby.Reason == LobbyExceptionReason.LobbyFull)
+                {
+                    return true;
+                }
+
+                if (current is SessionException session && session.Error == SessionError.Unknown && session.InnerException == null
+                    && session.Message != null && session.Message.IndexOf(FullMarker, StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -113,12 +149,16 @@ namespace AlienFarms.Networking.Session
             {
                 case DisconnectReasons.RoomFull:
                     return OnlineSessionErrorKeys.SessionFull;
+                case DisconnectReasons.AlreadyConnected:
+                    return OnlineSessionErrorKeys.AlreadyConnected;
                 case DisconnectReasons.ProtocolMismatch:
                     return OnlineSessionErrorKeys.ProtocolMismatch;
                 case DisconnectReasons.HostDisconnected:
                     return OnlineSessionErrorKeys.HostLeft;
                 case DisconnectReasons.InvalidPayload:
                     return OnlineSessionErrorKeys.ConnectionFailed;
+                case DisconnectReasons.NotSessionMember:
+                    return OnlineSessionErrorKeys.NotSessionMember;
                 default:
                     return null;
             }

@@ -143,7 +143,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: AlienFarms.Networking::AlienFarms.Networking.Session.ConnectionApprovalHandler
   _settings: {fileID: 11400000, guid: bbd39eff9786ae94ba8c4ad1657bab45, type: 2}
+  _membershipWaitSeconds: 5
   _manager: {fileID: 2352713602397585419}
+  _sessionConnection: {fileID: 4585822164530064170}
 --- !u!114 &3443010218423245288
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -189,6 +191,8 @@ MonoBehaviour:
   _transport: {fileID: 7564429501961392232}
   _region: 
   _connectTimeoutSeconds: 20
+  _alreadyInSessionRetrySeconds: 1
+  _hostLeftWaitSeconds: 3
 --- !u!114 &8737395324864652958
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -204,7 +208,6 @@ MonoBehaviour:
   _settings: {fileID: 11400000, guid: bbd39eff9786ae94ba8c4ad1657bab45, type: 2}
   _channel: {fileID: 11400000, guid: e886cd36434b8b84582b8c99c48ae0c1, type: 2}
   _session: {fileID: 11400000, guid: bacc8b976cfcbbf4397203a3b15af683, type: 2}
-  _characters: {fileID: 11400000, guid: 3de2edb924d927747817895d267db547, type: 2}
   _displayName: Player
   _signInOnStart: 1
   _root: {fileID: 7870769146679697371}

@@ -13,7 +13,7 @@ namespace AlienFarms.Networking.Tests
         private const ulong GuestClient = 7;
         private const ulong SpectatorClient = 9;
         private const int Roster = 4;
-        private const byte None = ConnectionPayload.NoCharacter;
+        private const byte None = PlayerSlot.NoCharacter;
 
         // ---------------------------------------------------------------- EvaluateRequest / ApplyRequest
 

@@ -72,7 +72,7 @@ namespace AlienFarms.Networking.Player
             PlayerId.None, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
         private readonly NetworkVariable<byte> _characterIndex = new NetworkVariable<byte>(
-            ConnectionPayload.NoCharacter, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+            PlayerSlot.NoCharacter, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
         private readonly NetworkVariable<FixedString32Bytes> _displayName = new NetworkVariable<FixedString32Bytes>(
             default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -85,12 +85,12 @@ namespace AlienFarms.Networking.Player
         private bool _watchingPhase;
         private bool _hasPendingInit;
         private PlayerId _pendingId;
-        private byte _pendingCharacter = ConnectionPayload.NoCharacter;
+        private byte _pendingCharacter = PlayerSlot.NoCharacter;
         private FixedString32Bytes _pendingName;
 
         public PlayerId PlayerId => _playerId.Value;
 
-        public int CharacterIndex => _characterIndex.Value == ConnectionPayload.NoCharacter ? -1 : _characterIndex.Value;
+        public int CharacterIndex => _characterIndex.Value == PlayerSlot.NoCharacter ? -1 : _characterIndex.Value;
 
         public FixedString32Bytes DisplayName => _displayName.Value;
 
@@ -113,9 +113,9 @@ namespace AlienFarms.Networking.Player
         public void ServerInitialize(PlayerId id, int characterIndex, in FixedString32Bytes displayName)
         {
             _pendingId = id;
-            _pendingCharacter = characterIndex >= 0 && characterIndex < ConnectionPayload.NoCharacter
+            _pendingCharacter = characterIndex >= 0 && characterIndex < PlayerSlot.NoCharacter
                 ? (byte)characterIndex
-                : ConnectionPayload.NoCharacter;
+                : PlayerSlot.NoCharacter;
             _pendingName = displayName;
             _hasPendingInit = true;
         }

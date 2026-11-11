@@ -3188,7 +3188,6 @@ MonoBehaviour:
   _anchor: {fileID: 11400000, guid: 73498404eacadb24f9a4e5c637046ab3, type: 2}
   _session: {fileID: 11400000, guid: bacc8b976cfcbbf4397203a3b15af683, type: 2}
   _settings: {fileID: 11400000, guid: bbd39eff9786ae94ba8c4ad1657bab45, type: 2}
-  _characters: {fileID: 11400000, guid: 3de2edb924d927747817895d267db547, type: 2}
   _displayName: Player
   _statusLabel: {fileID: 7408779931065100834}
   _addressField: {fileID: 5645346442573971402}

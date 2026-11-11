@@ -10,14 +10,20 @@ namespace AlienFarms.Networking.Session
         public const string InvalidPayload = "invalid_payload";
         public const string ProtocolMismatch = "protocol_mismatch";
         public const string RoomFull = "room_full";
+        /// <summary>The same Unity Gaming Services player is already connected to this session (another device / window).</summary>
+        public const string AlreadyConnected = "already_connected";
         public const string HostDisconnected = "host_disconnected";
+        /// <summary>The declared UGS player id is not a member of the host's online session.</summary>
+        public const string NotSessionMember = "not_session_member";
 
         public static bool IsKnown(string reason)
         {
             return reason == InvalidPayload
                 || reason == ProtocolMismatch
                 || reason == RoomFull
-                || reason == HostDisconnected;
+                || reason == AlreadyConnected
+                || reason == HostDisconnected
+                || reason == NotSessionMember;
         }
 
         /// <summary><paramref name="reason"/> when it is a known key; otherwise <see cref="HostDisconnected"/>.</summary>

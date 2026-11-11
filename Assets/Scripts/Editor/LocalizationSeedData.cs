@@ -95,6 +95,8 @@ namespace AlienFarms.Editor
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineErrorSessionNotFound, "No existe una sala con ese código.", "No room found with that code."),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineErrorSessionFull, "La sala está llena.", "The room is full."),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineErrorProtocolMismatch, "Tu versión del juego no coincide con la del anfitrión.", "Your game version does not match the host."),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineErrorAlreadyConnected, "Ya estás conectado a esta sala desde otra ventana o dispositivo.", "You are already connected to this room from another window or device."),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineErrorNotSessionMember, "El anfitrión no pudo verificar que estés en esta sala.", "The host could not verify that you are in this room."),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineErrorHostLeft, "El anfitrión cerró la sala.", "The host closed the room."),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineErrorRelayFailed, "No se pudo establecer la conexión (Relay).", "Could not set up the connection (Relay)."),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineErrorConnectionFailed, "Falló la conexión con la sala.", "Connection to the room failed."),

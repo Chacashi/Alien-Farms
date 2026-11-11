@@ -10,8 +10,9 @@ namespace AlienFarms.Data
     public sealed class NetworkSettings : ScriptableObject
     {
         [Header("Session")]
-        [SerializeField, Min(1), Tooltip("Connection protocol version; clients with a different one are rejected.")]
-        private int _protocolVersion = 1;
+        // History: 1 = payload with CharacterIndex (1.5); 2 = character picked in the room, removed from the payload (2.3).
+        [SerializeField, Min(1), Tooltip("Connection protocol version; clients with a different one are rejected. Bump it whenever the connection payload or any replicated layout changes.")]
+        private int _protocolVersion = 2;
 
         [SerializeField, Tooltip("Unity Gaming Services environment name.")]
         private string _environmentName = "dev";
@@ -19,7 +20,7 @@ namespace AlienFarms.Data
         [SerializeField, Range(2, 3), Tooltip("Maximum connections per session (2 players, plus a spectator when allowed).")]
         private int _maxPlayers = 2;
 
-        [SerializeField, Tooltip("Accept a third connection as a spectator instead of answering 'Room full'.")]
+        [SerializeField, Tooltip("Accept a third connection as a spectator instead of answering 'Room full'. Keep off until the gameplay scene supports a client without avatar (2.7).")]
         private bool _allowSpectator;
 
         [SerializeField, Min(0f), Tooltip("Seconds a disconnected player keeps its slot and pose while it reconnects.")]

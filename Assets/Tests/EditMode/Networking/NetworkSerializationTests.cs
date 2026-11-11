@@ -359,13 +359,12 @@ namespace AlienFarms.Networking.Tests
         // ---------------------------------------------------------------- ConnectionPayload
 
         [Test]
-        public void Payload_SizeIsFieldsPlusLengthPrefixedStrings()
+        public void Payload_SizeIsVersionPlusLengthPrefixedStrings()
         {
-            ConnectionPayload payload = ConnectionPayload.Create(Protocol, "Ana", 1);
-            payload.UgsPlayerId = new FixedString64Bytes("abcde");
+            ConnectionPayload payload = ConnectionPayload.Create(Protocol, "Ana", "abcde");
 
-            // int + (uint + 3) + byte + (uint + 5).
-            Assert.That(payload.ToBytes().Length, Is.EqualTo(4 + 4 + 3 + 1 + 4 + 5));
+            // int + (uint + 3) + (uint + 5): no character byte since protocol 2.
+            Assert.That(payload.ToBytes().Length, Is.EqualTo(4 + 4 + 3 + 4 + 5));
         }
 
         [Test]
@@ -373,25 +372,32 @@ namespace AlienFarms.Networking.Tests
         {
             string name = new string('n', FixedString32Bytes.UTF8MaxLengthInBytes);
             string ugsId = new string('u', FixedString64Bytes.UTF8MaxLengthInBytes);
-            ConnectionPayload payload = ConnectionPayload.Create(int.MaxValue, name, ConnectionPayload.NoCharacter - 1);
-            payload.UgsPlayerId = new FixedString64Bytes(ugsId);
+            ConnectionPayload payload = ConnectionPayload.Create(int.MaxValue, name, ugsId);
 
             byte[] bytes = payload.ToBytes();
             bool parsed = ConnectionPayload.TryParse(bytes, out ConnectionPayload result);
 
-            Assert.That(bytes.Length, Is.EqualTo(4 + 4 + 29 + 1 + 4 + 61));
+            Assert.That(bytes.Length, Is.EqualTo(4 + 4 + 29 + 4 + 61));
             Assert.That(parsed, Is.True);
             Assert.That(result.ProtocolVersion, Is.EqualTo(int.MaxValue));
             Assert.That(result.DisplayName.ToString(), Is.EqualTo(name));
             Assert.That(result.UgsPlayerId.ToString(), Is.EqualTo(ugsId));
-            Assert.That(result.CharacterIndex, Is.EqualTo(254));
-            Assert.That(result.HasCharacter, Is.True);
+            Assert.That(result.HasUgsPlayerId, Is.True);
+        }
+
+        [Test]
+        public void Payload_TooLongUgsIdIsTruncatedToCapacity()
+        {
+            ConnectionPayload payload = ConnectionPayload.Create(Protocol, "x", new string('u', 100));
+
+            Assert.That(payload.UgsPlayerId.Length, Is.EqualTo(FixedString64Bytes.UTF8MaxLengthInBytes));
+            Assert.That(ConnectionPayload.TryParse(payload.ToBytes(), out _), Is.True);
         }
 
         [Test]
         public void Payload_EmptyFieldsRoundTrip()
         {
-            ConnectionPayload payload = ConnectionPayload.Create(int.MinValue, null, -1);
+            ConnectionPayload payload = ConnectionPayload.Create(int.MinValue, null);
 
             bool parsed = ConnectionPayload.TryParse(payload.ToBytes(), out ConnectionPayload result);
 
@@ -399,29 +405,19 @@ namespace AlienFarms.Networking.Tests
             Assert.That(result.ProtocolVersion, Is.EqualTo(int.MinValue));
             Assert.That(result.DisplayName.Length, Is.EqualTo(0));
             Assert.That(result.UgsPlayerId.Length, Is.EqualTo(0));
-            Assert.That(result.HasCharacter, Is.False);
-        }
-
-        [TestCase(0, 0)]
-        [TestCase(254, 254)]
-        [TestCase(255, 255)]
-        [TestCase(1000, 255)]
-        [TestCase(int.MinValue, 255)]
-        public void Payload_CharacterIndexOutsideAByteMeansNoCharacter(int requested, int expected)
-        {
-            Assert.That(ConnectionPayload.Create(Protocol, "x", requested).CharacterIndex, Is.EqualTo(expected));
+            Assert.That(result.HasUgsPlayerId, Is.False);
         }
 
         [Test]
         public void Payload_MultiByteNameRoundTripsAndTruncatesOnACodePoint()
         {
             const string accented = "Ñandú \U0001F6F8";
-            ConnectionPayload exact = ConnectionPayload.Create(Protocol, accented, 0);
+            ConnectionPayload exact = ConnectionPayload.Create(Protocol, accented);
             ConnectionPayload.TryParse(exact.ToBytes(), out ConnectionPayload exactResult);
 
             // 20 two-byte characters = 40 bytes, more than the 29 the name holds.
             string longName = new string('ñ', 20);
-            ConnectionPayload truncated = ConnectionPayload.Create(Protocol, longName, 0);
+            ConnectionPayload truncated = ConnectionPayload.Create(Protocol, longName);
             string truncatedText = truncated.DisplayName.ToString();
 
             Assert.That(exactResult.DisplayName.ToString(), Is.EqualTo(accented));
@@ -434,12 +430,10 @@ namespace AlienFarms.Networking.Tests
         [Test]
         public void Payload_UgsIdLengthPrefixOverCapacityIsRejected()
         {
-            ConnectionPayload payload = ConnectionPayload.Create(Protocol, "Ana", 0);
-            payload.UgsPlayerId = new FixedString64Bytes("id");
-            byte[] bytes = payload.ToBytes();
+            byte[] bytes = ConnectionPayload.Create(Protocol, "Ana", "id").ToBytes();
 
-            // int + (uint + 3) + byte: the UGS id length prefix starts at byte 12.
-            const int prefix = 4 + 4 + 3 + 1;
+            // int + (uint + 3): the UGS id length prefix starts at byte 11.
+            const int prefix = 4 + 4 + 3;
             byte[] overCapacity = (byte[])bytes.Clone();
             overCapacity[prefix] = (byte)(FixedString64Bytes.UTF8MaxLengthInBytes + 1);
 
@@ -449,17 +443,106 @@ namespace AlienFarms.Networking.Tests
         }
 
         [Test]
+        public void Payload_MaxSerializedSizeIsTheLargestValidPayload()
+        {
+            string name = new string('n', FixedString32Bytes.UTF8MaxLengthInBytes);
+            string ugsId = new string('u', FixedString64Bytes.UTF8MaxLengthInBytes);
+
+            Assert.That(ConnectionPayload.MaxSerializedSize, Is.EqualTo(102));
+            Assert.That(ConnectionPayload.Create(Protocol, name, ugsId).ToBytes().Length, Is.EqualTo(ConnectionPayload.MaxSerializedSize));
+        }
+
+        [Test]
+        public void Payload_NameLengthPrefixOverCapacityIsRejected()
+        {
+            byte[] bytes = ConnectionPayload.Create(Protocol, "Ana", "id").ToBytes();
+
+            // The name length prefix starts right after the int version.
+            byte[] overCapacity = (byte[])bytes.Clone();
+            overCapacity[sizeof(int)] = (byte)(FixedString32Bytes.UTF8MaxLengthInBytes + 1);
+
+            Assert.That(bytes[sizeof(int)], Is.EqualTo(3));
+            Assert.That(ConnectionPayload.TryParse(overCapacity, out ConnectionPayload result), Is.False);
+            Assert.That(result.ProtocolVersion, Is.EqualTo(Protocol), "The version is still answered as such.");
+            Assert.That(result.DisplayName.Length, Is.EqualTo(0));
+        }
+
+        [TestCase(ConnectionPayload.MaxSerializedSize + 1)]
+        [TestCase(64 * 1024)]
+        public void Payload_OversizedDataIsRejectedKeepingOnlyTheVersion(int size)
+        {
+            byte[] valid = ConnectionPayload.Create(Protocol, "Ana", "id").ToBytes();
+            byte[] huge = new byte[size];
+            Array.Copy(valid, huge, valid.Length);
+
+            Assert.That(ConnectionPayload.TryParse(huge, out ConnectionPayload result), Is.False);
+            Assert.That(result.ProtocolVersion, Is.EqualTo(Protocol));
+            Assert.That(result.DisplayName.Length, Is.EqualTo(0));
+            Assert.That(result.UgsPlayerId.Length, Is.EqualTo(0));
+        }
+
+        [TestCase("  <b>Zorg</b>\n ", "bZorg/b")]
+        [TestCase("\u0007\u200B", "")]
+        [TestCase("Ana", "Ana")]
+        public void Payload_WithSanitizedName_CleansOnlyTheName(string name, string expected)
+        {
+            ConnectionPayload payload = ConnectionPayload.Create(Protocol, name, "u1");
+
+            ConnectionPayload clean = payload.WithSanitizedName();
+
+            Assert.That(clean.DisplayName.ToString(), Is.EqualTo(expected));
+            Assert.That(clean.UgsPlayerId.ToString(), Is.EqualTo("u1"));
+            Assert.That(clean.ProtocolVersion, Is.EqualTo(Protocol));
+        }
+
+        [Test]
+        public void Payload_TrailingBytesAreRejected()
+        {
+            byte[] bytes = ConnectionPayload.Create(Protocol, "Ana", "id").ToBytes();
+            byte[] longer = new byte[bytes.Length + 1];
+            Array.Copy(bytes, longer, bytes.Length);
+
+            Assert.That(ConnectionPayload.TryParse(longer, out _), Is.False);
+        }
+
+        [Test]
+        public void Payload_Protocol1LayoutFailsButKeepsItsVersion()
+        {
+            // Protocol 1 wrote int + name + CharacterIndex byte + UGS id.
+            byte[] old = Protocol1Bytes(1, "Ana", 2, "player-1");
+
+            bool parsed = ConnectionPayload.TryParse(old, out ConnectionPayload result);
+
+            Assert.That(parsed, Is.False);
+            Assert.That(result.ProtocolVersion, Is.EqualTo(1));
+            Assert.That(result.DisplayName.Length, Is.EqualTo(0));
+            Assert.That(result.UgsPlayerId.Length, Is.EqualTo(0));
+        }
+
+        [Test]
         public void Payload_ReadsBackThroughTheGenericNetworkSerializablePath()
         {
-            ConnectionPayload payload = ConnectionPayload.Create(Protocol, "Zorg", 3);
-            payload.UgsPlayerId = new FixedString64Bytes("player-123");
+            ConnectionPayload payload = ConnectionPayload.Create(Protocol, "Zorg", "player-123");
 
             ConnectionPayload result = RoundTrip(payload);
 
             Assert.That(result.ProtocolVersion, Is.EqualTo(Protocol));
             Assert.That(result.DisplayName.ToString(), Is.EqualTo("Zorg"));
-            Assert.That(result.CharacterIndex, Is.EqualTo(3));
             Assert.That(result.UgsPlayerId.ToString(), Is.EqualTo("player-123"));
+        }
+
+        private static byte[] Protocol1Bytes(int version, string name, byte character, string ugsId)
+        {
+            using (var writer = new FastBufferWriter(256, Allocator.Temp))
+            {
+                var fixedName = new FixedString32Bytes(name);
+                var fixedId = new FixedString64Bytes(ugsId);
+                writer.WriteValueSafe(version);
+                writer.WriteValueSafe(fixedName);
+                writer.WriteValueSafe(character);
+                writer.WriteValueSafe(fixedId);
+                return writer.ToArray();
+            }
         }
 
         // ---------------------------------------------------------------- Helpers

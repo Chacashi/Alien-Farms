@@ -366,6 +366,14 @@ MonoBehaviour:
     m_Localized: No se pudo cargar la partida.
     m_Metadata:
       m_Items: []
+  - m_Id: 4022579556503552
+    m_Localized: "Ya est\xE1s conectado a esta sala desde otra ventana o dispositivo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4028777219477504
+    m_Localized: "El anfitri\xF3n no pudo verificar que est\xE9s en esta sala."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

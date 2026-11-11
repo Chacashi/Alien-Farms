@@ -62,6 +62,8 @@ namespace AlienFarms.Networking.Session
         private string _joinCode;
         private string _displayName = string.Empty;
         private RelaySessionStart _current;
+        private int _startsInFlight;
+        private Task _refresh;
 
         /// <summary>Session this machine is in (null when none).</summary>
         public ISession Session => _current?.Session;
@@ -70,6 +72,77 @@ namespace AlienFarms.Networking.Session
         public string LastErrorKey { get; private set; }
 
         public bool HasSession => _current != null;
+
+        /// <summary>
+        /// In a UGS session, still creating / joining one, or running NGO over Relay. Between a host's start and its
+        /// adoption (<see cref="Session"/> still null) clients may already connect through its Relay allocation, so a
+        /// Relay transport alone counts as online (a direct connection sets the plain protocol again).
+        /// </summary>
+        public bool IsOnline => _current != null
+            || _startsInFlight > 0
+            || (_transport != null && _transport.Protocol == UnityTransport.ProtocolType.RelayUnityTransport);
+
+        /// <summary>
+        /// <paramref name="ugsPlayerId"/> is in the current session's player list, as last received by this machine (it
+        /// may lag behind a join: see <see cref="RefreshSessionAsync"/>). False without a session.
+        /// </summary>
+        public bool IsSessionMember(string ugsPlayerId)
+        {
+            ISession session = Session;
+            if (session == null || string.IsNullOrEmpty(ugsPlayerId))
+            {
+                return false;
+            }
+
+            IReadOnlyList<IReadOnlyPlayer> players = session.Players;
+            if (players == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < players.Count; i++)
+            {
+                if (players[i] != null && string.Equals(players[i].Id, ugsPlayerId, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Fetches the current session from the service (its player list included). Concurrent calls share one request
+        /// (the lobby read is rate limited). Never throws: a failure is logged and the local copy stays as it was.
+        /// </summary>
+        public Task RefreshSessionAsync()
+        {
+            if (_refresh != null && !_refresh.IsCompleted)
+            {
+                return _refresh;
+            }
+
+            ISession session = Session;
+            if (session == null)
+            {
+                return Task.CompletedTask;
+            }
+
+            _refresh = RefreshCoreAsync(session);
+            return _refresh;
+        }
+
+        private static async Task RefreshCoreAsync(ISession session)
+        {
+            try
+            {
+                await session.RefreshAsync();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[{nameof(RelaySessionConnection)}] Session refresh failed: {exception.Message}");
+            }
+        }
 
         /// <summary>Code the next <see cref="StartClientAsync"/> joins (normalized by the caller).</summary>
         public void SetJoinCode(string code)
@@ -282,6 +355,7 @@ namespace AlienFarms.Networking.Session
             }
 
             s_startsInFlight++;
+            _startsInFlight++;
             try
             {
                 return await StartCoreAsync(manager, joinCode, cancellationToken);
@@ -291,6 +365,11 @@ namespace AlienFarms.Networking.Session
                 if (s_startsInFlight > 0)
                 {
                     s_startsInFlight--;
+                }
+
+                if (_startsInFlight > 0)
+                {
+                    _startsInFlight--;
                 }
             }
         }
@@ -428,7 +507,10 @@ namespace AlienFarms.Networking.Session
         }
 
         // Error key of a failed start (null when cancelled). The SDK cleans its own session up on a failed or cancelled
-        // create/join; this handler only stops NGO if it started it.
+        // create/join (it leaves / releases it before rethrowing and never registers it, so no orphan is left for
+        // SessionSdkWorkarounds); this handler only stops NGO if it started it. Its NetworkModule stays subscribed to
+        // that dead session's Changed event (no public way to detach it) and may start the network again with this
+        // handler: Shutdown retires it, so such a late start is ignored (see NgoSessionNetworkHandler.Retired).
         private static string Fail(Exception exception, NgoSessionNetworkHandler handler, bool isJoin, CancellationToken cancellationToken)
         {
             handler.Shutdown();

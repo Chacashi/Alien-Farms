@@ -99,6 +99,8 @@ namespace AlienFarms.UI
         public const string OnlineErrorSessionNotFound = OnlineSessionErrorKeys.SessionNotFound;
         public const string OnlineErrorSessionFull = OnlineSessionErrorKeys.SessionFull;
         public const string OnlineErrorProtocolMismatch = OnlineSessionErrorKeys.ProtocolMismatch;
+        public const string OnlineErrorAlreadyConnected = OnlineSessionErrorKeys.AlreadyConnected;
+        public const string OnlineErrorNotSessionMember = OnlineSessionErrorKeys.NotSessionMember;
         public const string OnlineErrorHostLeft = OnlineSessionErrorKeys.HostLeft;
         public const string OnlineErrorRelayFailed = OnlineSessionErrorKeys.RelayFailed;
         public const string OnlineErrorConnectionFailed = OnlineSessionErrorKeys.ConnectionFailed;

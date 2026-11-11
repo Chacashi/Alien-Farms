@@ -31,11 +31,8 @@ namespace AlienFarms.Networking.Session
         [SerializeField, Tooltip("Channel the online menu talks to.")]
         private OnlineSessionChannel _channel;
 
-        [SerializeField, Tooltip("Optional: Mode is set to Online while in a session; LocalCharacter is sent as the pick.")]
+        [SerializeField, Tooltip("Optional: Mode is set to Online while in a session.")]
         private MatchSession _session;
-
-        [SerializeField, Tooltip("Optional: maps the session's LocalCharacter to its index for the connection payload.")]
-        private CharacterRoster _characters;
 
         [SerializeField, Tooltip("Name published in the session and the connection payload (truncated to 29 bytes).")]
         private string _displayName = "Player";
@@ -585,7 +582,12 @@ namespace AlienFarms.Networking.Session
                 && property != null
                 && !string.IsNullOrWhiteSpace(property.Value))
             {
-                return property.Value;
+                // Any member writes its own property: clean it before the menu shows it (rich text, control chars).
+                string name = DisplayNameSanitizer.Sanitize(property.Value);
+                if (name.Length > 0)
+                {
+                    return name;
+                }
             }
 
             return player.Id;
@@ -625,22 +627,10 @@ namespace AlienFarms.Networking.Session
             }
         }
 
+        // The character is picked inside the room (NetworkLobbyState); the payload only identifies the player.
         private ConnectionPayload BuildPayload()
         {
-            int characterIndex = -1;
-            if (_session != null && _characters != null)
-            {
-                characterIndex = _characters.IndexOf(_session.LocalCharacter);
-            }
-
-            ConnectionPayload payload = ConnectionPayload.Create(_settings.ProtocolVersion, _displayName, characterIndex);
-            string playerId = _bootstrapper.PlayerId;
-            if (!string.IsNullOrEmpty(playerId))
-            {
-                payload.UgsPlayerId.CopyFromTruncated(playerId);
-            }
-
-            return payload;
+            return ConnectionPayload.Create(_settings.ProtocolVersion, _displayName, _bootstrapper.PlayerId);
         }
 
         private void SubscribeAuthentication()

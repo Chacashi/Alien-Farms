@@ -221,7 +221,7 @@ namespace AlienFarms.Networking.Player
             }
 
             Transform spawn = _spawnPoints[index];
-            int characterIndex = slot.CharacterIndex != ConnectionPayload.NoCharacter ? slot.CharacterIndex : index;
+            int characterIndex = slot.CharacterIndex != PlayerSlot.NoCharacter ? slot.CharacterIndex : index;
             CharacterDefinition character = _characters != null ? _characters.Get(characterIndex) : null;
 
             // One instantiation per join (not a hot path); the instance becomes the client's player object.
