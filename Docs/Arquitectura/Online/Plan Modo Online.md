@@ -324,6 +324,7 @@ GP = gameplay-programmer · SB = scene-builder · QA = qa-tester · CR = code-re
 > Progreso 2026-11-11: 1.4 y 1.5 ✅. Host + cliente probados en MPPM: se mueven los dos jugadores (≈0,10 s de interpolación), `room_full`, desconexión y reconexión, `host_disconnected`. 413/413 tests. Método de prueba: los clones MPPM aparecen como instancias del MCP. Siguiente: 1.6.
 
 > Progreso 2026-11-11 (tarde): 1.6 ✅. CR aplicado (bomba despawneada mientras se carga ya no queda emparentada al avatar: `NetworkCarriable.ServerDetach` + `PooledParenting`; `RequestThrowRpc` con permiso Everyone y validación manual; bit `Paused` en `PlayerInputCommand`; `ReadyForRematch` limpio tras reconexión). Gate MPPM host + cliente: movimiento, agarre/lanzamiento/puntaje, ledger, bomba + stun, pausa cargando, fin de ronda cargando, Results y revancha OK (timer acortado en runtime, no se jugó un 5:00 real). Shutdown/salir de Play sin warnings (simulación a Replica en `OnNetworkDespawn`). `MaxPacketQueueSize` 512. 432/432 tests. Siguiente: 1.7.
+> Progreso 2026-11-11 (noche): 1.7 ✅. +75 tests EditMode: `SnapshotBufferTests` (capacidad, anillo, huecos, epochs, Clear), `SnapshotInterpolatorTests` ampliado (extremos, sin extrapolar, yaw por el camino corto, flags) y `NetworkSerializationTests` (round-trip y tamaño de wire de cada struct, valores límite, counts hostiles). 507/507. Sin bugs de producción. Nota: con `ServerTime` no monótono el interpolador podría extrapolar (`LerpUnclamped`); el servidor no lo produce. **Semana 1 (N1) completa.** Siguiente: 2.1.
 
 ### Semana 1 (11-10 → 11-16) · N1: núcleo online jugable (conexión directa)
 | # | Tarea | Agente | Verificación |
@@ -334,7 +335,7 @@ GP = gameplay-programmer · SB = scene-builder · QA = qa-tester · CR = code-re
 | 1.4 ✅ | (1.4a ✅ prefabs de red sobre los mismos prefabs, gate local OK; los animales sincronizan Rot Y porque la raíz rota al cargarlos. 1.4b = router, roots de modo, MatchNetwork y botones dev, después de 1.5) Prefabs `NetworkRoot` y `Player_Net`, red en animales y bomba, `NetworkPrefabs.asset`, roots de modo, `GameModeRouter`, `MatchNetwork`, botones dev Host/Cliente | SB | El modo local sigue funcionando |
 | 1.5 ✅ | `NetworkPlayer`, `NetworkPlayerInput`, `NetworkPlayerMotion` (sin predicción), `NetworkPlayerRoster`, `DirectConnection`, `NetworkSceneLoader` | GP | MPPM: 2 avatares se mueven |
 | 1.6 ✅ | `NetworkAnimal`/`NetworkBomb`, `NetworkCarry`, `NetworkMatchState`, la regla de GameEvents, `NetworkMatchExit` | GP | Partida de 5:00 completa en MPPM + revancha |
-| 1.7 | Tests EditMode (buffer, interpolador, serialización) | GP + QA | En verde |
+| 1.7 ✅ | Tests EditMode (buffer, interpolador, serialización) | GP + QA | En verde |
 
 ### Semana 2 (11-17 → 11-23) · N2: sesiones, ciclo de vida y colecciones
 | # | Tarea | Agente | Verificación |

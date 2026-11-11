@@ -153,6 +153,175 @@ namespace AlienFarms.Networking.Tests
             Assert.That(result.Flags, Is.EqualTo(snapshot.Flags));
         }
 
+        [Test]
+        public void Sample_NullBufferFails()
+        {
+            Assert.That(SnapshotInterpolator.TrySample(null, 1d, out InterpolatedPose pose), Is.False);
+            Assert.That(pose.Position, Is.EqualTo(Vector3.zero));
+        }
+
+        [Test]
+        public void Sample_SingleSnapshotIsClampedAtAnyTime()
+        {
+            var buffer = new SnapshotBuffer(4);
+            buffer.Add(Snapshot(5, new Vector3(3f, 0f, 0f), 45f));
+
+            foreach (double time in new[] { Time(0), Time(5), Time(50) })
+            {
+                Assert.That(SnapshotInterpolator.TrySample(buffer, time, out InterpolatedPose pose), Is.True);
+                Assert.That(pose.IsClamped, Is.True);
+                Assert.That(pose.Position.x, Is.EqualTo(3f));
+                Assert.That(pose.FacingYaw, Is.EqualTo(45f));
+            }
+        }
+
+        [Test]
+        public void Sample_ExactlyOnSnapshotTimes()
+        {
+            var buffer = new SnapshotBuffer(8);
+            buffer.Add(Snapshot(1, new Vector3(0f, 0f, 0f)));
+            buffer.Add(Snapshot(2, new Vector3(5f, 0f, 0f)));
+            buffer.Add(Snapshot(3, new Vector3(9f, 0f, 0f)));
+
+            SnapshotInterpolator.TrySample(buffer, Time(1), out InterpolatedPose atOldest);
+            SnapshotInterpolator.TrySample(buffer, Time(2), out InterpolatedPose atMiddle);
+            SnapshotInterpolator.TrySample(buffer, Time(3), out InterpolatedPose atNewest);
+
+            Assert.That(atOldest.IsClamped, Is.True);
+            Assert.That(atOldest.Position.x, Is.EqualTo(0f));
+            Assert.That(atMiddle.IsClamped, Is.False);
+            Assert.That(atMiddle.Position.x, Is.EqualTo(5f).Within(1e-5f));
+            Assert.That(atNewest.IsClamped, Is.True);
+            Assert.That(atNewest.Position.x, Is.EqualTo(9f));
+        }
+
+        [Test]
+        public void Sample_FindsTheSegmentAroundTheTimeWithUnevenGaps()
+        {
+            var buffer = new SnapshotBuffer(8);
+            buffer.Add(Snapshot(1, new Vector3(0f, 0f, 0f)));
+            buffer.Add(Snapshot(2, new Vector3(1f, 0f, 0f)));
+            buffer.Add(Snapshot(5, new Vector3(4f, 0f, 10f)));
+            buffer.Add(Snapshot(6, new Vector3(100f, 0f, 0f)));
+
+            // Halfway between ticks 2 and 5 (ticks 3-4 were lost).
+            SnapshotInterpolator.TrySample(buffer, Time(2) + Step * 1.5d, out InterpolatedPose pose);
+
+            Assert.That(pose.IsClamped, Is.False);
+            Assert.That(pose.Position.x, Is.EqualTo(2.5f).Within(1e-4f));
+            Assert.That(pose.Position.z, Is.EqualTo(5f).Within(1e-4f));
+        }
+
+        [Test]
+        public void Sample_WorksAfterTheRingWrapped()
+        {
+            var buffer = new SnapshotBuffer(3);
+            for (uint tick = 1; tick <= 8; tick++)
+            {
+                buffer.Add(Snapshot(tick, new Vector3(tick, 0f, 0f)));
+            }
+
+            SnapshotInterpolator.TrySample(buffer, Time(6) + Step * 0.25d, out InterpolatedPose inside);
+            SnapshotInterpolator.TrySample(buffer, Time(4), out InterpolatedPose evicted);
+
+            Assert.That(inside.IsClamped, Is.False);
+            Assert.That(inside.Position.x, Is.EqualTo(6.25f).Within(1e-4f));
+            // Tick 4 was overwritten: clamped to the oldest still buffered (tick 6).
+            Assert.That(evicted.IsClamped, Is.True);
+            Assert.That(evicted.Position.x, Is.EqualTo(6f));
+        }
+
+        [Test]
+        public void Sample_NeverExtrapolatesWithVelocity()
+        {
+            var buffer = new SnapshotBuffer(4);
+            PlayerSnapshot first = Snapshot(1, Vector3.zero);
+            first.Velocity = new Vector3(10f, 0f, 0f);
+            PlayerSnapshot second = Snapshot(2, new Vector3(0.2f, 0f, 0f));
+            second.Velocity = new Vector3(10f, 0f, 0f);
+            buffer.Add(first);
+            buffer.Add(second);
+
+            SnapshotInterpolator.TrySample(buffer, Time(2) + 1d, out InterpolatedPose pose);
+
+            Assert.That(pose.IsClamped, Is.True);
+            Assert.That(pose.Position, Is.EqualTo(second.Position));
+            Assert.That(pose.Velocity, Is.EqualTo(second.Velocity));
+        }
+
+        [Test]
+        public void Sample_LerpsVelocityAndStun()
+        {
+            var buffer = new SnapshotBuffer(4);
+            PlayerSnapshot first = Snapshot(1, Vector3.zero);
+            first.Velocity = new Vector3(0f, 0f, 2f);
+            first.StunRemaining = 1f;
+            PlayerSnapshot second = Snapshot(2, Vector3.zero);
+            second.Velocity = new Vector3(4f, 0f, 6f);
+            second.StunRemaining = 0f;
+            buffer.Add(first);
+            buffer.Add(second);
+
+            SnapshotInterpolator.TrySample(buffer, Time(1) + Step * 0.25d, out InterpolatedPose pose);
+
+            Assert.That(pose.Velocity.x, Is.EqualTo(1f).Within(1e-4f));
+            Assert.That(pose.Velocity.z, Is.EqualTo(3f).Within(1e-4f));
+            Assert.That(pose.StunRemaining, Is.EqualTo(0.75f).Within(1e-4f));
+        }
+
+        [TestCase(10f, 350f, 0.5d, 0f)]
+        [TestCase(10f, 350f, 0.25d, 5f)]
+        [TestCase(350f, 10f, 0.75d, 5f)]
+        [TestCase(170f, 190f, 0.5d, 180f)]
+        [TestCase(0f, 270f, 0.5d, 315f)]
+        public void Sample_YawTakesTheShortestWayRound(float fromYaw, float toYaw, double fraction, float expected)
+        {
+            var buffer = new SnapshotBuffer(4);
+            buffer.Add(Snapshot(1, Vector3.zero, fromYaw));
+            buffer.Add(Snapshot(2, Vector3.zero, toYaw));
+
+            SnapshotInterpolator.TrySample(buffer, Time(1) + Step * fraction, out InterpolatedPose pose);
+
+            Assert.That(Mathf.DeltaAngle(pose.FacingYaw, expected), Is.EqualTo(0f).Within(1e-3f));
+        }
+
+        [Test]
+        public void Sample_FlagsComeFromTheOlderSnapshotOfThePair()
+        {
+            var buffer = new SnapshotBuffer(4);
+            PlayerSnapshot sprinting = Snapshot(1, Vector3.zero);
+            sprinting.Flags = PlayerSnapshotFlags.Sprinting;
+            PlayerSnapshot aiming = Snapshot(2, Vector3.zero);
+            aiming.Flags = PlayerSnapshotFlags.Aiming;
+            PlayerSnapshot both = Snapshot(3, Vector3.zero);
+            both.Flags = PlayerSnapshotFlags.Sprinting | PlayerSnapshotFlags.Aiming;
+            buffer.Add(sprinting);
+            buffer.Add(aiming);
+            buffer.Add(both);
+
+            SnapshotInterpolator.TrySample(buffer, Time(1) + Step * 0.99d, out InterpolatedPose first);
+            SnapshotInterpolator.TrySample(buffer, Time(2), out InterpolatedPose second);
+            SnapshotInterpolator.TrySample(buffer, Time(9), out InterpolatedPose clamped);
+
+            Assert.That(first.Flags, Is.EqualTo(PlayerSnapshotFlags.Sprinting));
+            Assert.That(second.Flags, Is.EqualTo(PlayerSnapshotFlags.Aiming));
+            Assert.That(clamped.Flags, Is.EqualTo(PlayerSnapshotFlags.Sprinting | PlayerSnapshotFlags.Aiming));
+        }
+
+        [TestCase(0f, 0f, 1f)]
+        [TestCase(90f, 1f, 0f)]
+        [TestCase(180f, 0f, -1f)]
+        [TestCase(-90f, -1f, 0f)]
+        [TestCase(360f, 0f, 1f)]
+        public void Pose_FacingDirectionIsPlanarFromYaw(float yaw, float expectedX, float expectedZ)
+        {
+            Vector3 direction = new InterpolatedPose { FacingYaw = yaw }.FacingDirection;
+
+            Assert.That(direction.x, Is.EqualTo(expectedX).Within(1e-5f));
+            Assert.That(direction.y, Is.EqualTo(0f));
+            Assert.That(direction.z, Is.EqualTo(expectedZ).Within(1e-5f));
+        }
+
         private static double Time(uint tick) => tick * Step;
 
         private static PlayerSnapshot Snapshot(uint tick, Vector3 position, float yaw = 0f, byte epoch = 0)
