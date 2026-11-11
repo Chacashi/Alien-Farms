@@ -83,5 +83,32 @@ namespace AlienFarms.Tests
             Assert.AreEqual(1, AudioVariation.SelectVoice(busy, 3));
             Assert.AreEqual(1, AudioVariation.SelectVoice(busy, -1));
         }
+
+        [TestCase(0f, 1f)]
+        [TestCase(0.5f, 1.25f)]
+        [TestCase(1f, 1.5f)]
+        [TestCase(3f, 1.5f)]
+        public void RampPitch_RisesLinearlyThenHolds(float elapsed, float expected)
+        {
+            Assert.AreEqual(expected, AudioVariation.RampPitch(1f, elapsed, 1f, 1.5f), 1e-5f);
+        }
+
+        [Test]
+        public void RampPitch_ScalesBasePitch()
+        {
+            Assert.AreEqual(1.8f, AudioVariation.RampPitch(1.2f, 2f, 1f, 1.5f), 1e-5f);
+        }
+
+        [Test]
+        public void RampPitch_ZeroRampTime_JumpsToTarget()
+        {
+            Assert.AreEqual(2f, AudioVariation.RampPitch(1f, 0f, 0f, 2f), 1e-5f);
+        }
+
+        [Test]
+        public void RampPitch_ClampsToMaxPitch()
+        {
+            Assert.AreEqual(AudioVariation.MaxPitch, AudioVariation.RampPitch(2.5f, 1f, 1f, 3f), 1e-5f);
+        }
     }
 }

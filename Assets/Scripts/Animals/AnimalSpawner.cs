@@ -9,9 +9,10 @@ namespace AlienFarms.Animals
     /// <summary>
     /// Scene composition root for animals: owns one pool per type, spawns the initial population around
     /// a scene-placed center and refills it over time while the free population is below target.
+    /// As a <see cref="SimulationRole.Replica"/> it only keeps the pools (for replicated animals) and never populates.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class AnimalSpawner : MonoBehaviour
+    public sealed class AnimalSpawner : MonoBehaviour, ISimulationRoleTarget
     {
         [Header("Config")]
         [SerializeField, Tooltip("Population, types and placement rules.")]
@@ -37,9 +38,13 @@ namespace AlienFarms.Animals
         private int _blockingMask;
         private float _respawnTimer;
         private bool _warnedCap;
+        private SimulationRole _role = SimulationRole.Authority;
+        private IAnimalNetworkHook _networkHook;
 
         /// <summary>Animals currently in play (including carried and captured ones).</summary>
         public int ActiveCount => _active != null ? _active.Count : 0;
+
+        public SimulationRole Role => _role;
 
         private void Awake()
         {
@@ -75,6 +80,7 @@ namespace AlienFarms.Animals
 
                 _pools[i] = new AnimalTypePool(
                     data, _animalsContainer, _bounds, zones, _settings.KillHeight, _settings.PrewarmPerType, _settings.PoolHardCap);
+                _pools[i].SetNetworkHook(_networkHook);
                 _totalWeight += Mathf.Max(1, entries[i].Weight);
             }
         }
@@ -87,7 +93,7 @@ namespace AlienFarms.Animals
             }
 
             // ResetPopulation may already have populated the zone (e.g. a match reset before our Start).
-            if (_active.Count == 0)
+            if (_role == SimulationRole.Authority && _active.Count == 0)
             {
                 SpawnInitial();
             }
@@ -95,6 +101,11 @@ namespace AlienFarms.Animals
 
         private void Update()
         {
+            if (_role == SimulationRole.Replica)
+            {
+                return;
+            }
+
             _respawnTimer -= Time.deltaTime;
             if (_respawnTimer > 0f)
             {
@@ -127,6 +138,74 @@ namespace AlienFarms.Animals
             TrySpawnOne();
         }
 
+        /// <summary>Replica: never populates or refills (animals come from the network). Set it before Start.</summary>
+        public void SetSimulationRole(SimulationRole role)
+        {
+            if (role == SimulationRole.Replica && _role == SimulationRole.Authority && ActiveCount > 0)
+            {
+                Debug.LogWarning($"[{nameof(AnimalSpawner)}] '{name}' switched to Replica with {ActiveCount} animals already spawned locally; set the role before Start.", this);
+            }
+
+            _role = role;
+        }
+
+        /// <summary>Network hook every pool reports the authority's spawns and despawns to (null = local pooling).</summary>
+        public void SetNetworkHook(IAnimalNetworkHook hook)
+        {
+            _networkHook = hook;
+            if (_pools == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _pools.Length; i++)
+            {
+                _pools[i]?.SetNetworkHook(hook);
+            }
+        }
+
+        /// <summary>
+        /// Stable index of an animal type: its position in <see cref="AnimalSpawnSettings.Entries"/> (the order both
+        /// server and clients load from the same asset). False for a type this spawner does not handle.
+        /// </summary>
+        public bool TryGetTypeIndex(AnimalData data, out int typeIndex)
+        {
+            if (_pools != null && data != null)
+            {
+                for (int i = 0; i < _pools.Length; i++)
+                {
+                    if (_pools[i] != null && _pools[i].Data == data)
+                    {
+                        typeIndex = i;
+                        return true;
+                    }
+                }
+            }
+
+            typeIndex = -1;
+            return false;
+        }
+
+        /// <summary>Pool of the given animal type, if this spawner has one.</summary>
+        public bool TryGetPool(AnimalData data, out AnimalTypePool pool)
+        {
+            if (_pools != null && data != null)
+            {
+                for (int i = 0; i < _pools.Length; i++)
+                {
+                    AnimalTypePool candidate = _pools[i];
+                    if (candidate != null && candidate.Data == data)
+                    {
+                        pool = candidate;
+                        return true;
+                    }
+                }
+            }
+
+            pool = null;
+            return false;
+        }
+
         /// <summary>Removes an animal from play and returns it to its pool.</summary>
         public void Despawn(Animal animal)
         {
@@ -146,7 +225,7 @@ namespace AlienFarms.Animals
         /// <summary>Despawns every animal and spawns the initial population again.</summary>
         public void ResetPopulation()
         {
-            if (!enabled || _active == null)
+            if (!enabled || _active == null || _role == SimulationRole.Replica)
             {
                 return;
             }
@@ -199,6 +278,8 @@ namespace AlienFarms.Animals
                 }
 
                 Animal animal = pool.Get();
+                // A pooled instance may have served as a replica before.
+                animal.SetSimulationRole(SimulationRole.Authority);
                 animal.Spawn(point, Quaternion.Euler(0f, Random.Range(0f, 360f), 0f));
                 _active.Add(animal);
                 return true;

@@ -1,0 +1,88 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: HowToPlay_en
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.StringTable
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: 5abba3cebb7a32f42b8f7baae91d6072, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 348901376
+    m_Localized: 'Bring animals from the center zone to your pen. Each animal is
+      worth different points (the cow is worth more, but it''s heavier). When time
+      runs out, whoever has the most points in their pen wins. <color=#B04A0A>Watch
+      out: your rival can steal from you, even from your own pen!</color>'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 361484288
+    m_Localized: You can't sprint while carrying. Tackle a rival who's carrying an
+      animal to steal it. Throw the bomb to stun your rival.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 361484289
+    m_Localized: Keyboard & Mouse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 361484290
+    m_Localized: '<color=#9A3E08>Move:</color> WASD
+
+      <color=#9A3E08>Camera:</color>
+      Mouse
+
+      <color=#9A3E08>Sprint:</color> Left Shift
+
+      <color=#9A3E08>Grab:</color>
+      hold E (release to drop)
+
+      <color=#9A3E08>Aim:</color> hold right click
+
+      <color=#9A3E08>Throw:</color>
+      while aiming, release E
+
+      <color=#9A3E08>Pause:</color> hold Esc 3 s
+
+      <color=#9A3E08>Menus:</color>
+      Enter confirm, Esc back'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 361484291
+    m_Localized: Gamepad (PS / Xbox)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 361484292
+    m_Localized: '<color=#9A3E08>Move:</color> Left stick
+
+      <color=#9A3E08>Camera:</color>
+      Right stick
+
+      <color=#9A3E08>Sprint:</color> L2 / LT
+
+      <color=#9A3E08>Grab:</color>
+      hold R2 / RT (release to drop)
+
+      <color=#9A3E08>Aim:</color> hold Cross
+      / A or L1 / LB
+
+      <color=#9A3E08>Throw:</color> while aiming, release R2
+      / RT
+
+      <color=#9A3E08>Pause:</color> hold Options / Menu 3 s
+
+      <color=#9A3E08>Menus:</color>
+      Cross / A confirm, Circle / B back'
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

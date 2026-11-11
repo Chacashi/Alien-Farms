@@ -11,9 +11,11 @@ namespace AlienFarms.Zones
     /// <see cref="ObstacleSlot"/>s and, on <see cref="Regenerate"/>, asks <see cref="ObstacleLayoutPlanner"/> which slots get
     /// which variant and yaw, then toggles the pre-instantiated children (no Instantiate/Destroy, no positions moved).
     /// The first layout is rolled in Awake, before the animal spawner's Start populates the zone.
+    /// As a <see cref="SimulationRole.Replica"/> it never rolls a layout: the authority's one is applied with
+    /// <see cref="ApplyLayout"/> (captured there with <see cref="CaptureLayout"/>).
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ObstacleField : MonoBehaviour
+    public sealed class ObstacleField : MonoBehaviour, ISimulationRoleTarget
     {
         // Gizmo circle resolution.
         private const int GizmoSegments = 24;
@@ -42,9 +44,15 @@ namespace AlienFarms.Zones
         private int[] _localVariantIndex;
         private bool _initialized;
         private int _activeCount;
+        private SimulationRole _role = SimulationRole.Authority;
 
-        /// <summary>Obstacles enabled by the last <see cref="Regenerate"/>.</summary>
+        /// <summary>Obstacles enabled by the last <see cref="Regenerate"/> or <see cref="ApplyLayout"/>.</summary>
         public int ActiveCount => _activeCount;
+
+        /// <summary>Number of slots; the length a layout passed to <see cref="CaptureLayout"/> / <see cref="ApplyLayout"/> needs.</summary>
+        public int SlotCount => _slots != null ? _slots.Length : 0;
+
+        public SimulationRole Role => _role;
 
         private void Reset()
         {
@@ -81,13 +89,76 @@ namespace AlienFarms.Zones
             Regenerate();
         }
 
+        /// <summary>Replica: <see cref="Regenerate"/> does nothing (set it before Awake to also skip the first roll).</summary>
+        public void SetSimulationRole(SimulationRole role)
+        {
+            _role = role;
+        }
+
+        /// <summary>
+        /// Copies the current layout (one placement per slot, in slot order) into <paramref name="destination"/>.
+        /// Returns the number of slots written: 0 before initialization or when the array is shorter than
+        /// <see cref="SlotCount"/>.
+        /// </summary>
+        public int CaptureLayout(ObstaclePlacement[] destination)
+        {
+            if (!_initialized || destination == null || destination.Length < _placements.Length)
+            {
+                return 0;
+            }
+
+            for (int i = 0; i < _placements.Length; i++)
+            {
+                destination[i] = _placements[i];
+            }
+
+            return _placements.Length;
+        }
+
+        /// <summary>
+        /// Shows <paramref name="layout"/> (one placement per slot, as <see cref="CaptureLayout"/> writes it) without
+        /// rolling. A variant this field does not know leaves its slot empty. False (nothing changed) before
+        /// initialization or when the array is shorter than <see cref="SlotCount"/>.
+        /// </summary>
+        public bool ApplyLayout(ObstaclePlacement[] layout)
+        {
+            if (!_initialized || layout == null || layout.Length < _placements.Length)
+            {
+                return false;
+            }
+
+            int ruleCount = _rules.Length;
+            _activeCount = 0;
+            for (int i = 0; i < _placements.Length; i++)
+            {
+                ObstaclePlacement placement = layout[i];
+                int local = placement.IsActive && placement.Variant < ruleCount
+                    ? _localVariantIndex[i * ruleCount + placement.Variant]
+                    : -1;
+                if (local < 0)
+                {
+                    placement.Clear();
+                }
+                else
+                {
+                    _activeCount++;
+                }
+
+                _placements[i] = placement;
+                _slots[i].Apply(local, placement.Yaw);
+            }
+
+            Physics.SyncTransforms();
+            return true;
+        }
+
         /// <summary>
         /// Rolls a new layout: slots with a player inside their clearance stay empty. Called by the match on each new
         /// round, after the players are respawned and before the animals are repopulated.
         /// </summary>
         public void Regenerate()
         {
-            if (!_initialized)
+            if (!_initialized || _role == SimulationRole.Replica)
             {
                 return;
             }

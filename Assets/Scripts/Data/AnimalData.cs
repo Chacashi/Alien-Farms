@@ -1,5 +1,4 @@
 using AlienFarms.Animals;
-using AlienFarms.Audio;
 using UnityEngine;
 
 namespace AlienFarms.Data
@@ -154,8 +153,8 @@ namespace AlienFarms.Data
                 _idleTimeRange.y = _idleTimeRange.x;
             }
 
-            _voicePitchRange.x = Mathf.Clamp(_voicePitchRange.x, AudioVariation.MinPitch, AudioVariation.MaxPitch);
-            _voicePitchRange.y = Mathf.Clamp(_voicePitchRange.y, _voicePitchRange.x, AudioVariation.MaxPitch);
+            _voicePitchRange.x = Mathf.Clamp(_voicePitchRange.x, SoundCue.MinPitch, SoundCue.MaxPitch);
+            _voicePitchRange.y = Mathf.Clamp(_voicePitchRange.y, _voicePitchRange.x, SoundCue.MaxPitch);
         }
     }
 }

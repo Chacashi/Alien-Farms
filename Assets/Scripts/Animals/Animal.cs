@@ -1,6 +1,8 @@
+using System;
 using AlienFarms.Core;
 using AlienFarms.Data;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace AlienFarms.Animals
 {
@@ -11,10 +13,12 @@ namespace AlienFarms.Animals
     /// settles inside a player zone (counts for that zone's owner), otherwise Wandering. Captured -&gt; Carried when
     /// either player grabs it. Only the private transition methods write the state; the transitions into and out of
     /// Captured are the single source of <see cref="GameEvents.OnAnimalCaptured"/> / <see cref="GameEvents.OnAnimalLeftZone"/>.
+    /// As a <see cref="SimulationRole.Replica"/> it runs no AI, landing or grabbing and raises no GameEvents: its body is
+    /// kinematic and its state comes from <see cref="ApplyReplicatedState"/>.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public abstract class Animal : MonoBehaviour, IThrowable, IScareable
+    public abstract class Animal : MonoBehaviour, IThrowable, IScareable, ISimulationRoleTarget
     {
         private const float ArrivalDistanceSqr = 0.3f * 0.3f;
         private const float MinVisualSpeedSqr = 0.2f * 0.2f;
@@ -132,9 +136,16 @@ namespace AlienFarms.Animals
         private float _grabCooldownUntil;
         private float _steeringResumeTime;
         private CornerEscape _cornerEscape;
+        private SimulationRole _role = SimulationRole.Authority;
+
+        /// <summary>
+        /// Raised after each completed transition (state, owner or holder changed), before the matching GameEvent.
+        /// </summary>
+        public event Action<Animal> StateChanged;
 
         public AnimalData Data => _data;
         public AnimalState State => _state;
+        public SimulationRole Role => _role;
 
         /// <summary>True while the animal is in play and not captured (carried and airborne included).</summary>
         public bool IsFree => _state != AnimalState.Inactive && _state != AnimalState.Captured;
@@ -217,7 +228,10 @@ namespace AlienFarms.Animals
             OnInitialized();
         }
 
-        /// <summary>Places the animal in the world and activates it in the Wandering state.</summary>
+        /// <summary>
+        /// Places the animal in the world and activates it in the Wandering state. The authority notifies the network
+        /// hook (if any); a replica stays kinematic.
+        /// </summary>
         public void Spawn(Vector3 position, Quaternion rotation)
         {
             _rb.isKinematic = false;
@@ -227,6 +241,12 @@ namespace AlienFarms.Animals
             transform.SetPositionAndRotation(position, Quaternion.identity);
             _rb.linearVelocity = Vector3.zero;
             _rb.angularVelocity = Vector3.zero;
+
+            // Velocities are cleared while still dynamic: writing them on a kinematic body is not supported.
+            if (_role == SimulationRole.Replica)
+            {
+                _rb.isKinematic = true;
+            }
 
             if (_visual != null)
             {
@@ -257,20 +277,41 @@ namespace AlienFarms.Animals
             EnterIdle();
 
             gameObject.SetActive(true);
+
+            IAnimalNetworkHook hook = AuthorityHook;
+            if (hook != null)
+            {
+                hook.OnSpawned(this);
+            }
+
+            NotifyStateChanged();
         }
 
         /// <summary>
-        /// Removes the animal from play and returns it to its pool. A carried animal is dropped first (Forced) and a
-        /// captured one leaves its zone first, so listeners always see a balanced event sequence.
+        /// Removes the animal from play and returns it to its pool (or hands it to the network hook, which then
+        /// returns it). A carried animal is dropped first (Forced) and a captured one leaves its zone first, so
+        /// listeners always see a balanced event sequence. A replica just leaves play, without events; it is returned to
+        /// its pool even when its state already reads Inactive (replicated before its despawn).
         /// </summary>
         public void Despawn()
         {
             if (_state == AnimalState.Inactive)
             {
+                if (_role == SimulationRole.Replica && !IsInPool)
+                {
+                    ReturnToPool();
+                }
+
                 return;
             }
 
-            if (_state == AnimalState.Carried)
+            if (_role == SimulationRole.Replica)
+            {
+                _holder = PlayerId.None;
+                _owner = PlayerId.None;
+                _holdPoint = null;
+            }
+            else if (_state == AnimalState.Carried)
             {
                 Release(transform.position, Vector3.zero, DropReason.Forced);
             }
@@ -280,7 +321,22 @@ namespace AlienFarms.Animals
             }
 
             _state = AnimalState.Inactive;
+            NotifyStateChanged();
 
+            IAnimalNetworkHook hook = AuthorityHook;
+            if (hook != null && hook.TryDespawn(this))
+            {
+                return;
+            }
+
+            ReturnToPool();
+        }
+
+        /// <summary>True while the instance sits inactive in its pool (maintained by <see cref="AnimalTypePool"/>).</summary>
+        internal bool IsInPool { get; set; }
+
+        private void ReturnToPool()
+        {
             if (_pool != null)
             {
                 _pool.Release(this);
@@ -291,9 +347,72 @@ namespace AlienFarms.Animals
             }
         }
 
+        /// <summary>
+        /// Replica: no AI, landing or grabbing, no GameEvents, kinematic body. Authority (default): full simulation.
+        /// </summary>
+        public void SetSimulationRole(SimulationRole role)
+        {
+            _role = role;
+            if (_rb == null)
+            {
+                _rb = GetComponent<Rigidbody>();
+            }
+
+            if (role == SimulationRole.Replica)
+            {
+                _rb.isKinematic = true;
+            }
+            else if (_state != AnimalState.Inactive)
+            {
+                _rb.isKinematic = _state == AnimalState.Carried;
+            }
+        }
+
+        /// <summary>
+        /// Replica: applies the authority's state, pen owner and holder (the transform is synchronized separately).
+        /// Updates layer and collider like the authority's transitions do, and raises <see cref="StateChanged"/>.
+        /// Inactive leaves play (<see cref="Despawn"/>). Never raises GameEvents; ignored on the authority.
+        /// </summary>
+        public void ApplyReplicatedState(AnimalState state, PlayerId owner, PlayerId holder)
+        {
+            if (_role != SimulationRole.Replica)
+            {
+                return;
+            }
+
+            if (state == AnimalState.Inactive)
+            {
+                Despawn();
+                return;
+            }
+
+            if (state == _state && owner == _owner && holder == _holder)
+            {
+                return;
+            }
+
+            CacheLayers();
+            _state = state;
+            _owner = state == AnimalState.Captured ? owner : PlayerId.None;
+            _holder = state == AnimalState.Carried ? holder : PlayerId.None;
+            if (state != AnimalState.Carried)
+            {
+                _holdPoint = null;
+            }
+
+            gameObject.layer = state == AnimalState.Captured ? _capturedLayer : _freeLayer;
+            if (_collider != null)
+            {
+                _collider.enabled = state != AnimalState.Carried;
+            }
+
+            NotifyStateChanged();
+        }
+
         public bool TryGrab(PlayerId holder, Transform holdPoint)
         {
-            if (!CanBeGrabbed || holder == PlayerId.None || holdPoint == null || _holder != PlayerId.None)
+            if (_role == SimulationRole.Replica
+                || !CanBeGrabbed || holder == PlayerId.None || holdPoint == null || _holder != PlayerId.None)
             {
                 return false;
             }
@@ -325,13 +444,14 @@ namespace AlienFarms.Animals
             _state = AnimalState.Carried;
             SnapToHoldPoint();
 
+            NotifyStateChanged();
             GameEvents.RaiseAnimalGrabbed(holder, this);
             return true;
         }
 
         public void Release(Vector3 position, Vector3 velocity, DropReason reason)
         {
-            if (_state != AnimalState.Carried)
+            if (_state != AnimalState.Carried || _role == SimulationRole.Replica)
             {
                 return;
             }
@@ -365,6 +485,7 @@ namespace AlienFarms.Animals
             _holdPoint = null;
             _grabCooldownUntil = Time.time + (_data != null ? _data.GrabCooldown : 0f);
             EnterAirborne();
+            NotifyStateChanged();
 
             // MUST stay the last statement: listeners may react synchronously and rely on the release state above
             // being fully applied.
@@ -377,15 +498,21 @@ namespace AlienFarms.Animals
         /// </summary>
         public void Scare(Vector3 threatPosition, float minDuration)
         {
-            if (_data == null || (_state != AnimalState.Wandering && _state != AnimalState.Fleeing))
+            if (_data == null || _role == SimulationRole.Replica
+                || (_state != AnimalState.Wandering && _state != AnimalState.Fleeing))
             {
                 return;
             }
 
             float fleeEnd = Time.time + Mathf.Max(minDuration, _data.MinFleeTime);
             _threatPosition = threatPosition;
-            _minFleeEndTime = _state == AnimalState.Fleeing ? Mathf.Max(_minFleeEndTime, fleeEnd) : fleeEnd;
+            bool wasFleeing = _state == AnimalState.Fleeing;
+            _minFleeEndTime = wasFleeing ? Mathf.Max(_minFleeEndTime, fleeEnd) : fleeEnd;
             _state = AnimalState.Fleeing;
+            if (!wasFleeing)
+            {
+                NotifyStateChanged();
+            }
         }
 
         private void EnterAirborne()
@@ -473,6 +600,7 @@ namespace AlienFarms.Animals
             _cornerEscape.Clear();
             _avoidance.Clear();
             EnterIdle();
+            NotifyStateChanged();
         }
 
         /// <summary>
@@ -496,6 +624,7 @@ namespace AlienFarms.Animals
             _steeringResumeTime = 0f;
 
             // Last: listeners see the animal fully captured.
+            NotifyStateChanged();
             GameEvents.RaiseAnimalCaptured(owner, this);
         }
 
@@ -578,7 +707,7 @@ namespace AlienFarms.Animals
 
         private void FixedUpdate()
         {
-            if (_data == null || _state == AnimalState.Inactive || _state == AnimalState.Carried)
+            if (_data == null || _role == SimulationRole.Replica || _state == AnimalState.Inactive || _state == AnimalState.Carried)
             {
                 return;
             }
@@ -918,15 +1047,26 @@ namespace AlienFarms.Animals
                 return;
             }
 
-            // Holder destroyed without dropping us: never stay frozen in the air.
+            // Holder destroyed without dropping us: never stay frozen in the air. A replica has no hold point of its
+            // own (its transform is synchronized from the authority).
             if (_holdPoint == null)
             {
-                Release(transform.position, Vector3.zero, DropReason.Forced);
+                if (_role == SimulationRole.Authority)
+                {
+                    Release(transform.position, Vector3.zero, DropReason.Forced);
+                }
+
                 return;
             }
 
             SnapToHoldPoint();
         }
+
+        /// <summary>The pool's network hook, only while this animal is the authority.</summary>
+        private IAnimalNetworkHook AuthorityHook =>
+            _role == SimulationRole.Authority && _pool != null ? _pool.NetworkHook : null;
+
+        private void NotifyStateChanged() => StateChanged?.Invoke(this);
 
         private void SnapToHoldPoint()
         {
@@ -968,6 +1108,7 @@ namespace AlienFarms.Animals
                 {
                     _state = AnimalState.Fleeing;
                     _minFleeEndTime = now + _data.MinFleeTime;
+                    NotifyStateChanged();
                 }
 
                 return;
@@ -977,6 +1118,7 @@ namespace AlienFarms.Animals
             {
                 _state = AnimalState.Wandering;
                 EnterIdle();
+                NotifyStateChanged();
             }
         }
 

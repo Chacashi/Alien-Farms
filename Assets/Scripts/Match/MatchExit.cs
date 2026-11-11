@@ -1,10 +1,13 @@
-using AlienFarms.Core;
 using AlienFarms.Data;
 using UnityEngine;
 
 namespace AlienFarms.Match
 {
-    /// <summary>Exit options of a finished (or paused) match, wired to menu buttons: rematch or back to the title screen.</summary>
+    /// <summary>
+    /// Exit options of a finished (or paused) match, wired to menu buttons: rematch or back to the title screen.
+    /// What they do is delegated to an <see cref="IMatchExitHandler"/>: the local one by default, or one set with
+    /// <see cref="SetHandler"/>.
+    /// </summary>
     [DisallowMultipleComponent]
     public sealed class MatchExit : MonoBehaviour
     {
@@ -15,18 +18,25 @@ namespace AlienFarms.Match
         [SerializeField, Tooltip("Session picked in the MainMenu; cleared when returning to the title screen.")]
         private MatchSession _session;
 
+        private IMatchExitHandler _handler;
         private bool _isLeaving;
+
+        /// <summary>Replaces what the exit buttons do (e.g. the online handler). Null restores the local one.</summary>
+        public void SetHandler(IMatchExitHandler handler)
+        {
+            _handler = handler;
+        }
 
         /// <summary>Starts a new round with the same players (ignored until the results input delay has passed).</summary>
         public void Rematch()
         {
-            if (_match != null && !_isLeaving)
+            if (!_isLeaving)
             {
-                _match.RequestRematch();
+                Handler.RequestRematch();
             }
         }
 
-        /// <summary>Clears the session and loads the title screen (time and audio are restored by <see cref="SceneFlow"/>).</summary>
+        /// <summary>Leaves for the title screen (locally: clears the session and loads the main menu).</summary>
         public void ReturnToTitle()
         {
             if (_isLeaving)
@@ -34,13 +44,11 @@ namespace AlienFarms.Match
                 return;
             }
 
-            if (_session != null)
-            {
-                _session.Clear();
-            }
-
-            _isLeaving = SceneFlow.LoadMainMenu();
+            _isLeaving = Handler.ReturnToTitle();
         }
+
+        // Created on first use (no allocation unless an exit button is pressed).
+        private IMatchExitHandler Handler => _handler ??= new LocalMatchExitHandler(_match, _session);
 
         private void OnValidate()
         {

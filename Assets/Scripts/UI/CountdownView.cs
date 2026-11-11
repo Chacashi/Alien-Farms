@@ -1,6 +1,7 @@
 using AlienFarms.Core;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace AlienFarms.UI
 {
@@ -14,7 +15,7 @@ namespace AlienFarms.UI
     {
         [Header("Config")]
         [SerializeField, Tooltip("Text shown when the countdown ends.")]
-        private string _goText = "¡YA!";
+        private LocalizedString _goEntry = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.MatchGo);
 
         [Header("References")]
         [SerializeField, Tooltip("Root shown while counting down (text lives in the scene). Must not contain this component.")]
@@ -25,9 +26,16 @@ namespace AlienFarms.UI
 
         // > 0 while the GO message is visible: Time.time at which to hide it.
         private float _hideAt;
+        private LocalizedStringBinding _goBinding;
+
+        private void Awake()
+        {
+            _goBinding = new LocalizedStringBinding(_goEntry, RefreshGoIfVisible);
+        }
 
         private void OnEnable()
         {
+            _goBinding.Enable();
             GameEvents.OnCountdownTick += HandleCountdownTick;
             GameEvents.OnCountdownFinished += HandleCountdownFinished;
             GameEvents.OnMatchPhaseChanged += HandleMatchPhaseChanged;
@@ -35,6 +43,7 @@ namespace AlienFarms.UI
 
         private void OnDisable()
         {
+            _goBinding.Disable();
             GameEvents.OnCountdownTick -= HandleCountdownTick;
             GameEvents.OnCountdownFinished -= HandleCountdownFinished;
             GameEvents.OnMatchPhaseChanged -= HandleMatchPhaseChanged;
@@ -72,14 +81,27 @@ namespace AlienFarms.UI
                 return;
             }
 
-            if (_text != null)
-            {
-                _text.SetText(_goText);
-            }
-
             SetVisible(true);
             // Never 0: 0 means "no pending hide".
             _hideAt = Mathf.Max(Time.time + goMessageDuration, Mathf.Epsilon);
+            RenderGo();
+        }
+
+        private void RefreshGoIfVisible()
+        {
+            if (_hideAt > 0f)
+            {
+                RenderGo();
+            }
+        }
+
+        private void RenderGo()
+        {
+            string go = _goBinding.Value;
+            if (_text != null && go != null)
+            {
+                _text.SetText(go);
+            }
         }
 
         private void HandleMatchPhaseChanged(MatchPhase previous, MatchPhase current)
@@ -107,6 +129,11 @@ namespace AlienFarms.UI
 
         private void OnValidate()
         {
+            if (_goEntry == null || _goEntry.IsEmpty)
+            {
+                Debug.LogWarning($"[{nameof(CountdownView)}] Empty GO localized string on '{name}'.", this);
+            }
+
             if (_text == null)
             {
                 Debug.LogWarning($"[{nameof(CountdownView)}] Missing text on '{name}'.", this);

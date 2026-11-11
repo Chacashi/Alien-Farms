@@ -1,7 +1,9 @@
+using System;
 using AlienFarms.Core;
 using AlienFarms.Data;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Localization;
 using UnityEngine.UI;
 
 namespace AlienFarms.UI
@@ -17,11 +19,14 @@ namespace AlienFarms.UI
         [SerializeField, Tooltip("Character shown by this card.")]
         private CharacterDefinition _character;
 
-        [SerializeField, Tooltip("Locked-by format; {0} = player label.")]
-        private string _lockedByFormat = "Tomado por {0}";
+        [SerializeField, Tooltip("Locked-by format (non-Smart); {0} = player label.")]
+        private LocalizedString _takenByEntry = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.SelectTakenBy);
 
-        [SerializeField, Tooltip("Player labels (index 0 = Player 1).")]
-        private string[] _playerLabels = { "J1", "J2" };
+        [SerializeField, Tooltip("Player 1 label.")]
+        private LocalizedString _player1Label = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.CommonP1);
+
+        [SerializeField, Tooltip("Player 2 label.")]
+        private LocalizedString _player2Label = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.CommonP2);
 
         [Header("References")]
         [SerializeField, Tooltip("Portrait image. Without a portrait sprite it shows a Theme.Primary square.")]
@@ -45,13 +50,34 @@ namespace AlienFarms.UI
         private GameObject _readyStamp;
 
         private PlayerId _renderedLockedBy = PlayerId.None;
+        private LocalizedStringBinding _takenByBinding;
+        private LocalizedStringBinding _player1Binding;
+        private LocalizedStringBinding _player2Binding;
 
         public CharacterDefinition Character => _character;
 
         private void Awake()
         {
+            Action refresh = RefreshLockedByText;
+            _takenByBinding = new LocalizedStringBinding(_takenByEntry, refresh);
+            _player1Binding = new LocalizedStringBinding(_player1Label, refresh);
+            _player2Binding = new LocalizedStringBinding(_player2Label, refresh);
             ApplyCharacter();
             Render(false, false, PlayerId.None);
+        }
+
+        private void OnEnable()
+        {
+            _takenByBinding.Enable();
+            _player1Binding.Enable();
+            _player2Binding.Enable();
+        }
+
+        private void OnDisable()
+        {
+            _takenByBinding.Disable();
+            _player1Binding.Disable();
+            _player2Binding.Disable();
         }
 
         /// <summary>Shows who hovers this card and who locked it (None = free).</summary>
@@ -63,13 +89,26 @@ namespace AlienFarms.UI
             SetActive(_lockedOverlay, locked);
             SetActive(_readyStamp, locked);
 
-            if (_lockedBy != null && locked && lockedBy != _renderedLockedBy)
+            bool ownerChanged = lockedBy != _renderedLockedBy;
+            _renderedLockedBy = lockedBy;
+            if (locked && ownerChanged)
             {
                 // Only when the owner changes: once per confirm.
-                _lockedBy.SetText(string.Format(_lockedByFormat, GetLabel(lockedBy)));
+                RefreshLockedByText();
+            }
+        }
+
+        // On owner change or language change (not per frame).
+        private void RefreshLockedByText()
+        {
+            // Bindings exist after Awake; until then the prefab text stays.
+            string format = _takenByBinding?.Value;
+            if (_lockedBy == null || format == null || _renderedLockedBy == PlayerId.None)
+            {
+                return;
             }
 
-            _renderedLockedBy = lockedBy;
+            _lockedBy.SetText(string.Format(format, GetLabel(_renderedLockedBy)));
         }
 
         private void ApplyCharacter()
@@ -94,8 +133,8 @@ namespace AlienFarms.UI
 
         private string GetLabel(PlayerId id)
         {
-            int index = (int)id - 1;
-            return _playerLabels != null && index >= 0 && index < _playerLabels.Length ? _playerLabels[index] : string.Empty;
+            string label = id == PlayerId.Player2 ? _player2Binding.Value : _player1Binding.Value;
+            return label ?? string.Empty;
         }
 
         private static void SetActive(GameObject target, bool active)
@@ -108,6 +147,12 @@ namespace AlienFarms.UI
 
         private void OnValidate()
         {
+            if (_takenByEntry == null || _takenByEntry.IsEmpty || _player1Label == null || _player1Label.IsEmpty
+                || _player2Label == null || _player2Label.IsEmpty)
+            {
+                Debug.LogWarning($"[{nameof(CharacterCardView)}] Empty localized string on '{name}'.", this);
+            }
+
             if (_character == null)
             {
                 Debug.LogWarning($"[{nameof(CharacterCardView)}] Missing character on '{name}'.", this);

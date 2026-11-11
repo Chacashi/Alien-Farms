@@ -32,11 +32,49 @@ namespace AlienFarms.Player
         [SerializeField, Tooltip("Menu input on this root (pause and results menus).")]
         private PlayerMenuInput _menu;
 
+        [SerializeField, Tooltip("Aim on this root (auto-wired from this root when empty).")]
+        private PlayerAim _aim;
+
+        [SerializeField, Tooltip("Tackle on this root (auto-wired from this root when empty).")]
+        private PlayerTackle _tackle;
+
+        [SerializeField, Tooltip("Blast stun receiver on this root (auto-wired from this root when empty).")]
+        private PlayerStunReceiver _stunReceiver;
+
         public PlayerId Id => _identity != null ? _identity.Id : PlayerId.None;
 
         public PlayerGrabber Grabber => _grabber;
 
         public PlayerMenuInput Menu => _menu;
+
+        public PlayerMovement Movement => _movement;
+
+        public PlayerAim Aim => _aim;
+
+        public PlayerTackle Tackle => _tackle;
+
+        public ThirdPersonCamera Camera => _camera;
+
+        public PlayerStunReceiver StunReceiver => _stunReceiver;
+
+        private void Awake()
+        {
+            // Same-root components added after the prefab was last saved: resolved once here.
+            if (_aim == null)
+            {
+                TryGetComponent(out _aim);
+            }
+
+            if (_tackle == null)
+            {
+                TryGetComponent(out _tackle);
+            }
+
+            if (_stunReceiver == null)
+            {
+                TryGetComponent(out _stunReceiver);
+            }
+        }
 
         /// <summary>Assigns identity, places the player at the spawn, aligns its camera and shows its character visual.</summary>
         public void Configure(PlayerId id, Transform spawn, CharacterDefinition character)
@@ -134,6 +172,21 @@ namespace AlienFarms.Player
             if (_menu == null)
             {
                 TryGetComponent(out _menu);
+            }
+
+            if (_aim == null)
+            {
+                TryGetComponent(out _aim);
+            }
+
+            if (_tackle == null)
+            {
+                TryGetComponent(out _tackle);
+            }
+
+            if (_stunReceiver == null)
+            {
+                TryGetComponent(out _stunReceiver);
             }
         }
     }

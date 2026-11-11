@@ -38,6 +38,8 @@ Assets/
     Data/          # Clases ScriptableObject (definiciones, no instancias)
     Utilities/     # Extensiones, ObjectPool genérico, helpers
     Editor/        # Solo código de editor (asmdef Editor-only)
+    Networking/    # Modo online (NGO + UGS), asmdef AlienFarms.Networking → referencia Runtime, nunca al revés.
+                   # Networking/Data/ = SOs que usan tipos de NGO (excepción a Data/). Plan: Docs/Arquitectura/Online/
   ScriptableObjects/  # Instancias .asset (AnimalData, MatchSettings, PlayerSettings...)
   Prefabs/            # Subcarpetas por dominio: Player/, Animals/, Zones/, UI/, Environment/
   Scenes/

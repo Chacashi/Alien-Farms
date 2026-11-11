@@ -127,12 +127,39 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.UI.PlayerSlotStatusView
   _player: 1
-  _emptyText: Presiona X / Enter para unirte
-  _choosingText: "Eligiendo\u2026"
-  _readyText: "\xA1LISTO!"
+  _emptyEntry:
+    m_TableReference:
+      m_TableCollectionName: UI
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: common.press_to_join
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  _choosingEntry:
+    m_TableReference:
+      m_TableCollectionName: UI
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: select.choosing
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  _readyEntry:
+    m_TableReference:
+      m_TableCollectionName: UI
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: select.ready
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   _emptyFrameColor: {r: 0.36078432, g: 0.2, b: 0.09019608, a: 1}
   _status: {fileID: 5233655956589960241}
   _frame: {fileID: 2649232302779711512}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &4611241178589501660
 GameObject:
   m_ObjectHideFlags: 0
@@ -220,6 +247,7 @@ GameObject:
   - component: {fileID: 1798108815793479743}
   - component: {fileID: 8576984816830296060}
   - component: {fileID: 4181788260111282850}
+  - component: {fileID: 3883102205079768488}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -346,6 +374,30 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &3883102205079768488
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6380468902586121973}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f2ecfb15b1788540828cb6b493235e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.UI.LocalizedText
+  _string:
+    m_TableReference:
+      m_TableCollectionName: UI
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: common.p1
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &8217109772333621567
 GameObject:
   m_ObjectHideFlags: 0

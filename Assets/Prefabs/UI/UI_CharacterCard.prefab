@@ -299,6 +299,7 @@ GameObject:
   - component: {fileID: 3336539886425331198}
   - component: {fileID: 5772840926660962119}
   - component: {fileID: 7697171133455930076}
+  - component: {fileID: 8508649409305268618}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -425,6 +426,30 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &8508649409305268618
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2865487975913180308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f2ecfb15b1788540828cb6b493235e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.UI.LocalizedText
+  _string:
+    m_TableReference:
+      m_TableCollectionName: UI
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: common.p1
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &4741304134218120310
 GameObject:
   m_ObjectHideFlags: 0
@@ -436,6 +461,7 @@ GameObject:
   - component: {fileID: 1141475179867444695}
   - component: {fileID: 8499737538227878469}
   - component: {fileID: 6912753801063460083}
+  - component: {fileID: 1027952825124943987}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -562,6 +588,30 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &1027952825124943987
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4741304134218120310}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f2ecfb15b1788540828cb6b493235e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.UI.LocalizedText
+  _string:
+    m_TableReference:
+      m_TableCollectionName: UI
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: common.p2
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &5383517092055994455
 GameObject:
   m_ObjectHideFlags: 0
@@ -648,6 +698,7 @@ GameObject:
   - component: {fileID: 586089525997383488}
   - component: {fileID: 975216244649879280}
   - component: {fileID: 7501533723811161025}
+  - component: {fileID: 5650585630838807469}
   m_Layer: 5
   m_Name: ReadyStamp
   m_TagString: Untagged
@@ -774,6 +825,30 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &5650585630838807469
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6595722942723404386}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f2ecfb15b1788540828cb6b493235e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.UI.LocalizedText
+  _string:
+    m_TableReference:
+      m_TableCollectionName: UI
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: select.ready
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &7381932012468402800
 GameObject:
   m_ObjectHideFlags: 0
@@ -907,10 +982,33 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.UI.CharacterCardView
   _character: {fileID: 11400000, guid: f05f460065a1b6542bd9d8daba983f26, type: 2}
-  _lockedByFormat: Tomado por {0}
-  _playerLabels:
-  - J1
-  - J2
+  _takenByEntry:
+    m_TableReference:
+      m_TableCollectionName: UI
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: select.taken_by
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  _player1Label:
+    m_TableReference:
+      m_TableCollectionName: UI
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: common.p1
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  _player2Label:
+    m_TableReference:
+      m_TableCollectionName: UI
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: common.p2
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   _portrait: {fileID: 1079894587467535058}
   _name: {fileID: 8863608249657437783}
   _lockedOverlay: {fileID: 7381932012468402800}
@@ -918,6 +1016,9 @@ MonoBehaviour:
   _cursorP1: {fileID: 464100208039566070}
   _cursorP2: {fileID: 7723291149460142812}
   _readyStamp: {fileID: 6595722942723404386}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &7488037211655014170
 GameObject:
   m_ObjectHideFlags: 0

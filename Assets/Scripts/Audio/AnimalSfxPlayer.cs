@@ -139,6 +139,10 @@ namespace AlienFarms.Audio
                 {
                     Debug.LogWarning($"[{nameof(AnimalSfxPlayer)}] Voice slot {i} is empty on '{name}'.", this);
                 }
+                else if (_voices[i].outputAudioMixerGroup == null)
+                {
+                    Debug.LogWarning($"[{nameof(AnimalSfxPlayer)}] Voice slot {i} on '{name}' has no output mixer group; the SFX volume will not apply (use AlienFarmsMixer > SFX).", this);
+                }
             }
         }
     }

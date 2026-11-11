@@ -1,6 +1,5 @@
 using AlienFarms.Core;
 using AlienFarms.Data;
-using AlienFarms.Input;
 using AlienFarms.Utilities;
 using UnityEngine;
 
@@ -22,8 +21,9 @@ namespace AlienFarms.Player
         private ThrowSettings _defaultThrowSettings;
 
         [Header("References")]
-        [SerializeField, Tooltip("Input source for this player.")]
-        private PlayerInputHandler _input;
+        // Name kept from when it was typed PlayerInputHandler, so existing prefab references stay wired.
+        [SerializeField, Tooltip("Input source for this player: a component implementing IPlayerCommandSource (PlayerInputHandler).")]
+        private MonoBehaviour _input;
 
         [SerializeField, Tooltip("Grabber on this root (what is carried).")]
         private PlayerGrabber _grabber;
@@ -38,6 +38,7 @@ namespace AlienFarms.Player
         private IThrowable _heldThrowable;
         private bool _appliedAim;
         private int _environmentMask;
+        private IPlayerCommandSource _commands;
 
         /// <summary>True right now if a throw would happen on release (evaluated live).</summary>
         public bool IsAiming => EvaluateAiming();
@@ -59,6 +60,18 @@ namespace AlienFarms.Player
         private void Awake()
         {
             _environmentMask = LayerMask.GetMask(LayerNames.Environment);
+
+            // An injected source (SetCommandSource before Awake) wins over the serialized one.
+            if (_commands == null)
+            {
+                _commands = _input as IPlayerCommandSource;
+            }
+        }
+
+        /// <summary>Replaces the input source (e.g. a network-fed one). Null means Aim is never held.</summary>
+        public void SetCommandSource(IPlayerCommandSource source)
+        {
+            _commands = source;
         }
 
         private void Update()
@@ -84,6 +97,22 @@ namespace AlienFarms.Player
         /// </summary>
         public bool TryGetLaunch(out Vector3 origin, out Vector3 velocity)
         {
+            if (_camera == null)
+            {
+                origin = Vector3.zero;
+                velocity = Vector3.zero;
+                return false;
+            }
+
+            return TryGetLaunchWithView(_camera.Yaw, _camera.Pitch, out origin, out velocity);
+        }
+
+        /// <summary>
+        /// Same as <see cref="TryGetLaunch"/> but for an explicit orbit view (deg) instead of the camera's current one
+        /// (e.g. the view a remote player reported for its throw).
+        /// </summary>
+        public bool TryGetLaunchWithView(float yaw, float pitch, out Vector3 origin, out Vector3 velocity)
+        {
             origin = Vector3.zero;
             velocity = Vector3.zero;
 
@@ -99,7 +128,7 @@ namespace AlienFarms.Player
             }
 
             float elevation = BallisticMath.ElevationFromPitch(
-                _camera.Pitch,
+                pitch,
                 settings.ReferenceCameraPitch,
                 settings.BaseElevation,
                 settings.PitchInfluence,
@@ -116,7 +145,8 @@ namespace AlienFarms.Player
             origin = launchOrigin;
             // Heavy objects fly shorter; the preview uses this same launch, so it shows the real distance.
             float speed = settings.LaunchSpeed * BallisticMath.SpeedScaleForDistance(_heldThrowable.ThrowDistanceMultiplier);
-            velocity = BallisticMath.LaunchVelocity(_camera.PlanarForward, elevation, speed);
+            Vector3 planarForward = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+            velocity = BallisticMath.LaunchVelocity(planarForward, elevation, speed);
             if (_movement != null)
             {
                 velocity += _movement.Velocity * settings.InheritVelocityFactor;
@@ -127,12 +157,12 @@ namespace AlienFarms.Player
 
         private bool EvaluateAiming()
         {
-            if (_input == null || _grabber == null || _camera == null)
+            if (_commands == null || _grabber == null || _camera == null)
             {
                 return false;
             }
 
-            if (!_grabber.IsInputEnabled || !_input.IsAimHeld || (_movement != null && _movement.IsStunned))
+            if (!_grabber.IsInputEnabled || !_commands.IsAimHeld || (_movement != null && _movement.IsStunned))
             {
                 return false;
             }
@@ -187,9 +217,9 @@ namespace AlienFarms.Player
                 Debug.LogWarning($"[{nameof(PlayerAim)}] Missing default ThrowSettings on '{name}'.", this);
             }
 
-            if (_input == null)
+            if (_input == null && TryGetComponent(out IPlayerCommandSource source))
             {
-                TryGetComponent(out _input);
+                _input = source as MonoBehaviour;
             }
 
             if (_grabber == null)
@@ -204,7 +234,11 @@ namespace AlienFarms.Player
 
             if (_input == null)
             {
-                Debug.LogWarning($"[{nameof(PlayerAim)}] Missing PlayerInputHandler on '{name}'.", this);
+                Debug.LogWarning($"[{nameof(PlayerAim)}] Missing input source on '{name}'.", this);
+            }
+            else if (!(_input is IPlayerCommandSource))
+            {
+                Debug.LogWarning($"[{nameof(PlayerAim)}] Input source '{_input.GetType().Name}' on '{name}' does not implement {nameof(IPlayerCommandSource)}.", this);
             }
 
             if (_grabber == null)

@@ -11,7 +11,7 @@ namespace AlienFarms.Player
     /// <see cref="PlayerRig"/>. Keeps a registry of joined rigs for the match (count, respawn, freeze).
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerJoinCoordinator : MonoBehaviour
+    public sealed class PlayerJoinCoordinator : MonoBehaviour, IPlayerRoster
     {
         // Matches the PlayerId enum (Player1, Player2): index i maps to (PlayerId)(i + 1).
         private const int RequiredPlayers = 2;

@@ -1,7 +1,8 @@
 using System;
-// Core -> Animals / Data references accepted while there is a single runtime asmdef; revisit if Core gets its own assembly.
+// Core -> Animals / Data / Items references accepted while there is a single runtime asmdef; revisit if Core gets its own assembly.
 using AlienFarms.Animals;
 using AlienFarms.Data;
+using AlienFarms.Items;
 using UnityEngine;
 
 namespace AlienFarms.Core
@@ -9,7 +10,8 @@ namespace AlienFarms.Core
     /// <summary>
     /// Global static events for decoupled communication between systems.
     /// Every per-player payload carries the <see cref="PlayerId"/> involved. Exception: match phase, countdown and
-    /// match time are global to the round (shared by both players), so they carry no PlayerId.
+    /// match time are global to the round (shared by both players), so they carry no PlayerId; neither do bomb
+    /// spawn/despawn, which belong to no player (the bomb lies in the shared Animal Zone or leaves play).
     /// </summary>
     public static class GameEvents
     {
@@ -79,6 +81,21 @@ namespace AlienFarms.Core
         /// <summary>Global: the round ended with this result (contains both players' scores).</summary>
         public static event Action<MatchResult> OnMatchEnded;
 
+        /// <summary>Global: a bomb appeared (inert) in the Animal Zone.</summary>
+        public static event Action<Bomb> OnBombSpawned;
+
+        /// <summary>A player picked up a bomb.</summary>
+        public static event Action<PlayerId, Bomb> OnBombGrabbed;
+
+        /// <summary>A player threw a bomb: it is armed (fuse lit) until it detonates or leaves play.</summary>
+        public static event Action<PlayerId, Bomb> OnBombArmed;
+
+        /// <summary>
+        /// Global: a bomb left play (detonated, fell off the map or the round ended). Raised after
+        /// <see cref="OnBombDetonated"/> when it exploded.
+        /// </summary>
+        public static event Action<Bomb> OnBombDespawned;
+
         /// <summary>
         /// A thrown bomb exploded. Payload: thrower (the player who threw it), blast center and blast radius (m).
         /// </summary>
@@ -89,6 +106,21 @@ namespace AlienFarms.Core
         /// Tackle stuns do not raise it.
         /// </summary>
         public static event Action<PlayerId, PlayerId, float> OnPlayerStunned;
+
+        /// <summary>
+        /// The given player's pen now holds <c>count</c> animals of the type at <c>animalTypeIndex</c> (index in the
+        /// spawn settings' entries).
+        /// </summary>
+        public static event Action<PlayerId, int, int> OnPenInventoryChanged;
+
+        /// <summary>
+        /// Online: the given player's connection changed. Payload: player, connected, and the reconnection grace left (s)
+        /// when it disconnected (0 when connected).
+        /// </summary>
+        public static event Action<PlayerId, bool, float> OnPlayerConnectionChanged;
+
+        /// <summary>A tackle claim was resolved. Payload: attacker, victim and whether the tackle was accepted.</summary>
+        public static event Action<PlayerId, PlayerId, bool> OnTackleResolved;
 
         public static void RaisePlayerJoined(PlayerId playerId) => OnPlayerJoined?.Invoke(playerId);
 
@@ -134,11 +166,28 @@ namespace AlienFarms.Core
 
         public static void RaiseMatchEnded(MatchResult result) => OnMatchEnded?.Invoke(result);
 
+        public static void RaiseBombSpawned(Bomb bomb) => OnBombSpawned?.Invoke(bomb);
+
+        public static void RaiseBombGrabbed(PlayerId playerId, Bomb bomb) => OnBombGrabbed?.Invoke(playerId, bomb);
+
+        public static void RaiseBombArmed(PlayerId thrower, Bomb bomb) => OnBombArmed?.Invoke(thrower, bomb);
+
+        public static void RaiseBombDespawned(Bomb bomb) => OnBombDespawned?.Invoke(bomb);
+
         public static void RaiseBombDetonated(PlayerId thrower, Vector3 position, float radius) =>
             OnBombDetonated?.Invoke(thrower, position, radius);
 
         public static void RaisePlayerStunned(PlayerId victim, PlayerId source, float duration) =>
             OnPlayerStunned?.Invoke(victim, source, duration);
+
+        public static void RaisePenInventoryChanged(PlayerId playerId, int animalTypeIndex, int count) =>
+            OnPenInventoryChanged?.Invoke(playerId, animalTypeIndex, count);
+
+        public static void RaisePlayerConnectionChanged(PlayerId playerId, bool connected, float graceSeconds) =>
+            OnPlayerConnectionChanged?.Invoke(playerId, connected, graceSeconds);
+
+        public static void RaiseTackleResolved(PlayerId attacker, PlayerId victim, bool accepted) =>
+            OnTackleResolved?.Invoke(attacker, victim, accepted);
 
         // Enter Play Mode without domain reload keeps statics alive: clear stale subscribers.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -164,8 +213,15 @@ namespace AlienFarms.Core
             OnCountdownFinished = null;
             OnMatchTimeChanged = null;
             OnMatchEnded = null;
+            OnBombSpawned = null;
+            OnBombGrabbed = null;
+            OnBombArmed = null;
+            OnBombDespawned = null;
             OnBombDetonated = null;
             OnPlayerStunned = null;
+            OnPenInventoryChanged = null;
+            OnPlayerConnectionChanged = null;
+            OnTackleResolved = null;
         }
     }
 }

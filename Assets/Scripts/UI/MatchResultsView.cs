@@ -1,7 +1,9 @@
+using System;
 using AlienFarms.Core;
 using AlienFarms.Data;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Localization;
 using UnityEngine.UI;
 
 namespace AlienFarms.UI
@@ -16,16 +18,20 @@ namespace AlienFarms.UI
     public sealed class MatchResultsView : MonoBehaviour
     {
         [Header("Texts")]
-        [SerializeField, Tooltip("Winner format; {0} = winner's character name.")]
-        private string _winnerFormat = "¡Gana {0}!";
+        [SerializeField, Tooltip("Winner format (non-Smart); {0} = winner's character name.")]
+        private LocalizedString _winnerEntry = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.ResultsWinner);
 
-        [SerializeField] private string _drawText = "¡Empate!";
+        [SerializeField, Tooltip("Text shown on a draw.")]
+        private LocalizedString _drawEntry = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.ResultsDraw);
 
         [SerializeField, Tooltip("TMP format; {0} = Player 1 score, {1} = Player 2 score.")]
         private string _scoreFormat = "{0} - {1}";
 
-        [SerializeField, Tooltip("Names used when a player has no character (index 0 = Player 1).")]
-        private string[] _fallbackNames = { "J1", "J2" };
+        [SerializeField, Tooltip("Player 1 name when it has no character.")]
+        private LocalizedString _player1Label = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.CommonP1);
+
+        [SerializeField, Tooltip("Player 2 name when it has no character.")]
+        private LocalizedString _player2Label = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.CommonP2);
 
         [Header("References")]
         [SerializeField, Tooltip("Results panel (text lives in the scene). Must not contain this component.")]
@@ -48,9 +54,21 @@ namespace AlienFarms.UI
 
         private readonly PlayerCharacterCache _characters = new PlayerCharacterCache();
         private Color _winnerDefaultColor = Color.white;
+        private LocalizedStringBinding _winnerBinding;
+        private LocalizedStringBinding _drawBinding;
+        private LocalizedStringBinding _player1Binding;
+        private LocalizedStringBinding _player2Binding;
+        private MatchResult _lastResult;
+        private bool _hasResult;
 
         private void Awake()
         {
+            Action refresh = RefreshIfVisible;
+            _winnerBinding = new LocalizedStringBinding(_winnerEntry, refresh);
+            _drawBinding = new LocalizedStringBinding(_drawEntry, refresh);
+            _player1Binding = new LocalizedStringBinding(_player1Label, refresh);
+            _player2Binding = new LocalizedStringBinding(_player2Label, refresh);
+
             if (_winnerText != null)
             {
                 _winnerDefaultColor = _winnerText.color;
@@ -59,6 +77,10 @@ namespace AlienFarms.UI
 
         private void OnEnable()
         {
+            _winnerBinding.Enable();
+            _drawBinding.Enable();
+            _player1Binding.Enable();
+            _player2Binding.Enable();
             GameEvents.OnPlayerCharacterAssigned += HandlePlayerCharacterAssigned;
             GameEvents.OnMatchEnded += HandleMatchEnded;
             GameEvents.OnMatchPhaseChanged += HandleMatchPhaseChanged;
@@ -66,6 +88,10 @@ namespace AlienFarms.UI
 
         private void OnDisable()
         {
+            _winnerBinding.Disable();
+            _drawBinding.Disable();
+            _player1Binding.Disable();
+            _player2Binding.Disable();
             GameEvents.OnPlayerCharacterAssigned -= HandlePlayerCharacterAssigned;
             GameEvents.OnMatchEnded -= HandleMatchEnded;
             GameEvents.OnMatchPhaseChanged -= HandleMatchPhaseChanged;
@@ -76,30 +102,57 @@ namespace AlienFarms.UI
 
         private void HandleMatchEnded(MatchResult result)
         {
-            if (_winnerText != null)
-            {
-                if (result.IsDraw)
-                {
-                    _winnerText.SetText(_drawText);
-                    _winnerText.color = _winnerDefaultColor;
-                }
-                else
-                {
-                    // One format per match (not per frame).
-                    _winnerText.SetText(string.Format(_winnerFormat, GetName(result.Winner)));
-                    CharacterDefinition winner = _characters.Get(result.Winner);
-                    _winnerText.color = winner != null ? winner.Theme.Secondary : _winnerDefaultColor;
-                }
-            }
+            _lastResult = result;
+            _hasResult = true;
+            RenderTexts();
 
             if (_scoreText != null)
             {
                 _scoreText.SetText(_scoreFormat, result.Player1Score, result.Player2Score);
             }
 
+            SetVisible(true);
+        }
+
+        // The language can change while the results panel is open (e.g. rematch flow in another locale).
+        private void RefreshIfVisible()
+        {
+            if (_hasResult && _panelRoot != null && _panelRoot.activeSelf)
+            {
+                RenderTexts();
+            }
+        }
+
+        private void RenderTexts()
+        {
+            if (_winnerText != null)
+            {
+                if (_lastResult.IsDraw)
+                {
+                    string draw = _drawBinding.Value;
+                    if (draw != null)
+                    {
+                        _winnerText.SetText(draw);
+                    }
+
+                    _winnerText.color = _winnerDefaultColor;
+                }
+                else
+                {
+                    string format = _winnerBinding.Value;
+                    if (format != null)
+                    {
+                        // One format per match or language change (not per frame).
+                        _winnerText.SetText(string.Format(format, GetName(_lastResult.Winner)));
+                    }
+
+                    CharacterDefinition winner = _characters.Get(_lastResult.Winner);
+                    _winnerText.color = winner != null ? winner.Theme.Secondary : _winnerDefaultColor;
+                }
+            }
+
             SetName(_nameP1, _nameStripeP1, PlayerId.Player1);
             SetName(_nameP2, _nameStripeP2, PlayerId.Player2);
-            SetVisible(true);
         }
 
         private void HandleMatchPhaseChanged(MatchPhase previous, MatchPhase current)
@@ -136,8 +189,8 @@ namespace AlienFarms.UI
                 return character.DisplayName;
             }
 
-            int index = (int)id - 1;
-            return _fallbackNames != null && index >= 0 && index < _fallbackNames.Length ? _fallbackNames[index] : string.Empty;
+            string label = id == PlayerId.Player2 ? _player2Binding.Value : _player1Binding.Value;
+            return label ?? string.Empty;
         }
 
         private void SetVisible(bool visible)
@@ -150,6 +203,12 @@ namespace AlienFarms.UI
 
         private void OnValidate()
         {
+            if (_winnerEntry == null || _winnerEntry.IsEmpty || _drawEntry == null || _drawEntry.IsEmpty
+                || _player1Label == null || _player1Label.IsEmpty || _player2Label == null || _player2Label.IsEmpty)
+            {
+                Debug.LogWarning($"[{nameof(MatchResultsView)}] Empty localized string on '{name}'.", this);
+            }
+
             if (_winnerText == null || _scoreText == null)
             {
                 Debug.LogWarning($"[{nameof(MatchResultsView)}] Missing winner or score text on '{name}'.", this);

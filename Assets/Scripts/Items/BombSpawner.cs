@@ -12,9 +12,10 @@ namespace AlienFarms.Items
     /// <summary>
     /// Scene composition root for stun bombs: owns the bomb pool and drops bombs at random free spots of the Animal Zone
     /// while a round is playing (timer paused while the max is in play). Bombs never exist outside Playing.
+    /// As a <see cref="SimulationRole.Replica"/> it only keeps the pool (for replicated bombs) and never spawns or clears.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class BombSpawner : MonoBehaviour
+    public sealed class BombSpawner : MonoBehaviour, ISimulationRoleTarget
     {
         // Height above the floor used for the player clearance check (roughly chest height, m).
         private const float PlayerProbeHeight = 1f;
@@ -44,9 +45,15 @@ namespace AlienFarms.Items
         private int _groundLayer = -1;
         private int _blockingMask;
         private int _playerMask;
+        // Every bomb this pool created, so a network hook set later reaches the pooled ones too.
+        private List<Bomb> _created;
+        private IBombNetworkHook _networkHook;
+        private SimulationRole _role = SimulationRole.Authority;
 
         /// <summary>Bombs currently in play (inert, carried or armed).</summary>
         public int ActiveCount => _active != null ? _active.Count : 0;
+
+        public SimulationRole Role => _role;
 
         private void Awake()
         {
@@ -71,10 +78,11 @@ namespace AlienFarms.Items
             int maxActive = _settings.MaxActive;
             int maxSize = Mathf.Max(maxActive, _settings.PoolMaxSize);
             _active = new List<Bomb>(maxActive);
+            _created = new List<Bomb>(maxSize);
             _rng = new SystemRandomSource(Environment.TickCount);
             _pool = new ObjectPool<Bomb>(
                 CreateBomb,
-                null,
+                OnGetBomb,
                 OnReleaseBomb,
                 OnDestroyBomb,
                 Application.isEditor,
@@ -99,6 +107,11 @@ namespace AlienFarms.Items
 
         private void Update()
         {
+            if (_role == SimulationRole.Replica)
+            {
+                return;
+            }
+
             if (!_schedule.Tick(Time.deltaTime, _active.Count, _settings.MaxActive))
             {
                 return;
@@ -117,13 +130,83 @@ namespace AlienFarms.Items
         /// <summary>Removes every bomb from play and stops spawning until the next round starts playing.</summary>
         public void ResetBombs()
         {
+            if (_role == SimulationRole.Replica)
+            {
+                return;
+            }
+
             DespawnAll();
             _schedule.Stop();
         }
 
+        /// <summary>Replica: never spawns or clears bombs (they come from the network). Authority (default): full control.</summary>
+        public void SetSimulationRole(SimulationRole role)
+        {
+            if (role == SimulationRole.Replica && _role == SimulationRole.Authority && ActiveCount > 0)
+            {
+                Debug.LogWarning($"[{nameof(BombSpawner)}] '{name}' switched to Replica with {ActiveCount} bombs already spawned locally; set the role before Start.", this);
+            }
+
+            _role = role;
+            if (role == SimulationRole.Replica)
+            {
+                _schedule.Stop();
+            }
+        }
+
+        /// <summary>Network hook every bomb reports its authority spawns and despawns to (null = local pooling).</summary>
+        public void SetNetworkHook(IBombNetworkHook hook)
+        {
+            _networkHook = hook;
+            if (_created == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _created.Count; i++)
+            {
+                if (_created[i] != null)
+                {
+                    _created[i].SetNetworkHook(hook);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Takes a bomb from the pool as a <see cref="SimulationRole.Replica"/> and places it active (Idle) with its base
+        /// at <paramref name="position"/>. Return it with <see cref="Bomb.Despawn"/>. Null when the spawner is disabled.
+        /// </summary>
+        public Bomb GetForReplica(Vector3 position)
+        {
+            if (_pool == null)
+            {
+                return null;
+            }
+
+            Bomb bomb = _pool.Get();
+            _active.Add(bomb);
+            bomb.SetSimulationRole(SimulationRole.Replica);
+            bomb.Spawn(position);
+            return bomb;
+        }
+
+        /// <summary>
+        /// Returns a bomb that already left play (Inactive) to the pool; used by a network hook that took over its
+        /// despawn. Ignored for a bomb still in play or already pooled.
+        /// </summary>
+        public void ReleaseToPool(Bomb bomb)
+        {
+            if (_pool == null || bomb == null || bomb.State != BombState.Inactive || bomb.IsInPool)
+            {
+                return;
+            }
+
+            _pool.Release(bomb);
+        }
+
         private void HandleMatchPhaseChanged(MatchPhase previous, MatchPhase current)
         {
-            if (!enabled || _active == null)
+            if (!enabled || _active == null || _role == SimulationRole.Replica)
             {
                 return;
             }
@@ -177,6 +260,8 @@ namespace AlienFarms.Items
 
                 Bomb bomb = _pool.Get();
                 _active.Add(bomb);
+                // A pooled instance may have served as a replica before.
+                bomb.SetSimulationRole(SimulationRole.Authority);
                 bomb.Spawn(floor + Vector3.up * _settings.SpawnDropHeight);
                 return true;
             }
@@ -237,17 +322,23 @@ namespace AlienFarms.Items
             Bomb bomb = Instantiate(_data.Prefab, _bombsContainer);
             bomb.gameObject.SetActive(false);
             bomb.Initialize(_data, _pool, _settings.KillHeight);
+            bomb.SetNetworkHook(_networkHook);
+            _created.Add(bomb);
             return bomb;
         }
 
+        private static void OnGetBomb(Bomb bomb) => bomb.IsInPool = false;
+
         private void OnReleaseBomb(Bomb bomb)
         {
+            bomb.IsInPool = true;
             _active.Remove(bomb);
             bomb.gameObject.SetActive(false);
         }
 
-        private static void OnDestroyBomb(Bomb bomb)
+        private void OnDestroyBomb(Bomb bomb)
         {
+            _created.Remove(bomb);
             if (bomb != null)
             {
                 Destroy(bomb.gameObject);

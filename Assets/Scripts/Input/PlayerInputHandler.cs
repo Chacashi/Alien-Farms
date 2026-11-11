@@ -1,4 +1,5 @@
 using System;
+using AlienFarms.Core;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -8,10 +9,11 @@ namespace AlienFarms.Input
     /// Reads gameplay input from this player's own <see cref="PlayerInput"/>.
     /// The serialized <see cref="InputActionReference"/>s only identify actions; the live actions are
     /// resolved by id on <see cref="PlayerInput.actions"/>, which is a per-player clone under PlayerInputManager.
+    /// It is the local <see cref="IPlayerCommandSource"/> of the player's gameplay components.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PlayerInput))]
-    public sealed class PlayerInputHandler : MonoBehaviour
+    public sealed class PlayerInputHandler : MonoBehaviour, IPlayerCommandSource
     {
         [Header("References")]
         [SerializeField, Tooltip("PlayerInput that owns this player's devices and action asset.")]

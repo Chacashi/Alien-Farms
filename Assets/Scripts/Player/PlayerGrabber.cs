@@ -1,6 +1,5 @@
 using AlienFarms.Core;
 using AlienFarms.Data;
-using AlienFarms.Input;
 using UnityEngine;
 
 namespace AlienFarms.Player
@@ -9,9 +8,12 @@ namespace AlienFarms.Player
     /// Hold-to-carry grabbing: while Grab is held with empty hands, picks the closest <see cref="IGrabbable"/>
     /// in a cone in front of the player (also catching ones that walk into range, free or penned). Releasing Grab drops
     /// it in front, or throws it along the aimed arc while <see cref="PlayerAim"/> is aiming. Carries at most one object.
+    /// With <see cref="ReleaseMode.External"/> the release is decided from outside (<see cref="ReleaseHeld"/>,
+    /// <see cref="ThrowWithView"/>) instead of by the Grab button. As a <see cref="SimulationRole.Replica"/> it never
+    /// grabs, drops or throws: it only mirrors the held object set with <see cref="SetReplicatedHeld"/>.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerGrabber : MonoBehaviour
+    public sealed class PlayerGrabber : MonoBehaviour, ISimulationRoleTarget
     {
         private const float DropHeight = 0.6f;
         private const float DropClearanceRadius = 0.3f;
@@ -26,8 +28,9 @@ namespace AlienFarms.Player
         private PlayerSettings _settings;
 
         [Header("References")]
-        [SerializeField, Tooltip("Input source for this player.")]
-        private PlayerInputHandler _input;
+        // Name kept from when it was typed PlayerInputHandler, so existing prefab references stay wired.
+        [SerializeField, Tooltip("Input source for this player: a component implementing IPlayerCommandSource (PlayerInputHandler).")]
+        private MonoBehaviour _input;
 
         [SerializeField, Tooltip("Identity of this player (holder id).")]
         private PlayerIdentity _identity;
@@ -53,6 +56,10 @@ namespace AlienFarms.Player
         private bool _releaseRequested;
         private bool _inputEnabled = true;
         private bool _paused;
+        private IPlayerCommandSource _commands;
+        private bool _subscribed;
+        private ReleaseMode _releaseMode = ReleaseMode.Auto;
+        private SimulationRole _role = SimulationRole.Authority;
 
         // Frame of the last unpause. Re-enabled actions only report their held state on the next input update (and
         // FixedUpdate runs before it), so the "lost cancel" poll is skipped until then.
@@ -64,6 +71,10 @@ namespace AlienFarms.Player
         /// <summary>False while the match freezes this player: nothing can be grabbed.</summary>
         public bool IsInputEnabled => _inputEnabled;
 
+        public ReleaseMode ReleaseMode => _releaseMode;
+
+        public SimulationRole Role => _role;
+
         private PlayerId Id => _identity != null ? _identity.Id : PlayerId.None;
 
         private void Awake()
@@ -71,27 +82,24 @@ namespace AlienFarms.Player
             _environmentMask = LayerMask.GetMask(LayerNames.Environment);
             _dropBlockingMask = LayerMask.GetMask(
                 LayerNames.Environment, LayerNames.Player, LayerNames.Animal, LayerNames.CapturedAnimal, LayerNames.Bomb);
+
+            // An injected source (SetCommandSource before Awake) wins over the serialized one.
+            if (_commands == null)
+            {
+                _commands = _input as IPlayerCommandSource;
+            }
         }
 
         private void OnEnable()
         {
             _requiresRepress = false;
             _releaseRequested = false;
-
-            if (_input != null)
-            {
-                _input.GrabStarted += HandleGrabStarted;
-                _input.GrabCanceled += HandleGrabCanceled;
-            }
+            Subscribe();
         }
 
         private void OnDisable()
         {
-            if (_input != null)
-            {
-                _input.GrabStarted -= HandleGrabStarted;
-                _input.GrabCanceled -= HandleGrabCanceled;
-            }
+            Unsubscribe();
 
             // A player leaving (or being disabled) must not keep an animal frozen at its hold point.
             ForceDrop(DropReason.Forced, Vector3.zero);
@@ -99,6 +107,11 @@ namespace AlienFarms.Player
 
         private void FixedUpdate()
         {
+            if (_role == SimulationRole.Replica)
+            {
+                return;
+            }
+
             if (_held != null)
             {
                 // Released externally (despawn, capture...): clear our side.
@@ -107,18 +120,11 @@ namespace AlienFarms.Player
                     _held = null;
                     ClearCarryLoad();
                 }
-                else if (_releaseRequested || (!_paused && !IsInResumeGrace() && _input != null && !_input.IsGrabHeld))
+                else if (_releaseMode == ReleaseMode.Auto
+                         && (_releaseRequested || (!_paused && !IsInResumeGrace() && _commands != null && !_commands.IsGrabHeld)))
                 {
                     // Grab released (deferred from HandleGrabCanceled), or 'canceled' was missed (focus loss...).
-                    // The launch is read while still holding: aiming requires a held throwable.
-                    if (_aim != null && _aim.TryGetLaunch(out Vector3 origin, out Vector3 velocity))
-                    {
-                        Throw(origin, velocity);
-                    }
-                    else
-                    {
-                        Drop(DropReason.Released, Vector3.zero);
-                    }
+                    ReleaseHeld();
                 }
 
                 return;
@@ -130,12 +136,12 @@ namespace AlienFarms.Player
             }
 
             // A release missed while paused (its 'canceled' is ignored) still re-arms grabbing.
-            if (_requiresRepress && _input != null && !_input.IsGrabHeld)
+            if (_requiresRepress && _commands != null && !_commands.IsGrabHeld)
             {
                 _requiresRepress = false;
             }
 
-            if (!_inputEnabled || _settings == null || _input == null || _requiresRepress || !_input.IsGrabHeld)
+            if (!_inputEnabled || _settings == null || _commands == null || _requiresRepress || !_commands.IsGrabHeld)
             {
                 return;
             }
@@ -155,6 +161,13 @@ namespace AlienFarms.Player
         /// <summary>Drops the carried object (if any) in front of the player, adding <paramref name="extraVelocity"/>.</summary>
         public void ForceDrop(DropReason reason, Vector3 extraVelocity)
         {
+            // The authority drops the object; a replica only forgets its mirrored reference.
+            if (_role == SimulationRole.Replica)
+            {
+                ClearReplicatedHeld();
+                return;
+            }
+
             bool wasHolding = _held != null;
             Drop(reason, extraVelocity);
 
@@ -179,7 +192,162 @@ namespace AlienFarms.Player
                 return;
             }
 
-            _requiresRepress = _input != null && _input.IsGrabHeld;
+            _requiresRepress = _commands != null && _commands.IsGrabHeld;
+        }
+
+        /// <summary>Replaces the input source (e.g. a network-fed one), moving the Grab subscriptions to it.</summary>
+        public void SetCommandSource(IPlayerCommandSource source)
+        {
+            if (ReferenceEquals(source, _commands))
+            {
+                return;
+            }
+
+            bool resubscribe = _subscribed;
+            Unsubscribe();
+            _commands = source;
+            if (resubscribe)
+            {
+                Subscribe();
+            }
+        }
+
+        /// <summary>Auto (default): the Grab button releases. External: only ReleaseHeld / ThrowWithView do.</summary>
+        public void SetReleaseMode(ReleaseMode mode)
+        {
+            _releaseMode = mode;
+            if (mode == ReleaseMode.External)
+            {
+                _releaseRequested = false;
+            }
+        }
+
+        /// <summary>
+        /// Lets go of the carried object as releasing Grab would: thrown along the current aim when a throw is possible,
+        /// otherwise dropped (Released). No-op with empty hands.
+        /// </summary>
+        public void ReleaseHeld()
+        {
+            if (_held == null || _role == SimulationRole.Replica)
+            {
+                return;
+            }
+
+            // The launch is read while still holding: aiming requires a held throwable.
+            if (_aim != null && _aim.TryGetLaunch(out Vector3 origin, out Vector3 velocity))
+            {
+                Throw(origin, velocity);
+            }
+            else
+            {
+                Drop(DropReason.Released, Vector3.zero);
+            }
+        }
+
+        /// <summary>
+        /// Lets go of the carried object with the throw computed from an explicit view (deg) instead of the camera's.
+        /// Falls back to a normal drop when no throw is possible (not aiming, wall in between...). True if thrown.
+        /// </summary>
+        public bool ThrowWithView(float yaw, float pitch)
+        {
+            if (_held == null || _role == SimulationRole.Replica)
+            {
+                return false;
+            }
+
+            if (_aim != null && _aim.TryGetLaunchWithView(yaw, pitch, out Vector3 origin, out Vector3 velocity))
+            {
+                Throw(origin, velocity);
+                return true;
+            }
+
+            Drop(DropReason.Released, Vector3.zero);
+            return false;
+        }
+
+        /// <summary>
+        /// Replica: mirrors what this player carries without grabbing it (the authority already did). Only updates the
+        /// held reference and the carry load; never calls TryGrab / Release on the object.
+        /// </summary>
+        public void SetReplicatedHeld(IGrabbable held)
+        {
+            if (_role != SimulationRole.Replica)
+            {
+                return;
+            }
+
+            if (IsDestroyed(held))
+            {
+                held = null;
+            }
+
+            _held = held;
+            _releaseRequested = false;
+            if (held != null && _movement != null)
+            {
+                _movement.SetCarryLoad(held.CarrySpeedMultiplier);
+            }
+            else
+            {
+                ClearCarryLoad();
+            }
+        }
+
+        /// <summary>
+        /// Replica: no acquisition, no physical drops (ForceDrop / disable only clear the mirrored reference).
+        /// Switching roles forgets whatever was held under the previous one.
+        /// </summary>
+        public void SetSimulationRole(SimulationRole role)
+        {
+            if (role == _role)
+            {
+                return;
+            }
+
+            if (role == SimulationRole.Replica)
+            {
+                // Leaving authority: let go physically first so nothing stays frozen at the hold point.
+                ForceDrop(DropReason.Forced, Vector3.zero);
+            }
+            else
+            {
+                ClearReplicatedHeld();
+            }
+
+            _role = role;
+            _releaseRequested = false;
+            _requiresRepress = false;
+        }
+
+        private void ClearReplicatedHeld()
+        {
+            _held = null;
+            _releaseRequested = false;
+            ClearCarryLoad();
+        }
+
+        private void Subscribe()
+        {
+            if (_subscribed || _commands == null)
+            {
+                return;
+            }
+
+            _commands.GrabStarted += HandleGrabStarted;
+            _commands.GrabCanceled += HandleGrabCanceled;
+            _subscribed = true;
+        }
+
+        private void Unsubscribe()
+        {
+            if (!_subscribed)
+            {
+                return;
+            }
+
+            _commands.GrabStarted -= HandleGrabStarted;
+            _commands.GrabCanceled -= HandleGrabCanceled;
+            _subscribed = false;
         }
 
         /// <summary>
@@ -202,7 +370,7 @@ namespace AlienFarms.Player
 
         private void HandleGrabStarted()
         {
-            if (_paused || !_inputEnabled || _held != null || _requiresRepress || (_movement != null && _movement.IsStunned))
+            if (_role == SimulationRole.Replica || _paused || !_inputEnabled || _held != null || _requiresRepress || (_movement != null && _movement.IsStunned))
             {
                 return;
             }
@@ -226,7 +394,7 @@ namespace AlienFarms.Player
             // Deferred to FixedUpdate on purpose: when the player is destroyed, PlayerInput cancels Grab before our
             // OnDisable runs, and at that point isActiveAndEnabled/activeInHierarchy are still true (verified in
             // Play Mode). Dropping here would report Released; deferring lets OnDisable drop with Forced first.
-            if (_held != null)
+            if (_held != null && _releaseMode == ReleaseMode.Auto)
             {
                 _releaseRequested = true;
             }
@@ -488,7 +656,11 @@ namespace AlienFarms.Player
 
             if (_input == null)
             {
-                Debug.LogWarning($"[{nameof(PlayerGrabber)}] Missing PlayerInputHandler on '{name}'.", this);
+                Debug.LogWarning($"[{nameof(PlayerGrabber)}] Missing input source on '{name}'.", this);
+            }
+            else if (!(_input is IPlayerCommandSource))
+            {
+                Debug.LogWarning($"[{nameof(PlayerGrabber)}] Input source '{_input.GetType().Name}' on '{name}' does not implement {nameof(IPlayerCommandSource)}.", this);
             }
 
             if (_identity == null)

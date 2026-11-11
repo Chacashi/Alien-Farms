@@ -1,3 +1,4 @@
+using AlienFarms.Data;
 using AlienFarms.Utilities;
 using UnityEngine;
 
@@ -7,10 +8,10 @@ namespace AlienFarms.Audio
     public static class AudioVariation
     {
         /// <summary>Lowest pitch accepted for a random pitch range.</summary>
-        public const float MinPitch = 0.1f;
+        public const float MinPitch = SoundCue.MinPitch;
 
         /// <summary>Highest pitch accepted for a random pitch range.</summary>
-        public const float MaxPitch = 3f;
+        public const float MaxPitch = SoundCue.MaxPitch;
 
         /// <summary>
         /// Random non-null entry of <paramref name="items"/>, or null when it is null/empty or holds only nulls.
@@ -42,6 +43,18 @@ namespace AlienFarms.Audio
             float min = Mathf.Clamp(range.x, MinPitch, MaxPitch);
             float max = Mathf.Clamp(range.y, min, MaxPitch);
             return Mathf.Lerp(min, max, rng.Value01());
+        }
+
+        /// <summary>
+        /// Pitch of a sound that speeds up over time: <paramref name="basePitch"/> at 0 s, rising linearly to
+        /// basePitch * <paramref name="multiplier"/> at <paramref name="rampTime"/> and holding there. Clamped to
+        /// [<see cref="MinPitch"/>, <see cref="MaxPitch"/>].
+        /// </summary>
+        public static float RampPitch(float basePitch, float elapsed, float rampTime, float multiplier)
+        {
+            float t = rampTime > 0f ? Mathf.Clamp01(elapsed / rampTime) : 1f;
+            float pitch = basePitch * Mathf.Lerp(1f, Mathf.Max(0f, multiplier), t);
+            return Mathf.Clamp(pitch, MinPitch, MaxPitch);
         }
 
         /// <summary>

@@ -1,5 +1,5 @@
+using AlienFarms.Core;
 using AlienFarms.Data;
-using AlienFarms.Input;
 using UnityEngine;
 
 namespace AlienFarms.Player
@@ -8,18 +8,20 @@ namespace AlienFarms.Player
     /// Camera-relative, Rigidbody-driven ground movement with walk/sprint speeds.
     /// The root never rotates; only <see cref="_visual"/> turns to face the move direction (or, while aiming, the
     /// camera's planar forward so the player strafes).
+    /// Input comes from an <see cref="IPlayerCommandSource"/>. As a <see cref="SimulationRole.Replica"/> it does not move.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public sealed class PlayerMovement : MonoBehaviour
+    public sealed class PlayerMovement : MonoBehaviour, ISimulationRoleTarget
     {
         [Header("Config")]
         [SerializeField, Tooltip("Shared movement tuning.")]
         private PlayerSettings _settings;
 
         [Header("References")]
-        [SerializeField, Tooltip("Input source for this player.")]
-        private PlayerInputHandler _input;
+        // Name kept from when it was typed PlayerInputHandler, so existing prefab references stay wired.
+        [SerializeField, Tooltip("Input source for this player: a component implementing IPlayerCommandSource (PlayerInputHandler).")]
+        private MonoBehaviour _input;
 
         [SerializeField, Tooltip("Rigidbody on this root (rotation should be frozen).")]
         private Rigidbody _rb;
@@ -37,6 +39,8 @@ namespace AlienFarms.Player
         private float _stunTimer;
         private bool _inputEnabled = true;
         private bool _isAiming;
+        private IPlayerCommandSource _commands;
+        private SimulationRole _role = SimulationRole.Authority;
 
         /// <summary>Last non-zero horizontal move direction, or the camera forward while aiming (normalized).</summary>
         public Vector3 Facing => _facing;
@@ -57,11 +61,25 @@ namespace AlienFarms.Player
         /// <summary>Current Rigidbody velocity (world space).</summary>
         public Vector3 Velocity => _rb != null ? _rb.linearVelocity : Vector3.zero;
 
+        /// <summary>Seconds left of the current knockback stun (0 when not stunned).</summary>
+        public float StunRemaining => _stunTimer > 0f ? _stunTimer : 0f;
+
+        public SimulationRole Role => _role;
+
+        /// <summary>Input this component reads (the serialized source unless one was injected).</summary>
+        public IPlayerCommandSource CommandSource => _commands;
+
         private void Awake()
         {
             if (_rb == null)
             {
                 _rb = GetComponent<Rigidbody>();
+            }
+
+            // An injected source (SetCommandSource before Awake) wins over the serialized one.
+            if (_commands == null)
+            {
+                _commands = _input as IPlayerCommandSource;
             }
 
             if (_visual != null)
@@ -77,7 +95,7 @@ namespace AlienFarms.Player
 
         private void FixedUpdate()
         {
-            if (_settings == null || _input == null)
+            if (_settings == null || _commands == null || _role == SimulationRole.Replica)
             {
                 return;
             }
@@ -90,7 +108,7 @@ namespace AlienFarms.Player
                 return;
             }
 
-            Vector2 move = _inputEnabled ? Vector2.ClampMagnitude(_input.Move, 1f) : Vector2.zero;
+            Vector2 move = _inputEnabled ? Vector2.ClampMagnitude(_commands.Move, 1f) : Vector2.zero;
             float magnitude = move.magnitude;
 
             GetPlanarBasis(out Vector3 forward, out Vector3 right);
@@ -115,7 +133,7 @@ namespace AlienFarms.Player
             }
 
             // Carrying or aiming forbids sprinting; both slow the walk.
-            _isSprinting = !_isCarrying && !_isAiming && _input.IsSprintHeld && magnitude > 0.0001f;
+            _isSprinting = !_isCarrying && !_isAiming && _commands.IsSprintHeld && magnitude > 0.0001f;
             float speed = _isSprinting
                 ? _settings.SprintSpeed
                 : _settings.WalkSpeed
@@ -171,6 +189,22 @@ namespace AlienFarms.Player
             if (_visual != null)
             {
                 _visual.rotation = Quaternion.LookRotation(_facing, Vector3.up);
+            }
+        }
+
+        /// <summary>Replaces the input source (e.g. a network-fed one). Null leaves the player without input.</summary>
+        public void SetCommandSource(IPlayerCommandSource source)
+        {
+            _commands = source;
+        }
+
+        /// <summary>Replica: no input-driven movement in FixedUpdate (the position is applied from outside).</summary>
+        public void SetSimulationRole(SimulationRole role)
+        {
+            _role = role;
+            if (role == SimulationRole.Replica)
+            {
+                _isSprinting = false;
             }
         }
 
@@ -255,7 +289,11 @@ namespace AlienFarms.Player
 
             if (_input == null)
             {
-                Debug.LogWarning($"[{nameof(PlayerMovement)}] Missing PlayerInputHandler on '{name}'.", this);
+                Debug.LogWarning($"[{nameof(PlayerMovement)}] Missing input source on '{name}'.", this);
+            }
+            else if (!(_input is IPlayerCommandSource))
+            {
+                Debug.LogWarning($"[{nameof(PlayerMovement)}] Input source '{_input.GetType().Name}' on '{name}' does not implement {nameof(IPlayerCommandSource)}.", this);
             }
 
             if (_cameraYawSource == null)

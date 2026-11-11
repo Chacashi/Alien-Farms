@@ -36,7 +36,7 @@ namespace AlienFarms.Animals
             int max = Mathf.Max(1, maxSize);
             _pool = new ObjectPool<Animal>(
                 CreateAnimal,
-                null,
+                OnGetAnimal,
                 OnReleaseAnimal,
                 OnDestroyAnimal,
                 Application.isEditor,
@@ -48,9 +48,39 @@ namespace AlienFarms.Animals
         public int CountActive => _pool.CountActive;
         public int CountInactive => _pool.CountInactive;
 
+        /// <summary>Network hook the authority's animals of this pool report to (null in local mode).</summary>
+        public IAnimalNetworkHook NetworkHook { get; private set; }
+
         public Animal Get() => _pool.Get();
 
-        public void Release(Animal animal) => _pool.Release(animal);
+        /// <summary>Returns <paramref name="animal"/> to the pool. Ignored for null or an instance already pooled.</summary>
+        public void Release(Animal animal)
+        {
+            if (animal == null || animal.IsInPool)
+            {
+                return;
+            }
+
+            _pool.Release(animal);
+        }
+
+        public void SetNetworkHook(IAnimalNetworkHook hook)
+        {
+            NetworkHook = hook;
+        }
+
+        /// <summary>
+        /// Takes an animal from the pool as a <see cref="SimulationRole.Replica"/> and places it active (Wandering)
+        /// at <paramref name="position"/>, its visual turned to <paramref name="rotation"/>. Return it with
+        /// <see cref="Animal.Despawn"/>.
+        /// </summary>
+        public Animal GetForReplica(Vector3 position, Quaternion rotation)
+        {
+            Animal animal = _pool.Get();
+            animal.SetSimulationRole(SimulationRole.Replica);
+            animal.Spawn(position, rotation);
+            return animal;
+        }
 
         /// <summary>Creates instances up front so gameplay never instantiates. Only call at load time.</summary>
         public void Prewarm(int count)
@@ -82,7 +112,13 @@ namespace AlienFarms.Animals
             return animal;
         }
 
-        private static void OnReleaseAnimal(Animal animal) => animal.gameObject.SetActive(false);
+        private static void OnGetAnimal(Animal animal) => animal.IsInPool = false;
+
+        private static void OnReleaseAnimal(Animal animal)
+        {
+            animal.IsInPool = true;
+            animal.gameObject.SetActive(false);
+        }
 
         private static void OnDestroyAnimal(Animal animal)
         {

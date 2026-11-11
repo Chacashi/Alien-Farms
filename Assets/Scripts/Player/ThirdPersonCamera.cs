@@ -1,6 +1,5 @@
 using AlienFarms.Core;
 using AlienFarms.Data;
-using AlienFarms.Input;
 using UnityEngine;
 
 namespace AlienFarms.Player
@@ -9,6 +8,7 @@ namespace AlienFarms.Player
     /// Orbit camera rig driven by this player's Look input. Lives on the CameraRig (child of the
     /// non-rotating player root); the camera is a child placed at local (0, 0, -distance).
     /// While aiming, the distance blends to the aim distance and look sensitivity is reduced.
+    /// In driven mode (<see cref="SetDrivenView"/>) yaw and pitch come from outside and the Look input is ignored.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class ThirdPersonCamera : MonoBehaviour
@@ -21,8 +21,9 @@ namespace AlienFarms.Player
         private PlayerSettings _settings;
 
         [Header("References")]
-        [SerializeField, Tooltip("Input source for this player.")]
-        private PlayerInputHandler _input;
+        // Name kept from when it was typed PlayerInputHandler, so existing prefab references stay wired.
+        [SerializeField, Tooltip("Input source for this player: a component implementing IPlayerCommandSource (PlayerInputHandler).")]
+        private MonoBehaviour _input;
 
         [SerializeField, Tooltip("Point the rig orbits around (e.g. a pivot at head height).")]
         private Transform _target;
@@ -39,6 +40,8 @@ namespace AlienFarms.Player
         private bool _yawSnapped;
         private bool _isAiming;
         private float _currentDistance;
+        private IPlayerCommandSource _commands;
+        private bool _isDriven;
 
         /// <summary>Current orbit pitch (deg, positive looks down).</summary>
         public float Pitch => _pitch;
@@ -51,6 +54,9 @@ namespace AlienFarms.Player
 
         public bool IsAiming => _isAiming;
 
+        /// <summary>True while yaw and pitch are set through <see cref="SetDrivenView"/> instead of the Look input.</summary>
+        public bool IsDriven => _isDriven;
+
         private void Awake()
         {
             // PlayerInputManager may call SnapYaw (via onPlayerJoined) before this Awake runs; keep that value.
@@ -61,17 +67,47 @@ namespace AlienFarms.Player
 
             _pitch = _settings != null ? _settings.DefaultPitch : 0f;
             _currentDistance = _settings != null ? _settings.Distance : 0f;
+
+            // An injected source (SetCommandSource before Awake) wins over the serialized one.
+            if (_commands == null)
+            {
+                _commands = _input as IPlayerCommandSource;
+            }
         }
 
         private void LateUpdate()
         {
-            if (_settings == null || _input == null || _target == null)
+            if (_settings == null || _target == null || (!_isDriven && _commands == null))
             {
                 return;
             }
 
-            Vector2 look = _input.Look;
-            Vector2 delta = _input.IsLookPointerDelta
+            if (!_isDriven)
+            {
+                ApplyLookInput();
+            }
+
+            // Exponential blend: frame-rate independent and never overshoots.
+            float targetDistance = _isAiming ? _settings.AimCameraDistance : _settings.Distance;
+            float blend = 1f - Mathf.Exp(-_settings.AimCameraBlendSpeed * Time.deltaTime);
+            _currentDistance = Mathf.Lerp(_currentDistance, targetDistance, blend);
+
+            Vector3 pivot = _target.position;
+            Quaternion rotation = Quaternion.Euler(_pitch, _yaw, 0f);
+            transform.SetPositionAndRotation(pivot, rotation);
+
+            if (_cameraTransform != null)
+            {
+                float distance = ResolveDistance(pivot, rotation * Vector3.back, _currentDistance);
+                _cameraTransform.localPosition = new Vector3(0f, 0f, -distance);
+                _cameraTransform.localRotation = Quaternion.identity;
+            }
+        }
+
+        private void ApplyLookInput()
+        {
+            Vector2 look = _commands.Look;
+            Vector2 delta = _commands.IsLookPointerDelta
                 ? look * _settings.MouseSensitivity
                 : Vector2.Scale(look, _settings.StickSensitivity) * Time.deltaTime;
 
@@ -85,24 +121,32 @@ namespace AlienFarms.Player
                 delta *= _settings.AimLookSensitivityMultiplier;
             }
 
-            // Exponential blend: frame-rate independent and never overshoots.
-            float targetDistance = _isAiming ? _settings.AimCameraDistance : _settings.Distance;
-            float blend = 1f - Mathf.Exp(-_settings.AimCameraBlendSpeed * Time.deltaTime);
-            _currentDistance = Mathf.Lerp(_currentDistance, targetDistance, blend);
-
             _yaw = Mathf.Repeat(_yaw + delta.x, 360f);
             _pitch = Mathf.Clamp(_pitch - delta.y, _settings.MinPitch, _settings.MaxPitch);
+        }
 
-            Vector3 pivot = _target.position;
-            Quaternion rotation = Quaternion.Euler(_pitch, _yaw, 0f);
-            transform.SetPositionAndRotation(pivot, rotation);
+        /// <summary>Replaces the input source (e.g. a network-fed one). Null leaves the camera without Look input.</summary>
+        public void SetCommandSource(IPlayerCommandSource source)
+        {
+            _commands = source;
+        }
 
-            if (_cameraTransform != null)
-            {
-                float distance = ResolveDistance(pivot, rotation * Vector3.back, _currentDistance);
-                _cameraTransform.localPosition = new Vector3(0f, 0f, -distance);
-                _cameraTransform.localRotation = Quaternion.identity;
-            }
+        /// <summary>
+        /// Enters driven mode and sets the orbit view (deg; pitch clamped to the settings). The rig rotation is applied
+        /// now, so movement and throws read this view in the same physics step.
+        /// </summary>
+        public void SetDrivenView(float yaw, float pitch)
+        {
+            _isDriven = true;
+            _yaw = Mathf.Repeat(yaw, 360f);
+            _pitch = _settings != null ? Mathf.Clamp(pitch, _settings.MinPitch, _settings.MaxPitch) : pitch;
+            transform.rotation = Quaternion.Euler(_pitch, _yaw, 0f);
+        }
+
+        /// <summary>Leaves driven mode: the Look input moves the camera again, from the last driven view.</summary>
+        public void ReleaseDrivenView()
+        {
+            _isDriven = false;
         }
 
         /// <summary>Enters or leaves aim mode (driven by PlayerAim).</summary>
@@ -167,7 +211,11 @@ namespace AlienFarms.Player
 
             if (_input == null)
             {
-                Debug.LogWarning($"[{nameof(ThirdPersonCamera)}] Missing PlayerInputHandler on '{name}'.", this);
+                Debug.LogWarning($"[{nameof(ThirdPersonCamera)}] Missing input source on '{name}'.", this);
+            }
+            else if (!(_input is IPlayerCommandSource))
+            {
+                Debug.LogWarning($"[{nameof(ThirdPersonCamera)}] Input source '{_input.GetType().Name}' on '{name}' does not implement {nameof(IPlayerCommandSource)}.", this);
             }
 
             if (_target == null)

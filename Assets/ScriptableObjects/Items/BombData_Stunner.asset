@@ -27,3 +27,30 @@ MonoBehaviour:
   _animalScareDuration: 1.5
   _blastVfxPrefab: {fileID: 2107231481314390831, guid: 276c5a769557fb34bb20b79787ae8e32, type: 3}
   _blastVfxDuration: 0.4
+  _spawnSound:
+    _clips:
+    - {fileID: 8300000, guid: daf6a71727e8488e8daefe5b09c28812, type: 3}
+    _volume: 0.6
+    _pitchRange: {x: 0.92, y: 1.08}
+  _grabSound:
+    _clips:
+    - {fileID: 8300000, guid: 99a9a034956e4c3ca84d66515600030c, type: 3}
+    _volume: 0.5
+    _pitchRange: {x: 0.95, y: 1.1}
+  _fuseSound:
+    _clips:
+    - {fileID: 8300000, guid: 9c3e953dceea4b6597694bf742849d7d, type: 3}
+    _volume: 0.45
+    _pitchRange: {x: 0.97, y: 1.03}
+  _fusePitchRampMultiplier: 1.6
+  _fusePitchRampTime: 1.5
+  _explosionSound:
+    _clips:
+    - {fileID: 8300000, guid: a358ee351dc0406f8a8093252392ec2c, type: 3}
+    _volume: 0.9
+    _pitchRange: {x: 0.9, y: 1.05}
+  _stunSound:
+    _clips:
+    - {fileID: 8300000, guid: 88892bf898fe439788ce025a5eec0018, type: 3}
+    _volume: 0.65
+    _pitchRange: {x: 0.96, y: 1.06}

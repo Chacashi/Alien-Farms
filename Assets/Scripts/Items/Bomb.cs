@@ -1,3 +1,4 @@
+using System;
 using AlienFarms.Core;
 using AlienFarms.Data;
 using UnityEngine;
@@ -11,10 +12,12 @@ namespace AlienFarms.Items
     /// player in the blast radius and scaring nearby free animals. It never touches capture or score.
     /// Does not share a base with Animal on purpose (its armed/inert behavior is different); the hold snap and the
     /// release order (dynamic before writing position/velocity) are duplicated consciously from it.
+    /// As a <see cref="SimulationRole.Replica"/> it never arms, detonates or raises GameEvents: its body is kinematic and
+    /// its state comes from <see cref="ApplyReplicatedState"/>.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public sealed class Bomb : MonoBehaviour, IThrowable
+    public sealed class Bomb : MonoBehaviour, IThrowable, ISimulationRoleTarget
     {
         private const float Epsilon = 0.0001f;
 
@@ -51,8 +54,17 @@ namespace AlienFarms.Items
         private int _animalMask;
         private int _playerLayer = -1;
         private bool _cached;
+        private SimulationRole _role = SimulationRole.Authority;
+        private IBombNetworkHook _networkHook;
+
+        /// <summary>
+        /// Raised after each completed transition (state, holder or thrower changed), before the matching GameEvent.
+        /// </summary>
+        public event Action<Bomb> StateChanged;
 
         public BombState State => _state;
+
+        public SimulationRole Role => _role;
 
         /// <summary>Player who threw the bomb; valid while <see cref="BombState.Armed"/>.</summary>
         public PlayerId Thrower => _thrower;
@@ -96,6 +108,12 @@ namespace AlienFarms.Items
             _rb.linearVelocity = Vector3.zero;
             _rb.angularVelocity = Vector3.zero;
 
+            // Velocities are cleared while still dynamic: writing them on a kinematic body is not supported.
+            if (_role == SimulationRole.Replica)
+            {
+                _rb.isKinematic = true;
+            }
+
             if (_collider != null)
             {
                 _collider.enabled = true;
@@ -109,11 +127,92 @@ namespace AlienFarms.Items
             _state = BombState.Idle;
 
             gameObject.SetActive(true);
+            if (_role == SimulationRole.Replica)
+            {
+                NotifyStateChanged();
+                return;
+            }
+
+            _networkHook?.OnSpawned(this);
+            NotifyStateChanged();
+            GameEvents.RaiseBombSpawned(this);
+        }
+
+        /// <summary>Network hook this bomb reports its authority spawns and despawns to (null = local pooling).</summary>
+        public void SetNetworkHook(IBombNetworkHook hook)
+        {
+            _networkHook = hook;
+        }
+
+        /// <summary>
+        /// Replica: never arms, detonates or grabs, no GameEvents, kinematic body. Authority (default): full simulation.
+        /// </summary>
+        public void SetSimulationRole(SimulationRole role)
+        {
+            CacheSetup();
+            _role = role;
+            if (role == SimulationRole.Replica)
+            {
+                _rb.isKinematic = true;
+            }
+            else if (_state != BombState.Inactive)
+            {
+                _rb.isKinematic = _state == BombState.Carried;
+            }
+        }
+
+        /// <summary>
+        /// Replica: applies the authority's state, holder and thrower (the transform is synchronized separately).
+        /// Updates collider and armed indicator like the authority's transitions do, and raises
+        /// <see cref="StateChanged"/>. Inactive leaves play (<see cref="Despawn"/>). Never raises GameEvents; ignored on
+        /// the authority.
+        /// </summary>
+        public void ApplyReplicatedState(BombState state, PlayerId holder, PlayerId thrower)
+        {
+            if (_role != SimulationRole.Replica)
+            {
+                return;
+            }
+
+            if (state == BombState.Inactive)
+            {
+                Despawn();
+                return;
+            }
+
+            if (state == _state && holder == _holder && thrower == _thrower)
+            {
+                return;
+            }
+
+            bool becameArmed = state == BombState.Armed && _state != BombState.Armed;
+            _state = state;
+            _holder = state == BombState.Carried ? holder : PlayerId.None;
+            _thrower = state == BombState.Armed ? thrower : PlayerId.None;
+            if (state != BombState.Carried)
+            {
+                _holdPoint = null;
+            }
+
+            if (_collider != null)
+            {
+                _collider.enabled = state != BombState.Carried;
+            }
+
+            if (becameArmed)
+            {
+                _armedSince = Time.time;
+                _nextBlinkTime = Time.time + ArmedBlinkInterval;
+            }
+
+            SetIndicator(state == BombState.Armed);
+            NotifyStateChanged();
         }
 
         public bool TryGrab(PlayerId holder, Transform holdPoint)
         {
-            if (!CanBeGrabbed || holder == PlayerId.None || holdPoint == null || _holder != PlayerId.None)
+            if (_role == SimulationRole.Replica
+                || !CanBeGrabbed || holder == PlayerId.None || holdPoint == null || _holder != PlayerId.None)
             {
                 return false;
             }
@@ -133,6 +232,8 @@ namespace AlienFarms.Items
             _holdPoint = holdPoint;
             _state = BombState.Carried;
             SnapToHoldPoint();
+            NotifyStateChanged();
+            GameEvents.RaiseBombGrabbed(holder, this);
             return true;
         }
 
@@ -142,7 +243,7 @@ namespace AlienFarms.Items
         /// </summary>
         public void Release(Vector3 position, Vector3 velocity, DropReason reason)
         {
-            if (_state != BombState.Carried)
+            if (_state != BombState.Carried || _role == SimulationRole.Replica)
             {
                 return;
             }
@@ -173,6 +274,8 @@ namespace AlienFarms.Items
                 _nextBlinkTime = Time.time + ArmedBlinkInterval;
                 SetIndicator(true);
                 _state = BombState.Armed;
+                NotifyStateChanged();
+                GameEvents.RaiseBombArmed(previousHolder, this);
                 return;
             }
 
@@ -180,13 +283,23 @@ namespace AlienFarms.Items
             _grabCooldownUntil = Time.time + (_data != null ? _data.GrabCooldown : 0f);
             SetIndicator(false);
             _state = BombState.Idle;
+            NotifyStateChanged();
         }
 
-        /// <summary>Removes the bomb from play (any state) and returns it to its pool. Never detonates.</summary>
+        /// <summary>
+        /// Removes the bomb from play (any state) and returns it to its pool, or hands it to the network hook, which then
+        /// returns it. Never detonates. A replica just leaves play, without events.
+        /// </summary>
         public void Despawn()
         {
             if (_state == BombState.Inactive)
             {
+                // A replica whose Inactive state was replicated before its despawn still goes back to the pool.
+                if (_role == SimulationRole.Replica && !IsInPool)
+                {
+                    ReturnToPool();
+                }
+
                 return;
             }
 
@@ -196,7 +309,27 @@ namespace AlienFarms.Items
             _thrower = PlayerId.None;
             SetIndicator(false);
             _state = BombState.Inactive;
+            NotifyStateChanged();
 
+            if (_role == SimulationRole.Authority)
+            {
+                // Before returning to the pool, so listeners still see this instance as the one that left play.
+                GameEvents.RaiseBombDespawned(this);
+
+                if (_networkHook != null && _networkHook.TryDespawn(this))
+                {
+                    return;
+                }
+            }
+
+            ReturnToPool();
+        }
+
+        /// <summary>True while the instance sits inactive in its pool (maintained by <see cref="BombSpawner"/>).</summary>
+        internal bool IsInPool { get; set; }
+
+        private void ReturnToPool()
+        {
             if (_pool != null)
             {
                 _pool.Release(this);
@@ -209,7 +342,7 @@ namespace AlienFarms.Items
 
         private void OnCollisionEnter(Collision collision)
         {
-            if (_state != BombState.Armed)
+            if (_state != BombState.Armed || _role == SimulationRole.Replica)
             {
                 return;
             }
@@ -229,7 +362,7 @@ namespace AlienFarms.Items
 
         private void FixedUpdate()
         {
-            if (_state == BombState.Inactive || _state == BombState.Carried)
+            if (_role == SimulationRole.Replica || _state == BombState.Inactive || _state == BombState.Carried)
             {
                 return;
             }
@@ -265,15 +398,22 @@ namespace AlienFarms.Items
                 return;
             }
 
-            // Holder destroyed without dropping us: never stay frozen in the air.
+            // Holder destroyed without dropping us: never stay frozen in the air. A replica has no hold point of its
+            // own (its transform is synchronized from the authority).
             if (_holdPoint == null)
             {
-                Release(transform.position, Vector3.zero, DropReason.Forced);
+                if (_role == SimulationRole.Authority)
+                {
+                    Release(transform.position, Vector3.zero, DropReason.Forced);
+                }
+
                 return;
             }
 
             SnapToHoldPoint();
         }
+
+        private void NotifyStateChanged() => StateChanged?.Invoke(this);
 
         /// <summary>Stuns every player in range except the thrower, scares free animals, then returns to the pool.</summary>
         private void Detonate()

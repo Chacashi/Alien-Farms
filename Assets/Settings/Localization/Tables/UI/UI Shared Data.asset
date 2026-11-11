@@ -1,0 +1,168 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
+  m_Name: UI Shared Data
+  m_EditorClassIdentifier: Unity.Localization::UnityEngine.Localization.Tables.SharedTableData
+  m_TableCollectionName: UI
+  m_TableCollectionNameGuidString: c89c2d9a0d5bcdd4284d91dd497cd5d9
+  m_Entries:
+  - m_Id: 1540083712
+    m_Key: common.back
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1590415360
+    m_Key: common.options
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1598803968
+    m_Key: common.how_to_play
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1598803969
+    m_Key: common.back_to_title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1598803970
+    m_Key: common.p1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1598803971
+    m_Key: common.p2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1598803972
+    m_Key: common.press_to_join
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998272
+    m_Key: title.play
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998273
+    m_Key: title.quit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998274
+    m_Key: select.header
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998275
+    m_Key: select.hints
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998276
+    m_Key: select.choosing
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998277
+    m_Key: select.ready
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998278
+    m_Key: select.taken_by
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998279
+    m_Key: loading.label
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998280
+    m_Key: gameplay.join_prompt
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998281
+    m_Key: pause.hold_hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998282
+    m_Key: pause.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998283
+    m_Key: pause.subtitle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998284
+    m_Key: pause.resume
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998285
+    m_Key: pause.restart
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998286
+    m_Key: match.go
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998287
+    m_Key: results.winner
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998288
+    m_Key: results.draw
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998289
+    m_Key: results.rematch
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998290
+    m_Key: options.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998291
+    m_Key: options.master
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998292
+    m_Key: options.music
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998293
+    m_Key: options.sfx
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998294
+    m_Key: options.mute_all
+    m_Metadata:
+      m_Items: []
+  - m_Id: 1602998295
+    m_Key: options.language
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14426120638464
+    m_Key: title.credits
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14426145804288
+    m_Key: credits.header
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14426145804289
+    m_Key: credits.team
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14426145804290
+    m_Key: credits.thanks
+    m_Metadata:
+      m_Items: []
+  m_Metadata:
+    m_Items: []
+  m_KeyGenerator:
+    rid: 834188093272096906
+  references:
+    version: 2
+    RefIds:
+    - rid: 834188093272096906
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
+      data:
+        m_CustomEpoch: 1793475119527

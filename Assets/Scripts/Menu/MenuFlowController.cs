@@ -13,7 +13,8 @@ namespace AlienFarms.Menu
     /// buttons (the other is blocked); on character select every player moves its own cursor, confirms (locks) and
     /// cancels. When both have confirmed, their devices, scheme and character go to the <see cref="MatchSession"/> and the
     /// gameplay scene is loaded. Input state changes are always applied outside input callbacks (next frame on join,
-    /// or from PlayerMenuInput's Update dispatch).
+    /// or from PlayerMenuInput's Update dispatch). Title sub-menus (<see cref="SubMenuPanel"/>) are navigated by the
+    /// title owner; Cancel or the panel's Back button returns to the title.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MenuFlowController : MonoBehaviour
@@ -49,6 +50,8 @@ namespace AlienFarms.Menu
         private readonly int[] _applyFrame = { NoPendingFrame, NoPendingFrame };
 
         private CharacterSelection _selection;
+        private SubMenuPanel _activeSubMenu;
+        private GameObject _titleReturnSelection;
         private MenuPhase _phase = MenuPhase.Title;
         private float _loadAt;
         private bool _isLeaving;
@@ -165,6 +168,51 @@ namespace AlienFarms.Menu
             Render();
         }
 
+        /// <summary>Title sub-menu buttons (Options, How to play): opens <paramref name="panel"/> for the title owner.</summary>
+        public void OpenSubMenu(SubMenuPanel panel)
+        {
+            if (panel == null || _phase != MenuPhase.Title || _isLeaving)
+            {
+                return;
+            }
+
+            _phase = MenuPhase.SubMenu;
+            _activeSubMenu = panel;
+            if (_title != null)
+            {
+                _title.Hide();
+            }
+
+            panel.Show();
+            // Called from a button onClick: input routing goes to the next frame.
+            RequestApplyAll();
+        }
+
+        /// <summary>Sub-menu 'Back' button (also the owner's Cancel): back to the title buttons.</summary>
+        public void CloseSubMenu()
+        {
+            if (_phase != MenuPhase.SubMenu || _isLeaving)
+            {
+                return;
+            }
+
+            if (_activeSubMenu != null)
+            {
+                _titleReturnSelection = _activeSubMenu.ReturnSelection;
+                _activeSubMenu.Hide();
+                _activeSubMenu = null;
+            }
+
+            _phase = MenuPhase.Title;
+            if (_title != null)
+            {
+                _title.Show();
+                _title.SetPlayerJoined(_lobby != null && _lobby.JoinedCount > 0);
+            }
+
+            RequestApplyAll();
+        }
+
         /// <summary>Title 'Quit' button.</summary>
         public void Quit()
         {
@@ -201,8 +249,9 @@ namespace AlienFarms.Menu
             }
 
             // Next frame: never switch maps or (de)activate input inside the join callback, and the join press must not
-            // also count as Submit. On the title the newcomer may take ownership (lowest player index), so refresh all.
-            if (_phase == MenuPhase.Title)
+            // also count as Submit. On the title (and its sub-menus) the newcomer may take ownership (lowest player
+            // index), so refresh all.
+            if (_phase == MenuPhase.Title || _phase == MenuPhase.SubMenu)
             {
                 RequestApplyAll();
             }
@@ -234,6 +283,18 @@ namespace AlienFarms.Menu
 
                     // The other player may become the title owner.
                     RequestApplyAll();
+                    break;
+                case MenuPhase.SubMenu:
+                    if (_lobby != null && _lobby.JoinedCount == 0)
+                    {
+                        EnterTitle();
+                    }
+                    else
+                    {
+                        // The other player may become the sub-menu owner.
+                        RequestApplyAll();
+                    }
+
                     break;
                 case MenuPhase.Loading:
                     CancelLoading();
@@ -287,6 +348,18 @@ namespace AlienFarms.Menu
                     // Any player backs out of the title: its device is freed; HandleLeft picks the next owner.
                     RemovePlayer(id);
                     break;
+                case MenuPhase.SubMenu:
+                    // The owner backs out to the title; the blocked player leaves (frees its device) as on the title.
+                    if (id == GetTitleOwner())
+                    {
+                        CloseSubMenu();
+                    }
+                    else
+                    {
+                        RemovePlayer(id);
+                    }
+
+                    break;
                 case MenuPhase.CharacterSelect:
                     if (_selection.Cancel(id))
                     {
@@ -336,6 +409,13 @@ namespace AlienFarms.Menu
                 _select.Hide();
             }
 
+            if (_activeSubMenu != null)
+            {
+                _activeSubMenu.Hide();
+                _activeSubMenu = null;
+            }
+
+            _titleReturnSelection = null;
             if (_title != null)
             {
                 _title.Show();
@@ -471,11 +551,19 @@ namespace AlienFarms.Menu
                 return;
             }
 
-            if (_phase == MenuPhase.Title)
+            if (_phase == MenuPhase.Title || _phase == MenuPhase.SubMenu)
             {
-                if (id == GetTitleOwner() && _title != null)
+                bool isOwner = id == GetTitleOwner();
+                if (isOwner && _phase == MenuPhase.SubMenu && _activeSubMenu != null)
                 {
-                    menu.EnterMenu(_title.MenuRoot, _title.FirstSelected);
+                    menu.EnterMenu(_activeSubMenu.MenuRoot, _activeSubMenu.FirstSelected);
+                }
+                else if (isOwner && _phase == MenuPhase.Title && _title != null)
+                {
+                    // Back from a sub-menu: focus the button that opened it.
+                    GameObject selection = _titleReturnSelection != null ? _titleReturnSelection : _title.FirstSelected;
+                    _titleReturnSelection = null;
+                    menu.EnterMenu(_title.MenuRoot, selection);
                 }
                 else
                 {

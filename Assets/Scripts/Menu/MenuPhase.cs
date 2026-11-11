@@ -5,6 +5,9 @@ namespace AlienFarms.Menu
     {
         Title = 0,
         CharacterSelect = 1,
-        Loading = 2
+        Loading = 2,
+
+        /// <summary>A sub-menu opened from the title (Options, How to play); the title owner navigates it.</summary>
+        SubMenu = 3
     }
 }

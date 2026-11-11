@@ -1,7 +1,9 @@
+using System;
 using AlienFarms.Core;
 using AlienFarms.Data;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace AlienFarms.UI
 {
@@ -13,11 +15,14 @@ namespace AlienFarms.UI
     public sealed class PauseMenuView : MonoBehaviour
     {
         [Header("Texts")]
-        [SerializeField, Tooltip("Subtitle format; {0} = name of the player who paused.")]
-        private string _subtitleFormat = "{0} pausó";
+        [SerializeField, Tooltip("Subtitle format (non-Smart); {0} = name of the player who paused.")]
+        private LocalizedString _subtitleEntry = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.PauseSubtitle);
 
-        [SerializeField, Tooltip("Names used when a player has no character (index 0 = Player 1).")]
-        private string[] _fallbackNames = { "J1", "J2" };
+        [SerializeField, Tooltip("Player 1 name when it has no character.")]
+        private LocalizedString _player1Label = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.CommonP1);
+
+        [SerializeField, Tooltip("Player 2 name when it has no character.")]
+        private LocalizedString _player2Label = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.CommonP2);
 
         [Header("References")]
         [SerializeField, Tooltip("Pause panel (inactive by default). Must not contain this component.")]
@@ -27,9 +32,24 @@ namespace AlienFarms.UI
         private TMP_Text _subtitle;
 
         private readonly PlayerCharacterCache _characters = new PlayerCharacterCache();
+        private LocalizedStringBinding _subtitleBinding;
+        private LocalizedStringBinding _player1Binding;
+        private LocalizedStringBinding _player2Binding;
+        private PlayerId _lastOwner = PlayerId.None;
+
+        private void Awake()
+        {
+            Action refresh = RefreshSubtitleIfVisible;
+            _subtitleBinding = new LocalizedStringBinding(_subtitleEntry, refresh);
+            _player1Binding = new LocalizedStringBinding(_player1Label, refresh);
+            _player2Binding = new LocalizedStringBinding(_player2Label, refresh);
+        }
 
         private void OnEnable()
         {
+            _subtitleBinding.Enable();
+            _player1Binding.Enable();
+            _player2Binding.Enable();
             GameEvents.OnPlayerCharacterAssigned += HandlePlayerCharacterAssigned;
             GameEvents.OnGamePaused += HandleGamePaused;
             GameEvents.OnGameResumed += HandleGameResumed;
@@ -37,6 +57,9 @@ namespace AlienFarms.UI
 
         private void OnDisable()
         {
+            _subtitleBinding.Disable();
+            _player1Binding.Disable();
+            _player2Binding.Disable();
             GameEvents.OnPlayerCharacterAssigned -= HandlePlayerCharacterAssigned;
             GameEvents.OnGamePaused -= HandleGamePaused;
             GameEvents.OnGameResumed -= HandleGameResumed;
@@ -47,13 +70,30 @@ namespace AlienFarms.UI
 
         private void HandleGamePaused(PlayerId owner)
         {
-            if (_subtitle != null)
+            _lastOwner = owner;
+            RenderSubtitle();
+            SetVisible(true);
+        }
+
+        // The language can change from the options panel opened inside the pause menu.
+        private void RefreshSubtitleIfVisible()
+        {
+            if (_panelRoot != null && _panelRoot.activeSelf)
             {
-                // One format per pause (not per frame).
-                _subtitle.SetText(string.Format(_subtitleFormat, GetName(owner)));
+                RenderSubtitle();
+            }
+        }
+
+        private void RenderSubtitle()
+        {
+            string format = _subtitleBinding.Value;
+            if (_subtitle == null || format == null || _lastOwner == PlayerId.None)
+            {
+                return;
             }
 
-            SetVisible(true);
+            // One format per pause or language change (not per frame).
+            _subtitle.SetText(string.Format(format, GetName(_lastOwner)));
         }
 
         private void HandleGameResumed(PlayerId owner) => SetVisible(false);
@@ -66,8 +106,8 @@ namespace AlienFarms.UI
                 return character.DisplayName;
             }
 
-            int index = (int)id - 1;
-            return _fallbackNames != null && index >= 0 && index < _fallbackNames.Length ? _fallbackNames[index] : string.Empty;
+            string label = id == PlayerId.Player2 ? _player2Binding.Value : _player1Binding.Value;
+            return label ?? string.Empty;
         }
 
         private void SetVisible(bool visible)
@@ -80,6 +120,12 @@ namespace AlienFarms.UI
 
         private void OnValidate()
         {
+            if (_subtitleEntry == null || _subtitleEntry.IsEmpty || _player1Label == null || _player1Label.IsEmpty
+                || _player2Label == null || _player2Label.IsEmpty)
+            {
+                Debug.LogWarning($"[{nameof(PauseMenuView)}] Empty localized string on '{name}'.", this);
+            }
+
             if (_panelRoot == null)
             {
                 Debug.LogWarning($"[{nameof(PauseMenuView)}] Missing panel root on '{name}'.", this);
