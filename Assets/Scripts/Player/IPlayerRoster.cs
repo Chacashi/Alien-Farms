@@ -6,12 +6,10 @@ namespace AlienFarms.Player
     /// Registry of the players in the match, as the match drives them. Local: <see cref="PlayerJoinCoordinator"/>;
     /// online, a network roster on the server.
     /// </summary>
-    public interface IPlayerRoster
+    public interface IPlayerRoster : IPlayerRigLookup
     {
         /// <summary>Players currently registered (joined and configured).</summary>
         int JoinedCount { get; }
-
-        bool TryGetRig(PlayerId id, out PlayerRig rig);
 
         /// <summary>Drops carried objects and moves every registered player back to its spawn point.</summary>
         void RespawnAll();

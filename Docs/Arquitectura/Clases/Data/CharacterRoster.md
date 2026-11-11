@@ -35,4 +35,4 @@ classDiagram
 [[CharacterDefinition]]
 
 ## Usado por
-[[MenuFlowController]]
+[[DevConnectionPanel]], [[MenuFlowController]], [[NetworkPlayer]], [[NetworkPlayerRoster]], [[Status]]

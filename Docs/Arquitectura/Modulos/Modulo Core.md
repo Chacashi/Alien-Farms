@@ -3,7 +3,7 @@ tags: [modulo, modulo/core]
 ---
 # Módulo Core
 
-Carpeta `Assets/Scripts/Core/` · 19 tipos. Las cajas punteadas son tipos de otros módulos.
+Carpeta `Assets/Scripts/Core/` · 20 tipos. Las cajas punteadas son tipos de otros módulos.
 
 Leyenda: `--|>` hereda · `..|>` implementa · `-->` tiene un campo/propiedad de ese tipo. Se muestran campos `[SerializeField]` y la API pública.
 
@@ -40,6 +40,18 @@ classDiagram
     <<enumeration>>
     Local
     Online
+  }
+  class GameModeRouter {
+    <<MonoBehaviour>>
+    -MatchSession _session
+    -GameObject _localModeRoot
+    -GameObject _onlineModeRoot
+    -MatchManager _match
+    -PauseController _pause
+    -MonoBehaviour _onlineRoster
+    -PlayerMenuRouter _menuRouter
+    -MonoBehaviour _onlineMenuPlayers
+    +GameMode Mode
   }
   class IGrabbable {
     <<interface>>
@@ -135,8 +147,20 @@ classDiagram
     Authority
     Replica
   }
+  class MatchManager:::external
+  <<MonoBehaviour>> MatchManager
+  class MatchSession:::external
+  <<ScriptableObject>> MatchSession
+  class PauseController:::external
+  <<MonoBehaviour>> PauseController
+  class PlayerMenuRouter:::external
+  <<MonoBehaviour>> PlayerMenuRouter
   class ThrowSettings:::external
   <<ScriptableObject>> ThrowSettings
+  GameModeRouter --> MatchManager
+  GameModeRouter --> MatchSession
+  GameModeRouter --> PauseController
+  GameModeRouter --> PlayerMenuRouter
   IThrowable --> ThrowSettings
   IThrowable ..|> IGrabbable
   classDef external fill:#eee,stroke:#999,stroke-dasharray: 4 3,color:#555
@@ -149,6 +173,7 @@ classDiagram
 | [[DropReason]] | enumeration | Why a carried `IGrabbable` left its holder. |
 | [[GameEvents]] | static | Global static events for decoupled communication between systems. Every per-player payload carries the `PlayerId` involved. Exception: match… |
 | [[GameMode]] | enumeration | How the gameplay scene is driven: local split-screen or online. |
+| [[GameModeRouter]] | MonoBehaviour | Composition root of the gameplay scene: reads `MatchSession.Mode` and activates the local or the online mode root, binds the match to that m… |
 | [[IGrabbable]] | interface | Something a player can pick up, carry at a hold point and drop. |
 | [[IPlayerCommandSource]] | interface | Everything the player's gameplay components read from input. Implemented locally by the PlayerInputHandler and, online, by a network-fed sou… |
 | [[IScareable]] | interface | Something that runs away from a sudden threat (e.g. a blast). Only free, grounded animals react. |
@@ -167,4 +192,4 @@ classDiagram
 | [[SimulationRole]] | enumeration | Who runs a simulated component. Authority runs the gameplay logic (local mode and the online server); Replica only shows state applied from … |
 
 ## Depende de
-[[Modulo Animals|Animals]] (2), [[Modulo Data|Data]] (2), [[Modulo Items|Items]] (2)
+[[Modulo Animals|Animals]] (2), [[Modulo Data|Data]] (3), [[Modulo Items|Items]] (2), [[Modulo Match|Match]] (2), [[Modulo Networking|Networking]] (1), [[Modulo Player|Player]] (3)

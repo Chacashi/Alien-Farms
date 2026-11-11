@@ -10,7 +10,8 @@
         "Unity.Services.Authentication",
         "Unity.Services.Multiplayer",
         "Unity.Services.CloudSave",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

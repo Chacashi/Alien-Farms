@@ -42,4 +42,4 @@ classDiagram
 [[IMatchExitHandler]], [[LocalMatchExitHandler]], [[MatchManager]], [[MatchSession]]
 
 ## Usado por
-[[PauseController]]
+[[OnlineMatchBootstrap]], [[PauseController]]

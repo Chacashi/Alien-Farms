@@ -60,4 +60,4 @@ classDiagram
 [[BallisticMath]], [[IGrabbable]], [[IPlayerCommandSource]], [[IThrowable]], [[LayerNames]], [[PlayerGrabber]], [[PlayerMovement]], [[ThirdPersonCamera]], [[ThrowSettings]]
 
 ## Usado por
-[[PlayerGrabber]], [[PlayerRig]], [[ThrowTrajectoryView]]
+[[Mode]], [[NetworkPlayerInput]], [[PlayerGrabber]], [[PlayerRig]], [[ThrowTrajectoryView]]

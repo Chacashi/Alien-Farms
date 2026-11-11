@@ -30,4 +30,4 @@ classDiagram
 ```
 
 ## Usa
-[[LocaleCycle]]
+[[LocaleCycle]], [[Mode]]

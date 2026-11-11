@@ -192,6 +192,38 @@ namespace AlienFarms.Player
             }
         }
 
+        /// <summary>
+        /// Replica only: shows a pose applied from outside (online snapshots). Moves the root (and Rigidbody), sets the
+        /// facing the visual turns towards and mirrors the stun timer (so <see cref="IsStunned"/> stays readable).
+        /// <paramref name="snapVisual"/> turns the visual instantly (teleports). Ignored as <see cref="SimulationRole.Authority"/>.
+        /// </summary>
+        public void ApplyReplicaPose(Vector3 position, Vector3 facing, float stunRemaining, bool snapVisual)
+        {
+            if (_role != SimulationRole.Replica)
+            {
+                return;
+            }
+
+            if (_rb != null)
+            {
+                _rb.position = position;
+            }
+
+            transform.position = position;
+            _stunTimer = stunRemaining > 0f ? stunRemaining : 0f;
+
+            facing.y = 0f;
+            if (facing.sqrMagnitude > 0.0001f)
+            {
+                _facing = facing.normalized;
+            }
+
+            if (snapVisual && _visual != null)
+            {
+                _visual.rotation = Quaternion.LookRotation(_facing, Vector3.up);
+            }
+        }
+
         /// <summary>Replaces the input source (e.g. a network-fed one). Null leaves the player without input.</summary>
         public void SetCommandSource(IPlayerCommandSource source)
         {

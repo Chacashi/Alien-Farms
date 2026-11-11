@@ -55,7 +55,7 @@ classDiagram
 [[DropReason]], [[GameEvents]], [[ISimulationRoleTarget]], [[IStunnable]], [[PlanarMath]], [[PlayerGrabber]], [[PlayerId]], [[PlayerIdentity]], [[PlayerMovement]], [[PlayerSettings]], [[SimulationRole]]
 
 ## Usado por
-[[PlayerRig]]
+[[NetworkPlayer]], [[PlayerRig]]
 
 ## Eventos que publica
 [[Eventos GameEvents#OnPlayerStunned|OnPlayerStunned]]

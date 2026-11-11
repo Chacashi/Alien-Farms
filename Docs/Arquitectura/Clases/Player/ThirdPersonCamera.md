@@ -48,4 +48,4 @@ classDiagram
 [[Animal]], [[IPlayerCommandSource]], [[LayerNames]], [[PlayerSettings]]
 
 ## Usado por
-[[PlayerAim]], [[PlayerRig]]
+[[Mode]], [[NetworkPlayer]], [[NetworkPlayerInput]], [[PlayerAim]], [[PlayerRig]]

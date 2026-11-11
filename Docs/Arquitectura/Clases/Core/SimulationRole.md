@@ -27,4 +27,4 @@ classDiagram
 `Authority`, `Replica`
 
 ## Usado por
-[[Animal]], [[AnimalSpawner]], [[AnimalTypePool]], [[Bomb]], [[BombSpawner]], [[ISimulationRoleTarget]], [[ObstacleField]], [[PlayerGrabber]], [[PlayerMovement]], [[PlayerStunReceiver]]
+[[Animal]], [[AnimalSpawner]], [[AnimalTypePool]], [[Bomb]], [[BombSpawner]], [[ISimulationRoleTarget]], [[NetworkPlayer]], [[ObstacleField]], [[OnlineMatchBootstrap]], [[PlayerGrabber]], [[PlayerMovement]], [[PlayerStunReceiver]]

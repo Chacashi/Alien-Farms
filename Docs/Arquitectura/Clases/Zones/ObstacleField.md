@@ -65,4 +65,4 @@ classDiagram
 [[AnimalZone]], [[IRandomSource]], [[ISimulationRoleTarget]], [[LayerNames]], [[ObstacleLayoutPlanner]], [[ObstacleLayoutSettings]], [[ObstaclePlacement]], [[ObstacleSlot]], [[ObstacleSlotInfo]], [[ObstacleVariant]], [[ObstacleVariantData]], [[ObstacleVariantRule]], [[ObstacleWeightEntry]], [[SimulationRole]], [[SystemRandomSource]]
 
 ## Usado por
-[[MatchManager]]
+[[MatchManager]], [[OnlineMatchBootstrap]]

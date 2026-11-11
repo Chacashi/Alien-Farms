@@ -12,7 +12,7 @@ tags: [clase, modulo/match]
 **Módulo:** [[Modulo Match|Match]] · **Namespace:** `AlienFarms.Match` · **Archivo:** `Assets/Scripts/Match/IMatchExitHandler.cs`
 
 ## Derivados / implementaciones
-[[LocalMatchExitHandler]]
+[[LocalMatchExitHandler]], [[OnlineMatchExitHandler]]
 
 ## Diagrama
 ```mermaid
@@ -27,4 +27,4 @@ classDiagram
 ```
 
 ## Usado por
-[[LocalMatchExitHandler]], [[MatchExit]]
+[[LocalMatchExitHandler]], [[MatchExit]], [[OnlineMatchExitHandler]]

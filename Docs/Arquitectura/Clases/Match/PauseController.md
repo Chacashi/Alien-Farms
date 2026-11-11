@@ -53,6 +53,9 @@ classDiagram
 ## Usa
 [[GameEvents]], [[MatchExit]], [[MatchManager]], [[PauseRules]], [[PlayerId]], [[PlayerMenuRouter]], [[SubMenuPanel]]
 
+## Usado por
+[[GameModeRouter]]
+
 ## Eventos que publica
 [[Eventos GameEvents#OnGamePaused|OnGamePaused]], [[Eventos GameEvents#OnGameResumed|OnGameResumed]]
 

@@ -11,8 +11,11 @@ tags: [clase, modulo/player]
 
 **Módulo:** [[Modulo Player|Player]] · **Namespace:** `AlienFarms.Player` · **Archivo:** `Assets/Scripts/Player/IPlayerRoster.cs`
 
+## Hereda / implementa
+[[IPlayerRigLookup]]
+
 ## Derivados / implementaciones
-[[PlayerJoinCoordinator]]
+[[NetworkPlayerRoster]], [[PlayerJoinCoordinator]]
 
 ## Diagrama
 ```mermaid
@@ -21,15 +24,17 @@ classDiagram
   class IPlayerRoster {
     <<interface>>
     +int JoinedCount
-    +TryGetRig(PlayerId id, PlayerRig rig) bool
     +RespawnAll() void
     +SetControlsEnabled(bool enabled) void
   }
+  class IPlayerRigLookup:::external
+  <<interface>> IPlayerRigLookup
+  IPlayerRoster ..|> IPlayerRigLookup
   classDef external fill:#eee,stroke:#999,stroke-dasharray: 4 3,color:#555
 ```
 
 ## Usa
-[[PlayerId]], [[PlayerRig]]
+[[IPlayerRigLookup]]
 
 ## Usado por
-[[MatchManager]], [[PlayerJoinCoordinator]]
+[[GameModeRouter]], [[MatchManager]], [[NetworkPlayerRoster]], [[PlayerJoinCoordinator]]

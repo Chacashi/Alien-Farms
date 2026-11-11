@@ -324,4 +324,4 @@ classDiagram
 | [[ThrowSettings]] | ScriptableObject | Launch and trajectory-preview tuning for thrown objects. |
 
 ## Depende de
-[[Modulo Animals|Animals]] (1), [[Modulo Audio|Audio]] (1), [[Modulo Core|Core]] (4), [[Modulo Items|Items]] (2)
+[[Modulo Animals|Animals]] (1), [[Modulo Audio|Audio]] (1), [[Modulo Core|Core]] (4), [[Modulo Items|Items]] (2), [[Modulo Networking|Networking]] (1)

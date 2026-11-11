@@ -61,4 +61,4 @@ classDiagram
 [[Animal]], [[AnimalData]], [[AnimalSpawnEntry]], [[AnimalSpawnSettings]], [[AnimalState]], [[AnimalSteering]], [[AnimalTypePool]], [[AnimalZone]], [[Bomb]], [[IAnimalNetworkHook]], [[ISimulationRoleTarget]], [[IZoneResolver]], [[LayerNames]], [[PlayerZoneRegistry]], [[SimulationRole]]
 
 ## Usado por
-[[MatchManager]]
+[[MatchManager]], [[OnlineMatchBootstrap]]

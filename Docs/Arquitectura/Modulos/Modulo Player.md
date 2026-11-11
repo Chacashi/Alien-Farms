@@ -3,7 +3,7 @@ tags: [modulo, modulo/player]
 ---
 # Módulo Player
 
-Carpeta `Assets/Scripts/Player/` · 15 tipos. Las cajas punteadas son tipos de otros módulos.
+Carpeta `Assets/Scripts/Player/` · 16 tipos. Las cajas punteadas son tipos de otros módulos.
 
 Leyenda: `--|>` hereda · `..|>` implementa · `-->` tiene un campo/propiedad de ese tipo. Se muestran campos `[SerializeField]` y la API pública.
 
@@ -18,10 +18,13 @@ classDiagram
     +CharacterDefinition Character
     +GameObject Root
   }
+  class IPlayerRigLookup {
+    <<interface>>
+    +TryGetRig(PlayerId id, PlayerRig rig) bool
+  }
   class IPlayerRoster {
     <<interface>>
     +int JoinedCount
-    +TryGetRig(PlayerId id, PlayerRig rig) bool
     +RespawnAll() void
     +SetControlsEnabled(bool enabled) void
   }
@@ -77,6 +80,7 @@ classDiagram
     <<MonoBehaviour>>
     -PlayerJoinCoordinator _players
     +PlayerId MenuOwner
+    +SetPlayers(IPlayerRigLookup lookup) void
     +RouteMenu(PlayerId owner, GameObject root, GameObject firstSelected) bool
     +ReleaseMenus() void
     +SetPlayersPaused(bool paused) void
@@ -96,7 +100,7 @@ classDiagram
     +bool IsAiming
     +Vector3 Velocity
     +float StunRemaining
-    ...10 más
+    ...11 más
   }
   class PlayerRig {
     <<MonoBehaviour>>
@@ -195,6 +199,7 @@ classDiagram
   class ThrowSettings:::external
   <<ScriptableObject>> ThrowSettings
   CharacterVisual --> CharacterDefinition
+  IPlayerRoster ..|> IPlayerRigLookup
   PlayerAim --> IGrabbable
   PlayerAim --> IPlayerCommandSource
   PlayerAim --> IThrowable
@@ -214,6 +219,7 @@ classDiagram
   PlayerJoinCoordinator --> MatchSession
   PlayerJoinCoordinator --> PlayerRig
   PlayerJoinCoordinator ..|> IPlayerRoster
+  PlayerMenuRouter --> IPlayerRigLookup
   PlayerMenuRouter --> PlayerJoinCoordinator
   PlayerMovement --> IPlayerCommandSource
   PlayerMovement --> PlayerSettings
@@ -249,6 +255,7 @@ classDiagram
 | Tipo | Clase | Descripción |
 |---|---|---|
 | [[CharacterVisual]] | struct | Pairs a character with its pre-built visual root inside the Player prefab. |
+| [[IPlayerRigLookup]] | interface | Finds the rig of a player. What shared menus (pause, results) need: locally every joined player; online only the avatar this machine owns. |
 | [[IPlayerRoster]] | interface | Registry of the players in the match, as the match drives them. Local: `PlayerJoinCoordinator`; online, a network roster on the server. |
 | [[PlayerAim]] | MonoBehaviour | Hold-to-aim for throws. Aiming is live: Aim held, grabbing enabled, not stunned and carrying something that can be thrown. While aiming, mov… |
 | [[PlayerAppearance]] | MonoBehaviour | Applies the player's character visual by activating one of the pre-built variants under the Visual child (no instantiation) and deactivating… |

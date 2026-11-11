@@ -69,7 +69,7 @@ classDiagram
 [[Animal]], [[AnimalData]], [[AnimalSpawner]], [[BombSpawner]], [[CaptureRules]], [[GameEvents]], [[IMatchContext]], [[IPlayerRoster]], [[MatchPhase]], [[MatchScore]], [[MatchSettings]], [[MatchStateMachine]], [[MatchTimer]], [[ObstacleField]], [[PlayerId]], [[PlayerJoinCoordinator]]
 
 ## Usado por
-[[LocalMatchExitHandler]], [[MatchExit]], [[PauseController]], [[ResultsMenuController]]
+[[GameModeRouter]], [[LocalMatchExitHandler]], [[MatchExit]], [[OnlineMatchBootstrap]], [[OnlineMatchExitHandler]], [[PauseController]], [[ResultsMenuController]]
 
 ## Eventos que publica
 [[Eventos GameEvents#OnMatchTimeChanged|OnMatchTimeChanged]], [[Eventos GameEvents#OnPenInventoryChanged|OnPenInventoryChanged]], [[Eventos GameEvents#OnScoreChanged|OnScoreChanged]]

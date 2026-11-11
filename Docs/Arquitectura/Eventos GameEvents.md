@@ -8,8 +8,18 @@ Comunicación desacoplada entre sistemas (`AlienFarms.Core.GameEvents`). Publica
 ## Mapa publicador → suscriptor
 ```mermaid
 flowchart LR
+  NetworkPlayer -- OnPlayerJoined --> JoinPromptView
+  NetworkPlayer -- OnPlayerJoined --> PlayerMenuRouter
+  NetworkPlayerRoster -- OnPlayerJoined --> JoinPromptView
+  NetworkPlayerRoster -- OnPlayerJoined --> PlayerMenuRouter
   PlayerJoinCoordinator -- OnPlayerJoined --> JoinPromptView
   PlayerJoinCoordinator -- OnPlayerJoined --> PlayerMenuRouter
+  NetworkPlayer -- OnPlayerLeft --> JoinPromptView
+  NetworkPlayer -- OnPlayerLeft --> PauseController
+  NetworkPlayer -- OnPlayerLeft --> PlayerHudThemeView
+  NetworkPlayerRoster -- OnPlayerLeft --> JoinPromptView
+  NetworkPlayerRoster -- OnPlayerLeft --> PauseController
+  NetworkPlayerRoster -- OnPlayerLeft --> PlayerHudThemeView
   PlayerJoinCoordinator -- OnPlayerLeft --> JoinPromptView
   PlayerJoinCoordinator -- OnPlayerLeft --> PauseController
   PlayerJoinCoordinator -- OnPlayerLeft --> PlayerHudThemeView
@@ -24,6 +34,12 @@ flowchart LR
   PlayerMenuInput -- OnPlayerDeviceLost --> ResultsMenuController
   PlayerMenuInput -- OnPlayerDeviceRegained --> PauseController
   PlayerMenuInput -- OnPlayerDeviceRegained --> ResultsMenuController
+  NetworkPlayer -- OnPlayerCharacterAssigned --> MatchResultsView
+  NetworkPlayer -- OnPlayerCharacterAssigned --> PauseMenuView
+  NetworkPlayer -- OnPlayerCharacterAssigned --> PlayerHudThemeView
+  NetworkPlayerRoster -- OnPlayerCharacterAssigned --> MatchResultsView
+  NetworkPlayerRoster -- OnPlayerCharacterAssigned --> PauseMenuView
+  NetworkPlayerRoster -- OnPlayerCharacterAssigned --> PlayerHudThemeView
   PlayerJoinCoordinator -- OnPlayerCharacterAssigned --> MatchResultsView
   PlayerJoinCoordinator -- OnPlayerCharacterAssigned --> PauseMenuView
   PlayerJoinCoordinator -- OnPlayerCharacterAssigned --> PlayerHudThemeView
@@ -55,13 +71,13 @@ flowchart LR
 ## OnPlayerJoined
 `Action<PlayerId>`
 
-- **Publica:** [[PlayerJoinCoordinator]]
+- **Publica:** [[NetworkPlayer]], [[NetworkPlayerRoster]], [[PlayerJoinCoordinator]]
 - **Escucha:** [[JoinPromptView]], [[PlayerMenuRouter]]
 
 ## OnPlayerLeft
 `Action<PlayerId>`
 
-- **Publica:** [[PlayerJoinCoordinator]]
+- **Publica:** [[NetworkPlayer]], [[NetworkPlayerRoster]], [[PlayerJoinCoordinator]]
 - **Escucha:** [[JoinPromptView]], [[PauseController]], [[PlayerHudThemeView]]
 
 ## OnPauseRequested
@@ -125,7 +141,7 @@ flowchart LR
 
 > A joined player was assigned a character. Raised right before `OnPlayerJoined`.
 
-- **Publica:** [[PlayerJoinCoordinator]]
+- **Publica:** [[NetworkPlayer]], [[NetworkPlayerRoster]], [[PlayerJoinCoordinator]]
 - **Escucha:** [[MatchResultsView]], [[PauseMenuView]], [[PlayerHudThemeView]]
 
 ## OnAnimalGrabbed

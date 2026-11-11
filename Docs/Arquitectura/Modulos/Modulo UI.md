@@ -264,4 +264,4 @@ classDiagram
 | [[TitleScreenView]] | MonoBehaviour | Title screen panel: shows the "press to start" prompt until the first player joins, then the menu buttons. Lives on an always-active object … |
 
 ## Depende de
-[[Modulo Audio|Audio]] (2), [[Modulo Core|Core]] (26), [[Modulo Data|Data]] (10), [[Modulo Match|Match]] (3), [[Modulo Player|Player]] (1)
+[[Modulo Audio|Audio]] (2), [[Modulo Core|Core]] (26), [[Modulo Data|Data]] (10), [[Modulo Match|Match]] (3), [[Modulo Networking|Networking]] (1), [[Modulo Player|Player]] (1)

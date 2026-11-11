@@ -38,7 +38,7 @@ classDiagram
 ```
 
 ## Usa
-[[CharacterDefinition]], [[GameMode]], [[PlayerId]], [[SessionData]], [[SessionSlot]]
+[[CharacterDefinition]], [[GameMode]], [[Mode]], [[PlayerId]], [[SessionData]], [[SessionSlot]]
 
 ## Usado por
-[[JoinPromptView]], [[LocalMatchExitHandler]], [[MatchExit]], [[MenuFlowController]], [[PlayerJoinCoordinator]]
+[[DevConnectionPanel]], [[GameModeRouter]], [[JoinPromptView]], [[LocalMatchExitHandler]], [[MatchExit]], [[MenuFlowController]], [[OnlineMatchBootstrap]], [[OnlineMatchExitHandler]], [[PlayerJoinCoordinator]], [[Status]]

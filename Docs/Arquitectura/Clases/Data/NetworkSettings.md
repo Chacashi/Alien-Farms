@@ -37,3 +37,6 @@ classDiagram
   }
   classDef external fill:#eee,stroke:#999,stroke-dasharray: 4 3,color:#555
 ```
+
+## Usado por
+[[ConnectionApprovalHandler]], [[DevConnectionPanel]], [[Mode]], [[NetworkPlayerInput]], [[NetworkPlayerMotion]], [[Status]]

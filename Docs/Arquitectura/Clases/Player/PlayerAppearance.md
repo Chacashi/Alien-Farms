@@ -33,4 +33,4 @@ classDiagram
 [[CharacterDefinition]], [[CharacterVisual]]
 
 ## Usado por
-[[PlayerRig]]
+[[NetworkPlayer]], [[PlayerRig]]

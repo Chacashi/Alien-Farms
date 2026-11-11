@@ -12,7 +12,7 @@ tags: [clase, modulo/core]
 **Módulo:** [[Modulo Core|Core]] · **Namespace:** `AlienFarms.Core` · **Archivo:** `Assets/Scripts/Core/IPlayerCommandSource.cs`
 
 ## Derivados / implementaciones
-[[PlayerInputHandler]]
+[[NetworkCommandSource]], [[PlayerInputHandler]]
 
 ## Diagrama
 ```mermaid
@@ -33,4 +33,4 @@ classDiagram
 ```
 
 ## Usado por
-[[PlayerAim]], [[PlayerGrabber]], [[PlayerInputHandler]], [[PlayerMovement]], [[ThirdPersonCamera]]
+[[NetworkCommandSource]], [[PlayerAim]], [[PlayerGrabber]], [[PlayerInputHandler]], [[PlayerMovement]], [[ThirdPersonCamera]]

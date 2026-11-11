@@ -63,4 +63,4 @@ classDiagram
 [[Animal]], [[Bomb]], [[DropReason]], [[IGrabbable]], [[IPlayerCommandSource]], [[ISimulationRoleTarget]], [[LayerNames]], [[PlayerAim]], [[PlayerId]], [[PlayerIdentity]], [[PlayerMovement]], [[PlayerSettings]], [[ReleaseMode]], [[SimulationRole]]
 
 ## Usado por
-[[PlayerAim]], [[PlayerRig]], [[PlayerStunReceiver]], [[PlayerTackle]]
+[[Mode]], [[NetworkPlayer]], [[NetworkPlayerInput]], [[PlayerAim]], [[PlayerRig]], [[PlayerStunReceiver]], [[PlayerTackle]]

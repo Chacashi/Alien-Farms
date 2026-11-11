@@ -62,7 +62,7 @@ classDiagram
 [[Animal]], [[AnimalZone]], [[Bomb]], [[BombData]], [[BombPlacement]], [[BombSpawnSchedule]], [[BombSpawnSettings]], [[BombState]], [[GameEvents]], [[IBombNetworkHook]], [[IRandomSource]], [[ISimulationRoleTarget]], [[LayerNames]], [[MatchPhase]], [[SimulationRole]], [[SystemRandomSource]]
 
 ## Usado por
-[[MatchManager]]
+[[MatchManager]], [[OnlineMatchBootstrap]]
 
 ## Eventos que escucha
 [[Eventos GameEvents#OnMatchPhaseChanged|OnMatchPhaseChanged]]

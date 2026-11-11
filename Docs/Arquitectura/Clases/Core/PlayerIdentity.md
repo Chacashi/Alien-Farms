@@ -31,4 +31,4 @@ classDiagram
 [[PlayerId]]
 
 ## Usado por
-[[Bomb]], [[MenuLobby]], [[PlayerGrabber]], [[PlayerMenuInput]], [[PlayerPauseInput]], [[PlayerRig]], [[PlayerStunReceiver]], [[PlayerTackle]]
+[[Bomb]], [[MenuLobby]], [[NetworkPlayer]], [[PlayerGrabber]], [[PlayerMenuInput]], [[PlayerPauseInput]], [[PlayerRig]], [[PlayerStunReceiver]], [[PlayerTackle]]

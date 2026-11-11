@@ -321,14 +321,16 @@ GP = gameplay-programmer · SB = scene-builder · QA = qa-tester · CR = code-re
 
 > Progreso 2026-11-10: 1.1–1.3 ✅. Revisión sin bloqueantes, gate local de QA aprobado, 375/375 tests EditMode. `animalTypeIndex` = índice en `AnimalSpawnSettings.Entries`. Pendiente para la semana 3: `PlayerMotor`, `ApplyAuthoritativeState`, `TackleRules`.
 
+> Progreso 2026-11-11: 1.4 y 1.5 ✅. Host + cliente probados en MPPM: se mueven los dos jugadores (≈0,10 s de interpolación), `room_full`, desconexión y reconexión, `host_disconnected`. 413/413 tests. Método de prueba: los clones MPPM aparecen como instancias del MCP. Siguiente: 1.6.
+
 ### Semana 1 (11-10 → 11-16) · N1: núcleo online jugable (conexión directa)
 | # | Tarea | Agente | Verificación |
 |---|---|---|---|
 | 1.1 | Instalar los paquetes, confirmar versiones, desactivar el DefaultNetworkPrefabs automático | Orq + QA | Compila sin warnings |
 | 1.2 ✅ | Asmdef Networking + Tests. Seams en Core. `MatchSession.Mode`. `NetworkSettings` | GP | Compila |
 | 1.3 ✅ | Refactor de los seams (Player, Animal, Bomb, ObstacleField, MatchManager, MatchExit, PauseController) | GP | **Gate:** los tests EditMode pasan y una partida local completa funciona |
-| 1.4 | Prefabs `NetworkRoot` y `Player_Net`, red en animales y bomba, `NetworkPrefabs.asset`, roots de modo, `GameModeRouter`, `MatchNetwork`, botones dev Host/Cliente | SB | El modo local sigue funcionando |
-| 1.5 | `NetworkPlayer`, `NetworkPlayerInput`, `NetworkPlayerMotion` (sin predicción), `NetworkPlayerRoster`, `DirectConnection`, `NetworkSceneLoader` | GP | MPPM: 2 avatares se mueven |
+| 1.4 ✅ | (1.4a ✅ prefabs de red sobre los mismos prefabs, gate local OK; los animales sincronizan Rot Y porque la raíz rota al cargarlos. 1.4b = router, roots de modo, MatchNetwork y botones dev, después de 1.5) Prefabs `NetworkRoot` y `Player_Net`, red en animales y bomba, `NetworkPrefabs.asset`, roots de modo, `GameModeRouter`, `MatchNetwork`, botones dev Host/Cliente | SB | El modo local sigue funcionando |
+| 1.5 ✅ | `NetworkPlayer`, `NetworkPlayerInput`, `NetworkPlayerMotion` (sin predicción), `NetworkPlayerRoster`, `DirectConnection`, `NetworkSceneLoader` | GP | MPPM: 2 avatares se mueven |
 | 1.6 | `NetworkAnimal`/`NetworkBomb`, `NetworkCarry`, `NetworkMatchState`, la regla de GameEvents, `NetworkMatchExit` | GP | Partida de 5:00 completa en MPPM + revancha |
 | 1.7 | Tests EditMode (buffer, interpolador, serialización) | GP + QA | En verde |
 

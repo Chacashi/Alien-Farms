@@ -33,7 +33,7 @@ classDiagram
     +bool IsAiming
     +Vector3 Velocity
     +float StunRemaining
-    ...10 más
+    ...11 más
   }
   class IPlayerCommandSource:::external
   <<interface>> IPlayerCommandSource
@@ -51,4 +51,4 @@ classDiagram
 [[IPlayerCommandSource]], [[ISimulationRoleTarget]], [[PlayerSettings]], [[SimulationRole]]
 
 ## Usado por
-[[PlayerAim]], [[PlayerGrabber]], [[PlayerRig]], [[PlayerStunIndicator]], [[PlayerStunReceiver]], [[PlayerTackle]]
+[[Mode]], [[NetworkPlayer]], [[NetworkPlayerInput]], [[NetworkPlayerMotion]], [[PlayerAim]], [[PlayerGrabber]], [[PlayerRig]], [[PlayerStunIndicator]], [[PlayerStunReceiver]], [[PlayerTackle]]

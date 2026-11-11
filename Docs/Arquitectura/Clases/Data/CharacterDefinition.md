@@ -37,4 +37,4 @@ classDiagram
 [[CharacterTheme]]
 
 ## Usado por
-[[CharacterCardView]], [[CharacterRoster]], [[CharacterSelectView]], [[CharacterVisual]], [[GameEvents]], [[MatchResultsView]], [[MatchSession]], [[MenuFlowController]], [[PauseMenuView]], [[PlayerAppearance]], [[PlayerCharacterCache]], [[PlayerHudThemeView]], [[PlayerJoinCoordinator]], [[PlayerRig]], [[PlayerSlotStatusView]], [[SessionSlot]]
+[[CharacterCardView]], [[CharacterRoster]], [[CharacterSelectView]], [[CharacterVisual]], [[GameEvents]], [[MatchResultsView]], [[MatchSession]], [[MenuFlowController]], [[NetworkPlayer]], [[NetworkPlayerRoster]], [[PauseMenuView]], [[PlayerAppearance]], [[PlayerCharacterCache]], [[PlayerHudThemeView]], [[PlayerJoinCoordinator]], [[PlayerRig]], [[PlayerSlotStatusView]], [[SessionSlot]]

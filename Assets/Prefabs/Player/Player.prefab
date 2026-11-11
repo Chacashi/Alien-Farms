@@ -1852,6 +1852,9 @@ MonoBehaviour:
   _appearance: {fileID: 7818434714832007616}
   _grabber: {fileID: 5693563724347917862}
   _menu: {fileID: 7100747675412686533}
+  _aim: {fileID: 1449882208029698993}
+  _tackle: {fileID: 5633965756350179368}
+  _stunReceiver: {fileID: 7638815227910284309}
 --- !u!114 &5693563724347917862
 MonoBehaviour:
   m_ObjectHideFlags: 0

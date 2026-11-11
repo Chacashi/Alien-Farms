@@ -69,4 +69,4 @@ classDiagram
 [[CharacterDefinition]], [[DropReason]], [[PlayerAim]], [[PlayerAppearance]], [[PlayerGrabber]], [[PlayerId]], [[PlayerIdentity]], [[PlayerMenuInput]], [[PlayerMovement]], [[PlayerStunReceiver]], [[PlayerTackle]], [[ThirdPersonCamera]]
 
 ## Usado por
-[[IPlayerRoster]], [[PlayerJoinCoordinator]], [[PlayerMenuRouter]]
+[[IPlayerRigLookup]], [[LocalPlayerRigLookup]], [[NetworkPlayer]], [[NetworkPlayerRoster]], [[PlayerJoinCoordinator]], [[PlayerMenuRouter]]

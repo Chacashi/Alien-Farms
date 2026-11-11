@@ -27,4 +27,4 @@ classDiagram
 [[SceneNames]]
 
 ## Usado por
-[[LocalMatchExitHandler]], [[MenuFlowController]]
+[[DevConnectionPanel]], [[LocalMatchExitHandler]], [[MenuFlowController]], [[OnlineMatchBootstrap]], [[OnlineMatchExitHandler]], [[Status]]

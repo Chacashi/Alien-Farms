@@ -8,6 +8,8 @@ namespace AlienFarms.Player
     /// Routes a shared menu (pause, results) to a single owner: the owner navigates it with its own event system while
     /// every other joined player is blocked. Also applies the game pause to every player. Players joining while a menu
     /// is routed or the game is paused get the same state.
+    /// Players are looked up through an <see cref="IPlayerRigLookup"/>: the serialized join coordinator unless another
+    /// lookup is injected with <see cref="SetPlayers"/> before Awake (online: only the local avatar).
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class PlayerMenuRouter : MonoBehaviour
@@ -15,14 +17,30 @@ namespace AlienFarms.Player
         private static readonly PlayerId[] Players = { PlayerId.Player1, PlayerId.Player2 };
 
         [Header("References")]
-        [SerializeField, Tooltip("Registry of joined players.")]
+        [SerializeField, Tooltip("Registry of joined players (local mode); default lookup unless another one is injected.")]
         private PlayerJoinCoordinator _players;
 
+        private IPlayerRigLookup _lookup;
         private PlayerId _menuOwner = PlayerId.None;
         private bool _paused;
 
         /// <summary>Player currently navigating a routed menu (None if no menu is routed).</summary>
         public PlayerId MenuOwner => _menuOwner;
+
+        private void Awake()
+        {
+            // A lookup injected before Awake wins. Unity null check before boxing to the interface.
+            if (_lookup == null && _players != null)
+            {
+                _lookup = _players;
+            }
+        }
+
+        /// <summary>Replaces where players are looked up (e.g. the online local-avatar lookup). Call it before Awake.</summary>
+        public void SetPlayers(IPlayerRigLookup lookup)
+        {
+            _lookup = lookup;
+        }
 
         private void OnEnable()
         {
@@ -86,14 +104,14 @@ namespace AlienFarms.Player
         public void SetPlayersPaused(bool paused)
         {
             _paused = paused;
-            if (_players == null)
+            if (_lookup == null)
             {
                 return;
             }
 
             for (int i = 0; i < Players.Length; i++)
             {
-                if (_players.TryGetRig(Players[i], out PlayerRig rig))
+                if (_lookup.TryGetRig(Players[i], out PlayerRig rig))
                 {
                     rig.SetPaused(paused);
                 }
@@ -102,7 +120,7 @@ namespace AlienFarms.Player
 
         private void HandlePlayerJoined(PlayerId id)
         {
-            if (_players == null || !_players.TryGetRig(id, out PlayerRig rig))
+            if (_lookup == null || !_lookup.TryGetRig(id, out PlayerRig rig))
             {
                 return;
             }
@@ -121,7 +139,7 @@ namespace AlienFarms.Player
         private bool TryGetMenu(PlayerId id, out PlayerMenuInput menu)
         {
             menu = null;
-            if (_players == null || !_players.TryGetRig(id, out PlayerRig rig))
+            if (_lookup == null || !_lookup.TryGetRig(id, out PlayerRig rig))
             {
                 return false;
             }
