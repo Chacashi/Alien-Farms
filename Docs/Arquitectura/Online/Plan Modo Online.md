@@ -120,11 +120,11 @@ flowchart LR
   CR --> R[Sala: participantes +<br/>selección de personaje<br/>validada por el servidor]
   JN --> R
   R -->|host: Empezar<br/>NetworkSceneManager.LoadScene Single| PO[Prototype · Mode=Online]
-  PO -->|Salir| LV[LeaveAsync + Shutdown<br/>+ destruir NetworkRoot] --> T
+  PO -->|Salir| LV[Shutdown HostDisconnected<br/>+ LeaveAsync/DeleteAsync<br/>+ destruir NetworkRoot] --> T
 ```
 
 - `EnableSceneManagement = true`. Solo el host carga `Prototype` con `NetworkManager.SceneManager.LoadScene(SceneNames.Prototype, LoadSceneMode.Single)`. Los clientes, incluidos los que entran tarde o se reconectan, reciben la escena al sincronizarse.
-- La vuelta al título es local, en este orden: `LeaveAsync` → `NetworkManager.Shutdown()` → destruir `NetworkRoot` → cargar con `SceneFlow`. `NetworkRoot` tiene una guarda contra duplicados en `Awake`.
+- La vuelta al título es local, en este orden: `NetworkRootLifetime.ShutdownSession()` (el host desconecta a cada cliente con `HostDisconnected` y luego `NetworkManager.Shutdown()`) → `LeaveAsync` (cliente) / `DeleteAsync` (host) de la sesión → destruir `NetworkRoot` → cargar con `SceneFlow`. Un Leave durante Creating/Joining cancela el start (CancellationToken) y la sesión que llegue a crearse se abandona después, como esa misma instancia. `NetworkRoot` tiene una guarda contra duplicados en `Awake`.
 - La revancha no cambia de escena: el servidor reinicia el match.
 - Las referencias entre escenas viajan en **SO de runtime** (runtime anchor, como el `MatchSession` actual). No se usan `Find*` ni singletons propios.
 
@@ -325,6 +325,7 @@ GP = gameplay-programmer · SB = scene-builder · QA = qa-tester · CR = code-re
 
 > Progreso 2026-11-11 (tarde): 1.6 ✅. CR aplicado (bomba despawneada mientras se carga ya no queda emparentada al avatar: `NetworkCarriable.ServerDetach` + `PooledParenting`; `RequestThrowRpc` con permiso Everyone y validación manual; bit `Paused` en `PlayerInputCommand`; `ReadyForRematch` limpio tras reconexión). Gate MPPM host + cliente: movimiento, agarre/lanzamiento/puntaje, ledger, bomba + stun, pausa cargando, fin de ronda cargando, Results y revancha OK (timer acortado en runtime, no se jugó un 5:00 real). Shutdown/salir de Play sin warnings (simulación a Replica en `OnNetworkDespawn`). `MaxPacketQueueSize` 512. 432/432 tests. Siguiente: 1.7.
 > Progreso 2026-11-11 (noche): 1.7 ✅. +75 tests EditMode: `SnapshotBufferTests` (capacidad, anillo, huecos, epochs, Clear), `SnapshotInterpolatorTests` ampliado (extremos, sin extrapolar, yaw por el camino corto, flags) y `NetworkSerializationTests` (round-trip y tamaño de wire de cada struct, valores límite, counts hostiles). 507/507. Sin bugs de producción. Nota: con `ServerTime` no monótono el interpolador podría extrapolar (`LerpUnclamped`); el servidor no lo produce. **Semana 1 (N1) completa.** Siguiente: 2.1.
+> Progreso 2026-11-11/12: 2.1 ✅. `UgsBootstrapper` (entorno dev, perfil por instancia MPPM vía `-name`), `RelaySessionConnection` con `INetworkHandler` propio, `OnlineSessionService` (cancelación por operación, SignedOut/Expired) y `OnlineSessionChannel` (en `Scripts/Data/`: lo consume el menú Runtime). Gate MPPM contra UGS real: IDs distintos, Create/Join por código, código inválido rechazado localmente, Leave/re-Join, partida por Relay, host sale en partida → cliente libre en ≈0,7 s y re-Join OK (×3), cancelar Create. **Workaround SDK 2.4.1:** `ISession.LeaveAsync` tras borrar el host el lobby deja la sesión huérfana en `MultiplayerService.Sessions`; el cliente ya no hace Leave si el host se fue y `SessionSdkWorkarounds` libera huérfanos por reflexión (camino de respaldo no ejercitado en vivo). Alfabeto de códigos de Lobby confirmado empíricamente: `6789BCDFGHJKLMNPQRTW` (14 códigos, todos de 6). 613/613 tests. Siguiente: 2.2.
 
 ### Semana 1 (11-10 → 11-16) · N1: núcleo online jugable (conexión directa)
 | # | Tarea | Agente | Verificación |
@@ -340,7 +341,7 @@ GP = gameplay-programmer · SB = scene-builder · QA = qa-tester · CR = code-re
 ### Semana 2 (11-17 → 11-23) · N2: sesiones, ciclo de vida y colecciones
 | # | Tarea | Agente | Verificación |
 |---|---|---|---|
-| 2.1 | `UgsBootstrapper`, `OnlineSessionService`, `RelaySessionConnection`, `OnlineSessionChannel` | GP | Login anónimo en 2 instancias, con IDs distintos |
+| 2.1 ✅ | `UgsBootstrapper`, `OnlineSessionService`, `RelaySessionConnection`, `OnlineSessionChannel` | GP | Login anónimo en 2 instancias, con IDs distintos |
 | 2.2 | `UI_OnlinePanel` (la sala reutiliza `UI_CharacterCard`), `TitleStatsView`, `OnlineMenuController`, `NetworkLobbyState` en MainMenu | SB + GP | Crear y unirse por código funciona; dos jugadores no pueden quedarse con el mismo personaje |
 | 2.3 | `ConnectionPayload`, `ApprovalRules` (+ tests), `ConnectionApprovalHandler`, `ServerSlotDirectory` | GP | Los clientes de más se rechazan con un motivo |
 | 2.4 | Ownership al agarrar y lanzar, `DontDestroyWithOwner`, colores, etiquetas de debug | GP | Log y colores correctos |

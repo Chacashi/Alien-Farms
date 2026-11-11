@@ -15,6 +15,8 @@ GameObject:
   - component: {fileID: 5986572655187050418}
   - component: {fileID: 3443010218423245288}
   - component: {fileID: 3813301923559258341}
+  - component: {fileID: 4585822164530064170}
+  - component: {fileID: 8737395324864652958}
   m_Layer: 0
   m_Name: NetworkRoot
   m_TagString: Untagged
@@ -171,3 +173,40 @@ MonoBehaviour:
   _address: 127.0.0.1
   _port: 7777
   _listenAddress: 0.0.0.0
+--- !u!114 &4585822164530064170
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 783177356002245637}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe25a62b8dfc7d2419d85895e30d1fb0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Networking::AlienFarms.Networking.Session.RelaySessionConnection
+  _settings: {fileID: 11400000, guid: bbd39eff9786ae94ba8c4ad1657bab45, type: 2}
+  _transport: {fileID: 7564429501961392232}
+  _region: 
+  _connectTimeoutSeconds: 20
+--- !u!114 &8737395324864652958
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 783177356002245637}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0f1024dad5f32b4297655583a3b81b2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Networking::AlienFarms.Networking.Session.OnlineSessionService
+  _settings: {fileID: 11400000, guid: bbd39eff9786ae94ba8c4ad1657bab45, type: 2}
+  _channel: {fileID: 11400000, guid: e886cd36434b8b84582b8c99c48ae0c1, type: 2}
+  _session: {fileID: 11400000, guid: bacc8b976cfcbbf4397203a3b15af683, type: 2}
+  _characters: {fileID: 11400000, guid: 3de2edb924d927747817895d267db547, type: 2}
+  _displayName: Player
+  _signInOnStart: 1
+  _root: {fileID: 7870769146679697371}
+  _manager: {fileID: 2352713602397585419}
+  _connection: {fileID: 4585822164530064170}

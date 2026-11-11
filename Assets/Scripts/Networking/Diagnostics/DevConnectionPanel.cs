@@ -50,6 +50,13 @@ namespace AlienFarms.Networking.Diagnostics
         [SerializeField, Tooltip("Optional address field read by Client (empty = the DirectConnection default).")]
         private TMP_InputField _addressField;
 
+        [Header("Online session (Sessions + Relay)")]
+        [SerializeField, Tooltip("Optional: channel of the root's OnlineSessionService; enables Sign in / Create / Join / Leave / Start match.")]
+        private OnlineSessionChannel _sessionChannel;
+
+        [SerializeField, Tooltip("Optional join code field read by JoinSession.")]
+        private TMP_InputField _codeField;
+
         private NetworkManager _subscribedManager;
         private Status _shownStatus = (Status)(-1);
         private int _shownPlayers = -1;
@@ -66,11 +73,78 @@ namespace AlienFarms.Networking.Diagnostics
                 _lastError = $"Disconnected: {reason}";
                 _errorDirty = true;
             }
+
+            if (_sessionChannel != null)
+            {
+                _sessionChannel.Changed += HandleSessionChannelChanged;
+                _errorDirty = true;
+            }
         }
 
         private void OnDisable()
         {
             SubscribeTo(null);
+            if (_sessionChannel != null)
+            {
+                _sessionChannel.Changed -= HandleSessionChannelChanged;
+            }
+        }
+
+        /// <summary>Button: signs in to Unity Gaming Services (anonymous, one profile per MPPM instance).</summary>
+        public void SignIn()
+        {
+            if (_sessionChannel != null)
+            {
+                _sessionChannel.RequestSignIn();
+            }
+        }
+
+        /// <summary>Button: creates a Sessions + Relay session; its code appears in the status label.</summary>
+        public void CreateSession()
+        {
+            if (_sessionChannel != null)
+            {
+                _sessionChannel.RequestCreate();
+            }
+        }
+
+        /// <summary>Button: joins the session whose code is typed in the code field.</summary>
+        public void JoinSession()
+        {
+            if (_sessionChannel != null)
+            {
+                _sessionChannel.RequestJoin(_codeField != null ? _codeField.text : null);
+            }
+        }
+
+        /// <summary>Button: leaves (client) or closes (host) the current session.</summary>
+        public void LeaveSession()
+        {
+            if (_sessionChannel != null)
+            {
+                _sessionChannel.RequestLeave();
+            }
+        }
+
+        /// <summary>Button (session host): loads the gameplay scene for everyone in the session.</summary>
+        public void StartSessionMatch()
+        {
+            if (_sessionChannel == null || !_sessionChannel.IsHost || _sessionChannel.Status != OnlineSessionStatus.InSession)
+            {
+                ShowError("Not hosting a session.");
+                return;
+            }
+
+            NetworkSceneLoader loader = _anchor != null ? _anchor.SceneLoader : null;
+            if (loader == null || !loader.LoadGameplay())
+            {
+                ShowError("The gameplay scene could not be loaded.");
+            }
+        }
+
+        private void HandleSessionChannelChanged()
+        {
+            _errorDirty = true;
         }
 
         private void Update()
@@ -238,6 +312,12 @@ namespace AlienFarms.Networking.Diagnostics
                 _session.SetMode(GameMode.Local);
             }
 
+            ShowError(message);
+        }
+
+        // Shows a failure without touching the session mode (the online session owns it while in one).
+        private void ShowError(string message)
+        {
             _lastError = message;
             _errorDirty = true;
             Debug.LogWarning($"[{nameof(DevConnectionPanel)}] {message}", this);
@@ -305,7 +385,55 @@ namespace AlienFarms.Networking.Diagnostics
                 text = $"{text}\n{_lastError}";
             }
 
+            if (_sessionChannel != null)
+            {
+                text = $"{text}\n{BuildSessionLine()}";
+            }
+
             _statusLabel.text = text;
+        }
+
+        // Rebuilt only on change (see HandleSessionChannelChanged).
+        private string BuildSessionLine()
+        {
+            var builder = new System.Text.StringBuilder(128);
+            builder.Append("Online: ").Append(_sessionChannel.Status);
+            if (!string.IsNullOrEmpty(_sessionChannel.LocalPlayerId))
+            {
+                builder.Append(" · id ").Append(_sessionChannel.LocalPlayerId);
+            }
+
+            if (!string.IsNullOrEmpty(_sessionChannel.Code))
+            {
+                builder.Append(_sessionChannel.IsHost ? "\nHosting code " : "\nJoined code ").Append(_sessionChannel.Code);
+            }
+
+            for (int i = 0; i < _sessionChannel.ParticipantCount; i++)
+            {
+                OnlineParticipant participant = _sessionChannel.GetParticipant(i);
+                builder.Append("\n - ").Append(participant.DisplayName);
+                if (participant.IsHost)
+                {
+                    builder.Append(" (host)");
+                }
+
+                if (participant.IsSpectator)
+                {
+                    builder.Append(" (spectator)");
+                }
+
+                if (participant.IsLocal)
+                {
+                    builder.Append(" (you)");
+                }
+            }
+
+            if (_sessionChannel.HasError)
+            {
+                builder.Append('\n').Append(_sessionChannel.LastErrorKey);
+            }
+
+            return builder.ToString();
         }
 
         private void SubscribeTo(NetworkManager manager)

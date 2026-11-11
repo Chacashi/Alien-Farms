@@ -19,6 +19,8 @@ namespace AlienFarms.Networking.Match
     /// <item>Every instance: the match exit buttons use the <see cref="OnlineMatchExitHandler"/>.</item>
     /// <item>Pure client: when this client is dropped (host left, kicked) the NetworkRoot is torn down and the main menu
     /// loaded on the next frame, leaving the reason on the anchor for the menu.</item>
+    /// <item>Host: when its server stops while in gameplay (session Leave, dev shutdown) the same exit runs, so the host
+    /// is never left in a dead gameplay scene.</item>
     /// </list>
     /// Lives under OnlineModeRoot: the GameModeRouter activates it inside its own Awake, so this Awake runs before the
     /// obstacle field's Awake and the spawners' Start.
@@ -51,7 +53,7 @@ namespace AlienFarms.Networking.Match
 
         private SimulationRole _appliedRole = SimulationRole.Authority;
         private NetworkManager _watchedManager;
-        private bool _dropped;
+        private bool _sessionEnded;
 
         /// <summary>Role applied to the shared simulation in Awake.</summary>
         public SimulationRole AppliedRole => _appliedRole;
@@ -99,10 +101,20 @@ namespace AlienFarms.Networking.Match
 
         private void OnEnable()
         {
-            if (_anchor != null && _anchor.IsPureClient)
+            if (_anchor == null)
+            {
+                return;
+            }
+
+            if (_anchor.IsPureClient)
             {
                 _watchedManager = _anchor.Manager;
                 _watchedManager.OnClientDisconnectCallback += HandleClientDisconnected;
+            }
+            else if (_anchor.IsServer)
+            {
+                _watchedManager = _anchor.Manager;
+                _watchedManager.OnServerStopped += HandleServerStopped;
             }
         }
 
@@ -111,19 +123,20 @@ namespace AlienFarms.Networking.Match
             if (_watchedManager != null)
             {
                 _watchedManager.OnClientDisconnectCallback -= HandleClientDisconnected;
+                _watchedManager.OnServerStopped -= HandleServerStopped;
                 _watchedManager = null;
             }
         }
 
         private void Update()
         {
-            if (!_dropped)
+            if (!_sessionEnded)
             {
                 return;
             }
 
             // Out of the NGO callback: tear down and leave on a regular frame.
-            _dropped = false;
+            _sessionEnded = false;
             if (_session != null)
             {
                 _session.Clear();
@@ -150,7 +163,19 @@ namespace AlienFarms.Networking.Match
 
             // NGO puts raw transport text here when the server gave no reason: only known keys reach the UI.
             _anchor.SetDisconnectReason(DisconnectReasons.Normalize(manager.DisconnectReason));
-            _dropped = true;
+            _sessionEnded = true;
+        }
+
+        // Host: the session ended under this gameplay scene (Leave request, dev shutdown). A teardown already in progress
+        // (exit to title) unpublished the root first and loads the menu itself.
+        private void HandleServerStopped(bool wasHost)
+        {
+            if (_anchor == null || !_anchor.HasRoot)
+            {
+                return;
+            }
+
+            _sessionEnded = true;
         }
 
         private void OnValidate()
