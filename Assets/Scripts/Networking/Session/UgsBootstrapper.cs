@@ -46,6 +46,24 @@ namespace AlienFarms.Networking.Session
         /// <summary>Unity Authentication player id (null until signed in).</summary>
         public string PlayerId => IsSignedIn ? AuthenticationService.Instance.PlayerId : null;
 
+        /// <summary>
+        /// Generated UGS player name ("Name#1234") once fetched after the sign-in; null when not signed in or the fetch
+        /// failed. Authentication caches it, so a root recreated while signed in reads it again without a request.
+        /// </summary>
+        public string PlayerName
+        {
+            get
+            {
+                if (!IsSignedIn)
+                {
+                    return null;
+                }
+
+                string name = AuthenticationService.Instance.PlayerName;
+                return string.IsNullOrWhiteSpace(name) ? null : name;
+            }
+        }
+
         /// <summary>Profile for this process from its command line and the MPPM main-editor flag.</summary>
         public static string ResolveProcessProfile()
         {
@@ -112,13 +130,32 @@ namespace AlienFarms.Networking.Session
                     await auth.SignInAnonymouslyAsync();
                 }
 
-                Debug.Log($"[{nameof(UgsBootstrapper)}] Signed in as {auth.PlayerId} (profile '{auth.Profile}', environment '{_environmentName ?? "default"}').");
+                await FetchPlayerNameAsync(auth);
+                Debug.Log($"[{nameof(UgsBootstrapper)}] Signed in as {auth.PlayerId} '{auth.PlayerName}' (profile '{auth.Profile}', environment '{_environmentName ?? "default"}').");
                 return true;
             }
             catch (Exception exception)
             {
                 string key = OnlineSessionErrorMapper.FromException(exception, OnlineSessionErrorKeys.SignInFailed) ?? OnlineSessionErrorKeys.SignInFailed;
                 return Fail(key, exception.Message);
+            }
+        }
+
+        // A missing name never fails the sign-in: the service falls back to the serialized name.
+        private static async Task FetchPlayerNameAsync(IAuthenticationService auth)
+        {
+            if (!string.IsNullOrWhiteSpace(auth.PlayerName))
+            {
+                return;
+            }
+
+            try
+            {
+                await auth.GetPlayerNameAsync(true);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[{nameof(UgsBootstrapper)}] Could not get the UGS player name: {exception.Message}");
             }
         }
 

@@ -21,6 +21,7 @@ namespace AlienFarms.Networking.Data
         [NonSerialized] private NetworkRootLifetime _root;
         [NonSerialized] private NetworkPlayer _localPlayer;
         [NonSerialized] private string _disconnectReason;
+        [NonSerialized] private string _rejoinSessionId;
 
         // Spawned avatars by seat on this machine (index = (int)PlayerId - 1), on server and clients alike.
         [NonSerialized] private readonly NetworkPlayer[] _players = new NetworkPlayer[2];
@@ -79,6 +80,7 @@ namespace AlienFarms.Networking.Data
                 _localPlayer = null;
                 _disconnectReason = null;
                 ClearPlayers();
+                _rejoinSessionId = null;
             }
 
             _generation = s_generation;
@@ -93,6 +95,7 @@ namespace AlienFarms.Networking.Data
                 _generation = s_generation;
                 _root = null;
                 ClearPlayers();
+                _rejoinSessionId = null;
             }
 
             _localPlayer = player;
@@ -113,6 +116,7 @@ namespace AlienFarms.Networking.Data
                 _localPlayer = null;
                 _disconnectReason = null;
                 ClearPlayers();
+                _rejoinSessionId = null;
             }
 
             int index = (int)player.PlayerId - 1;
@@ -188,6 +192,7 @@ namespace AlienFarms.Networking.Data
                 _root = null;
                 _localPlayer = null;
                 ClearPlayers();
+                _rejoinSessionId = null;
             }
 
             _disconnectReason = reason;
@@ -204,6 +209,32 @@ namespace AlienFarms.Networking.Data
             string reason = _disconnectReason;
             _disconnectReason = null;
             return reason;
+        }
+
+        /// <summary>
+        /// Id of the session this client dropped from, for the rejoin offer (the code lives on the online channel). Kept
+        /// here because the root that armed the offer is torn down before the menu's new root reconnects. Null when none.
+        /// </summary>
+        public string RejoinSessionId => IsCurrent ? _rejoinSessionId : null;
+
+        public void SetRejoinSession(string sessionId)
+        {
+            if (!IsCurrent)
+            {
+                _generation = s_generation;
+                _root = null;
+                _localPlayer = null;
+                _disconnectReason = null;
+                ClearPlayers();
+                _rejoinSessionId = null;
+            }
+
+            _rejoinSessionId = sessionId;
+        }
+
+        public void ClearRejoinSession()
+        {
+            _rejoinSessionId = null;
         }
 
         /// <summary>Clears the anchor when <paramref name="root"/> is the published one.</summary>

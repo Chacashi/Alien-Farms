@@ -31,6 +31,12 @@ namespace AlienFarms.Networking.Session
         [SerializeField, Tooltip("Connection strategy on this root: a component implementing IConnectionStrategy (DirectConnection).")]
         private MonoBehaviour _connection;
 
+        [SerializeField, Tooltip("Voluntary-leave notice on this root (the match exit sends it before the teardown).")]
+        private LeaveNoticeMessenger _leaveNotice;
+
+        [SerializeField, Tooltip("Online session service on this root (the match exit clears its rejoin offer).")]
+        private OnlineSessionService _sessionService;
+
         private bool _isPublished;
 
         public NetworkManager Manager => _manager;
@@ -40,6 +46,13 @@ namespace AlienFarms.Networking.Session
         public NetworkSceneLoader SceneLoader => _sceneLoader;
 
         public IConnectionStrategy Connection => _connection as IConnectionStrategy;
+
+        public LeaveNoticeMessenger LeaveNotice => _leaveNotice;
+
+        public OnlineSessionService SessionService => _sessionService;
+
+        /// <summary>Runtime anchor this root publishes itself on (outlives the root: e.g. the rejoin session id).</summary>
+        public NetworkRuntimeAnchor Anchor => _anchor;
 
         private void Awake()
         {
@@ -146,6 +159,16 @@ namespace AlienFarms.Networking.Session
             if (_sceneLoader == null)
             {
                 TryGetComponent(out _sceneLoader);
+            }
+
+            if (_leaveNotice == null)
+            {
+                TryGetComponent(out _leaveNotice);
+            }
+
+            if (_sessionService == null)
+            {
+                TryGetComponent(out _sessionService);
             }
 
             if (_connection == null)

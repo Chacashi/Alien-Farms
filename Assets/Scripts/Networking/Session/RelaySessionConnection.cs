@@ -32,6 +32,11 @@ namespace AlienFarms.Networking.Session
         private const float PendingEndWaitSeconds = 5f;
         private const float OrphanReleaseTimeoutSeconds = 5f;
 
+        // Rejoin: how long a session handed back by ReconnectToSessionAsync may take to connect NGO, and how long the
+        // fallback join waits for NGO to finish stopping after a failed attempt.
+        private const float ReconnectNetworkWaitSeconds = 3f;
+        private const float ManagerStopWaitSeconds = 3f;
+
         // Leaves / remote ends still running, by session: a later start waits for them before freeing the type.
         private static readonly Dictionary<ISession, Task> s_pendingEnds = new Dictionary<ISession, Task>();
 
@@ -171,6 +176,161 @@ namespace AlienFarms.Networking.Session
             }
 
             return StartAsync(manager, code, cancellationToken);
+        }
+
+        /// <summary>Id of the current session (null when none): what a dropped client reconnects to.</summary>
+        public string SessionId => Session?.Id;
+
+        /// <summary>
+        /// Reconnects a dropped client to its session. First <c>ReconnectToSessionAsync(sessionId)</c> (still a member of
+        /// the lobby; the SDK starts the Relay network through a fresh <see cref="NgoSessionNetworkHandler"/>); when that
+        /// fails, or returns without NGO connected (see the 2.7 design, R1), the session is joined again by
+        /// <paramref name="code"/>, with yet another handler (handlers are single use). An NGO rejection of the
+        /// reconnection (seat refused, room full, already connected) is returned as is. Never throws; cancellation
+        /// returns a failure without error key.
+        /// </summary>
+        internal async Task<RelaySessionStart> RejoinAsync(NetworkManager manager, string sessionId, string code, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(sessionId))
+            {
+                return await JoinAsync(manager, code, cancellationToken);
+            }
+
+            string invalidKey = Validate(manager);
+            if (invalidKey != null)
+            {
+                return RelaySessionStart.Failed(invalidKey);
+            }
+
+            s_startsInFlight++;
+            _startsInFlight++;
+            try
+            {
+                RelaySessionStart reconnected = await ReconnectCoreAsync(manager, sessionId, cancellationToken);
+
+                // The dropped session may still be registered (its end is in flight): free the type and retry once.
+                if (reconnected.ErrorKey == OnlineSessionErrorKeys.AlreadyInSession && _alreadyInSessionRetrySeconds > 0f
+                    && await FreeSessionTypeAsync(cancellationToken) && await WaitForManagerStoppedAsync(manager, cancellationToken))
+                {
+                    reconnected = await ReconnectCoreAsync(manager, sessionId, cancellationToken);
+                }
+
+                if (reconnected.IsSuccess || cancellationToken.IsCancellationRequested || IsNgoRejection(reconnected.ErrorKey))
+                {
+                    return reconnected;
+                }
+
+                if (string.IsNullOrEmpty(code))
+                {
+                    return reconnected;
+                }
+
+                // NGO may still be shutting down after the failed attempt; the join needs it stopped.
+                if (!await WaitForManagerStoppedAsync(manager, cancellationToken))
+                {
+                    return RelaySessionStart.Failed(cancellationToken.IsCancellationRequested ? null : OnlineSessionErrorKeys.Busy);
+                }
+
+                Debug.Log($"[{nameof(RelaySessionConnection)}] Reconnection to session {sessionId} failed ({reconnected.ErrorKey ?? "no network"}); joining again by code.");
+                return await StartCoreAsync(manager, code, cancellationToken);
+            }
+            finally
+            {
+                if (s_startsInFlight > 0)
+                {
+                    s_startsInFlight--;
+                }
+
+                if (_startsInFlight > 0)
+                {
+                    _startsInFlight--;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Host, best-effort: removes member <paramref name="ugsPlayerId"/> from the current session (e.g. its reserved
+        /// seat timed out), so it no longer counts against the session size. Never throws; does nothing on a client,
+        /// without a session or when the id is not listed.
+        /// </summary>
+        public async Task TryRemovePlayerAsync(string ugsPlayerId)
+        {
+            ISession session = Session;
+            if (session == null || !session.IsHost || !IsSessionMember(ugsPlayerId))
+            {
+                return;
+            }
+
+            try
+            {
+                await session.AsHost().RemovePlayerAsync(ugsPlayerId);
+                Debug.Log($"[{nameof(RelaySessionConnection)}] Removed member {ugsPlayerId} from the session.");
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[{nameof(RelaySessionConnection)}] Removing member {ugsPlayerId} failed: {exception.Message}");
+            }
+        }
+
+        private async Task<RelaySessionStart> ReconnectCoreAsync(NetworkManager manager, string sessionId, CancellationToken cancellationToken)
+        {
+            var handler = new NgoSessionNetworkHandler(manager, _transport, _connectTimeoutSeconds);
+            ISession session;
+            try
+            {
+                var options = new ReconnectSessionOptions { Type = SessionType }.WithNetworkHandler(handler);
+                session = await MultiplayerService.Instance.ReconnectToSessionAsync(sessionId, options, cancellationToken);
+            }
+            catch (Exception exception)
+            {
+                return RelaySessionStart.Failed(Fail(exception, handler, true, cancellationToken));
+            }
+
+            var start = RelaySessionStart.Succeeded(session, handler);
+
+            // R1: the SDK may hand the session back without (re)starting the network; give a late start a moment.
+            float deadline = Time.realtimeSinceStartup + ReconnectNetworkWaitSeconds;
+            while (!(handler.Started && manager.IsConnectedClient))
+            {
+                if (cancellationToken.IsCancellationRequested || !Application.isPlaying || handler.Retired || Time.realtimeSinceStartup >= deadline)
+                {
+                    Debug.LogWarning($"[{nameof(RelaySessionConnection)}] Reconnected to session {sessionId} but NGO did not connect (started: {handler.Started}); leaving it to join by code.");
+                    string key = OnlineSessionErrorMapper.FromDisconnectReason(handler.DisconnectReason);
+                    await LeaveAsync(start);
+                    return RelaySessionStart.Failed(cancellationToken.IsCancellationRequested ? null : key);
+                }
+
+                await Task.Yield();
+            }
+
+            Debug.Log($"[{nameof(RelaySessionConnection)}] Reconnected to session {sessionId} as client {manager.LocalClientId}.");
+            return start;
+        }
+
+        private static async Task<bool> WaitForManagerStoppedAsync(NetworkManager manager, CancellationToken cancellationToken)
+        {
+            float deadline = Time.realtimeSinceStartup + ManagerStopWaitSeconds;
+            while (manager != null && (manager.IsListening || manager.ShutdownInProgress))
+            {
+                if (cancellationToken.IsCancellationRequested || !Application.isPlaying || Time.realtimeSinceStartup >= deadline)
+                {
+                    return false;
+                }
+
+                await Task.Yield();
+            }
+
+            return manager != null && !cancellationToken.IsCancellationRequested;
+        }
+
+        // The host answered the reconnection itself: joining again by code would get the same answer.
+        private static bool IsNgoRejection(string errorKey)
+        {
+            return errorKey == OnlineSessionErrorKeys.ReconnectDenied
+                || errorKey == OnlineSessionErrorKeys.AlreadyConnected
+                || errorKey == OnlineSessionErrorKeys.SessionFull
+                || errorKey == OnlineSessionErrorKeys.ProtocolMismatch
+                || errorKey == OnlineSessionErrorKeys.NotSessionMember;
         }
 
         /// <summary>Makes a successful start the current session (<see cref="Session"/>, <see cref="LeaveAsync()"/>).</summary>
@@ -434,7 +594,7 @@ namespace AlienFarms.Networking.Session
                 return false;
             }
 
-            // The caller's own start counts as one; another start in flight may own the registered session.
+            // The caller's own start (create / join / rejoin) counts as one; another start in flight may own the registered session.
             if (s_startsInFlight > 1)
             {
                 Debug.Log($"[{nameof(RelaySessionConnection)}] Another session start is in flight; not releasing the registered session.");

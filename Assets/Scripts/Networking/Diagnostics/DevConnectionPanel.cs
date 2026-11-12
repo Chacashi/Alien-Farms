@@ -37,7 +37,7 @@ namespace AlienFarms.Networking.Diagnostics
         [SerializeField, Tooltip("Protocol version written in the connection payload.")]
         private NetworkSettings _settings;
 
-        [SerializeField, Tooltip("Name sent in the payload (truncated to 29 bytes).")]
+        [SerializeField, Tooltip("Fallback name sent in the payload when none is typed on the online channel (truncated to 29 bytes; tagged per MPPM instance).")]
         private string _displayName = "Player";
 
         [Header("References")]
@@ -320,9 +320,12 @@ namespace AlienFarms.Networking.Diagnostics
         }
 
         // Direct dev connection: no UGS player id (no reconnection by id); the roster gives each seat its default character.
+        // The name typed on the online channel, else the serialized one tagged with this MPPM instance (clones share PlayerPrefs).
         private ConnectionPayload BuildPayload()
         {
-            return ConnectionPayload.Create(_settings.ProtocolVersion, _displayName);
+            string typed = _sessionChannel != null ? _sessionChannel.DisplayName : null;
+            string displayName = DisplayNameResolver.Resolve(typed, null, _displayName, UgsBootstrapper.ResolveProcessProfile());
+            return ConnectionPayload.Create(_settings.ProtocolVersion, displayName);
         }
 
         private void Fail(string message)

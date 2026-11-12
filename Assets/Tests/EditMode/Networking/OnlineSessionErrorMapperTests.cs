@@ -70,6 +70,22 @@ namespace AlienFarms.Networking.Tests
         }
 
         [Test]
+        public void Rejoin_DeniedSeat_DropsTheOffer_WhileAFailedNetworkStartKeepsIt()
+        {
+            string denied = OnlineSessionErrorMapper.FromDisconnectReason(DisconnectReasons.ReconnectDenied);
+            string startFailed = OnlineSessionErrorMapper.FromJoinException(
+                new SessionException("start failed", SessionError.NetworkManagerStartFailed, null));
+            string missing = OnlineSessionErrorMapper.FromJoinException(
+                new SessionException("not found", SessionError.SessionNotFound, null));
+
+            Assert.That(RejoinOfferRules.KeepsOfferAfterFailure(denied), Is.False);
+            Assert.That(startFailed, Is.EqualTo(OnlineSessionErrorKeys.ConnectionFailed));
+            Assert.That(RejoinOfferRules.KeepsOfferAfterFailure(startFailed), Is.True);
+            Assert.That(missing, Is.EqualTo(OnlineSessionErrorKeys.SessionNotFound));
+            Assert.That(RejoinOfferRules.KeepsOfferAfterFailure(missing), Is.False);
+        }
+
+        [Test]
         public void FromDisconnectReason_ExplicitHostShutdown_IsStillHostLeft()
         {
             Assert.That(OnlineSessionErrorMapper.FromDisconnectReason(DisconnectReasons.Normalize(DisconnectReasons.HostDisconnected)), Is.EqualTo(OnlineSessionErrorKeys.HostLeft));

@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AlienFarms.Core;
 using AlienFarms.Data;
+using AlienFarms.Networking.Data;
 using Unity.Collections;
 using Unity.Netcode;
 using Unity.Services.Authentication;
@@ -34,8 +35,8 @@ namespace AlienFarms.Networking.Session
         [SerializeField, Tooltip("Optional: Mode is set to Online while in a session.")]
         private MatchSession _session;
 
-        [SerializeField, Tooltip("Name published in the session and the connection payload (truncated to 29 bytes).")]
-        private string _displayName = "Player";
+        [SerializeField, Tooltip("Last-resort name (truncated to 29 bytes): used when the player typed none on the channel and no UGS name is available. Tagged per MPPM instance so clones differ.")]
+        private string _displayName = DisplayNameResolver.DefaultName;
 
         [SerializeField, Tooltip("Sign in as soon as the root starts (otherwise on the first sign-in request).")]
         private bool _signInOnStart;
@@ -99,6 +100,7 @@ namespace AlienFarms.Networking.Session
             _channel.CreateRequested += HandleCreateRequested;
             _channel.JoinRequested += HandleJoinRequested;
             _channel.LeaveRequested += HandleLeaveRequested;
+            _channel.RejoinRequested += HandleRejoinRequested;
             _manager.OnClientStopped += HandleClientStopped;
             _manager.OnClientDisconnectCallback += HandleClientDisconnected;
             SubscribeAuthentication();
@@ -126,6 +128,7 @@ namespace AlienFarms.Networking.Session
                 _channel.CreateRequested -= HandleCreateRequested;
                 _channel.JoinRequested -= HandleJoinRequested;
                 _channel.LeaveRequested -= HandleLeaveRequested;
+                _channel.RejoinRequested -= HandleRejoinRequested;
             }
 
             if (_manager != null)
@@ -152,6 +155,8 @@ namespace AlienFarms.Networking.Session
             // drop it. The next root may get a transient 'already in a session' until this completes; it waits for it.
             if (_connection != null && _connection.HasSession)
             {
+                // A lost connection keeps the lobby membership (no LeaveAsync), so the player can come back from the menu.
+                TryArmRejoinOffer(droppedKey);
                 _ = droppedKey != null ? _connection.EndAfterHostLeftAsync() : _connection.LeaveAsync();
             }
 
@@ -255,6 +260,9 @@ namespace AlienFarms.Networking.Session
             int operation = ++_operation;
             UnsubscribeSession();
 
+            // Leaving on purpose gives up any seat still held for this player.
+            ClearRejoinOffer();
+
             if (previous == OnlineSessionStatus.Creating || previous == OnlineSessionStatus.Joining)
             {
                 // Stays Leaving: the pending start ends (cancelled or not), drops what it created and moves to Ready.
@@ -307,9 +315,111 @@ namespace AlienFarms.Networking.Session
             _droppedErrorKey = null;
             cancellation = new CancellationTokenSource();
             _startCancellation = cancellation;
-            _connection.SetDisplayName(_displayName);
-            _manager.NetworkConfig.ConnectionData = BuildPayload().ToBytes();
+            string displayName = ResolveDisplayName();
+            _connection.SetDisplayName(displayName);
+            _manager.NetworkConfig.ConnectionData = BuildPayload(displayName).ToBytes();
             return true;
+        }
+
+        private async void HandleRejoinRequested()
+        {
+            // Read before BeginStart: the offer stays until the rejoin succeeds or a final failure drops it.
+            string code = _channel.RejoinCode;
+            NetworkRuntimeAnchor anchor = _root.Anchor;
+            string sessionId = anchor != null ? anchor.RejoinSessionId : null;
+            if (string.IsNullOrEmpty(code) || !BeginStart(OnlineSessionStatus.Joining, out int operation, out CancellationTokenSource cancellation))
+            {
+                return;
+            }
+
+            Debug.Log($"[{nameof(OnlineSessionService)}] Rejoining session {sessionId ?? "(unknown id)"} / {code}.", this);
+            RelaySessionStart start;
+            try
+            {
+                start = await _connection.RejoinAsync(_manager, sessionId, code, cancellation.Token);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                start = RelaySessionStart.Failed(OnlineSessionErrorKeys.ConnectionFailed);
+            }
+
+            // A cancellation (null key) or a transient failure keeps the offer for another try while it lasts.
+            if (!start.IsSuccess && start.ErrorKey != null && !RejoinOfferRules.KeepsOfferAfterFailure(start.ErrorKey))
+            {
+                ClearRejoinOffer(anchor);
+            }
+
+            await CompleteStartAsync(operation, cancellation, start, false);
+        }
+
+        /// <summary>Drops this machine's rejoin offer (the player left on purpose or it expired).</summary>
+        public void ClearRejoinOffer()
+        {
+            ClearRejoinOffer(_root != null ? _root.Anchor : null);
+        }
+
+        /// <summary>Host, best-effort: removes a member from the current session (see <see cref="RelaySessionConnection.TryRemovePlayerAsync"/>).</summary>
+        public Task TryRemovePlayerAsync(string ugsPlayerId)
+        {
+            return _connection != null ? _connection.TryRemovePlayerAsync(ugsPlayerId) : Task.CompletedTask;
+        }
+
+        private void ClearRejoinOffer(NetworkRuntimeAnchor anchor)
+        {
+            if (anchor != null)
+            {
+                anchor.ClearRejoinSession();
+            }
+
+            if (_channel != null && _channel.HasRejoinOffer)
+            {
+                _channel.ClearRejoinOffer();
+                Debug.Log($"[{nameof(OnlineSessionService)}] Rejoin offer cleared.", this);
+            }
+        }
+
+        // Pure client dropped by a lost connection: remember its session so the menu can offer "Rejoin" for the grace.
+        private void TryArmRejoinOffer(string errorKey)
+        {
+            if (_channel == null || _root == null || _settings == null || _connection == null)
+            {
+                return;
+            }
+
+            ISession session = _connection.Session;
+            string sessionId = session != null ? session.Id : null;
+            string code = session != null ? session.Code : null;
+            if (!RejoinOfferRules.ShouldOffer(_channel.IsHost, errorKey, sessionId, code))
+            {
+                return;
+            }
+
+            double expiresAt = RejoinOfferRules.ExpiresAt(Time.realtimeSinceStartupAsDouble, _settings.ReconnectGraceSeconds);
+            NetworkRuntimeAnchor anchor = _root.Anchor;
+            if (anchor != null)
+            {
+                anchor.SetRejoinSession(sessionId);
+            }
+
+            _channel.SetRejoinOffer(code, expiresAt);
+            Debug.Log($"[{nameof(OnlineSessionService)}] Connection lost; rejoin offered for session {sessionId} / {code} ({_settings.ReconnectGraceSeconds:0.#}s).", this);
+        }
+
+        // Only a cheap check while an offer exists.
+        private void Update()
+        {
+            if (_channel != null && _channel.HasRejoinOffer
+                && RejoinOfferRules.IsExpired(_channel.RejoinExpiresAt, Time.realtimeSinceStartupAsDouble))
+            {
+                ClearRejoinOffer();
+            }
+        }
+
+        // Typed name, else the generated UGS name, else the serialized one tagged with this MPPM instance.
+        private string ResolveDisplayName()
+        {
+            return DisplayNameResolver.Resolve(_channel.DisplayName, _bootstrapper.PlayerName, _displayName, _bootstrapper.Profile);
         }
 
         // Runs even when the root was destroyed meanwhile (this == null): a start that succeeded anyway is still left.
@@ -352,6 +462,9 @@ namespace AlienFarms.Networking.Session
             {
                 _connection.Adopt(start);
                 ISession session = start.Session;
+
+                // In a session again (rejoined or another one): an older seat offer no longer applies.
+                ClearRejoinOffer();
                 SetMode(GameMode.Online);
                 SubscribeSession(session);
                 _channel.SetSession(session.Code, session.IsHost);
@@ -422,6 +535,9 @@ namespace AlienFarms.Networking.Session
             // here the host ended the session (left, kicked this client) or the connection was lost.
             string key = _droppedErrorKey ?? MapDisconnectReason();
             _droppedErrorKey = null;
+
+            // Lost connection: the lobby membership is kept (AwaitHostEnd never calls LeaveAsync), so it can rejoin.
+            TryArmRejoinOffer(key);
             EndSessionRemotely(key, SessionExit.AwaitHostEnd);
         }
 
@@ -469,6 +585,17 @@ namespace AlienFarms.Networking.Session
         private void HandlePlayerChanged(string playerId)
         {
             RefreshParticipants();
+        }
+
+        // Host: a member that left the session no longer gets its reserved seat back (backup of the leave notice).
+        private void HandlePlayerLeft(string playerId)
+        {
+            RefreshParticipants();
+            ConnectionApprovalHandler approval = _root.Approval;
+            if (_channel.IsHost && approval != null)
+            {
+                approval.ReleaseLeftMember(playerId);
+            }
         }
 
         private void HandlePlayerPropertiesChanged()
@@ -629,9 +756,9 @@ namespace AlienFarms.Networking.Session
         }
 
         // The character is picked inside the room (NetworkLobbyState); the payload only identifies the player.
-        private ConnectionPayload BuildPayload()
+        private ConnectionPayload BuildPayload(string displayName)
         {
-            return ConnectionPayload.Create(_settings.ProtocolVersion, _displayName, _bootstrapper.PlayerId);
+            return ConnectionPayload.Create(_settings.ProtocolVersion, displayName, _bootstrapper.PlayerId);
         }
 
         private void SubscribeAuthentication()
@@ -677,7 +804,7 @@ namespace AlienFarms.Networking.Session
             session.SessionHostChanged += HandleHostChanged;
             session.PlayerPropertiesChanged += HandlePlayerPropertiesChanged;
             session.PlayerJoined += HandlePlayerChanged;
-            session.PlayerHasLeft += HandlePlayerChanged;
+            session.PlayerHasLeft += HandlePlayerLeft;
             session.RemovedFromSession += HandleSessionRemoved;
             session.Deleted += HandleSessionRemoved;
         }
@@ -695,7 +822,7 @@ namespace AlienFarms.Networking.Session
             session.SessionHostChanged -= HandleHostChanged;
             session.PlayerPropertiesChanged -= HandlePlayerPropertiesChanged;
             session.PlayerJoined -= HandlePlayerChanged;
-            session.PlayerHasLeft -= HandlePlayerChanged;
+            session.PlayerHasLeft -= HandlePlayerLeft;
             session.RemovedFromSession -= HandleSessionRemoved;
             session.Deleted -= HandleSessionRemoved;
         }

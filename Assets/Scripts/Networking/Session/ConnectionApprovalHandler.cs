@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using AlienFarms.Core;
 using AlienFarms.Data;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -41,6 +43,10 @@ namespace AlienFarms.Networking.Session
         private RelaySessionConnection _sessionConnection;
 
         private readonly ServerSlotDirectory _slots = new ServerSlotDirectory();
+        // Clients that announced a voluntary leave ("AF.Leaving"); preallocated, an entry is removed when that client drops.
+        private readonly HashSet<ulong> _leaving = new HashSet<ulong>(ServerSlotDirectory.Capacity + ServerSlotDirectory.SpectatorCapacity);
+        private readonly PlayerId[] _expiredBuffer = new PlayerId[ServerSlotDirectory.Capacity];
+        private bool _graceEnabled;
         // Re-check interval of a pending membership (the lobby events may update the player list meanwhile).
         private const int MembershipPollMilliseconds = 200;
 
@@ -51,6 +57,108 @@ namespace AlienFarms.Networking.Session
 
         /// <summary>Seats of the current session (server only; empty on clients).</summary>
         public ServerSlotDirectory Slots => _slots;
+
+        /// <summary>
+        /// True while a silent drop keeps the seat for <see cref="NetworkSettings.ReconnectGraceSeconds"/>
+        /// (<see cref="SeatReserved"/>). Off by default: in the MainMenu room a drop frees the seat at once.
+        /// </summary>
+        public bool GraceEnabled => _graceEnabled;
+
+        /// <summary>Clock of the reservations (<see cref="Time.realtimeSinceStartupAsDouble"/>).</summary>
+        public double Now => Time.realtimeSinceStartupAsDouble;
+
+        /// <summary>Server: a seat is now held for its dropped player (grace on, no leave notice).</summary>
+        public event Action<PlayerId> SeatReserved;
+
+        /// <summary>
+        /// Server: a seat was freed with <see cref="PlayerConnectionStatus.Left"/> (leave notice, or the member left the
+        /// session while its seat was reserved) or <see cref="PlayerConnectionStatus.TimedOut"/> (grace over).
+        /// </summary>
+        public event Action<PlayerId, PlayerConnectionStatus> SeatReleased;
+
+        /// <summary>
+        /// Turns the reconnection grace on or off (the gameplay scene's coordinator turns it on while it lives). Turning
+        /// it off does not free seats already reserved: they still expire or reconnect.
+        /// </summary>
+        public void SetGraceEnabled(bool enabled)
+        {
+            if (_graceEnabled == enabled)
+            {
+                return;
+            }
+
+            _graceEnabled = enabled;
+            Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Reconnection grace {(enabled ? "enabled" : "disabled")}.", this);
+        }
+
+        /// <summary>
+        /// Server: <paramref name="clientId"/> announced it is leaving on purpose (<see cref="LeaveNoticeMessenger"/>);
+        /// its upcoming disconnection frees the seat at once as <see cref="PlayerConnectionStatus.Left"/>.
+        /// </summary>
+        public void NotifyLeaving(ulong clientId)
+        {
+            if (_manager == null || !_manager.IsServer || clientId == NetworkManager.ServerClientId)
+            {
+                return;
+            }
+
+            if (_leaving.Add(clientId))
+            {
+                Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Client {clientId} announced it is leaving.", this);
+            }
+        }
+
+        /// <summary>
+        /// Server, backup of the leave notice: the online session reports that member <paramref name="ugsPlayerId"/>
+        /// left. If a seat awaits its reconnection it is freed as <see cref="PlayerConnectionStatus.Left"/>; a connected
+        /// seat is left alone (its NGO disconnection decides).
+        /// </summary>
+        public void ReleaseLeftMember(string ugsPlayerId)
+        {
+            if (_manager == null || !_manager.IsServer || string.IsNullOrEmpty(ugsPlayerId))
+            {
+                return;
+            }
+
+            var ugsId = new FixedString64Bytes();
+            ugsId.CopyFromTruncated(ugsPlayerId);
+            if (_slots.TryFindAwaiting(ugsId, out PlayerId id) && _slots.ReleaseSeat(id))
+            {
+                Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Seat {id} released (Left): its player left the session.", this);
+                SeatReleased?.Invoke(id, PlayerConnectionStatus.Left);
+            }
+        }
+
+        /// <summary>Seconds of grace left for the dropped player of <paramref name="id"/>; 0 when its seat awaits nothing.</summary>
+        public float GraceLeft(PlayerId id)
+        {
+            if (_settings == null || !_slots.TryGet(id, out PlayerSlot seat))
+            {
+                return 0f;
+            }
+
+            return SeatGraceRules.GraceLeft(seat, Now, _settings.ReconnectGraceSeconds);
+        }
+
+        // Only does work while a seat awaits its player (two seats scanned, no allocation).
+        private void Update()
+        {
+            if (_settings == null || _slots.CountAwaiting == 0)
+            {
+                return;
+            }
+
+            int expired = SeatGraceRules.CollectExpired(_slots.Seats, Now, _settings.ReconnectGraceSeconds, _expiredBuffer);
+            for (int i = 0; i < expired; i++)
+            {
+                PlayerId id = _expiredBuffer[i];
+                if (_slots.ReleaseSeat(id))
+                {
+                    Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Seat {id} released (TimedOut): no reconnection within {_settings.ReconnectGraceSeconds:0.#}s.", this);
+                    SeatReleased?.Invoke(id, PlayerConnectionStatus.TimedOut);
+                }
+            }
+        }
 
         private void OnEnable()
         {
@@ -217,7 +325,8 @@ namespace AlienFarms.Networking.Session
             }
         }
 
-        // Version 2.3: a dropped player's seat is freed at once (the reconnection grace, MarkDisconnected, comes in 2.7).
+        // A voluntary leave frees the seat as Left; a silent drop keeps it while the grace is on (SeatReserved), and
+        // frees it otherwise. Spectators never hold a reservation.
         private void HandleClientDisconnected(ulong clientId)
         {
             if (!_manager.IsServer)
@@ -225,20 +334,38 @@ namespace AlienFarms.Networking.Session
                 return;
             }
 
-            if (_slots.Release(clientId, out PlayerId id))
+            bool noticed = _leaving.Remove(clientId);
+            if (_slots.TryGetByClient(clientId, out PlayerSlot seat))
             {
-                Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Client {clientId} left; seat {id} freed.", this);
+                PlayerId id = seat.Id;
+                switch (SeatGraceRules.OnDisconnect(noticed, _graceEnabled))
+                {
+                    case SeatDropOutcome.Left:
+                        _slots.Release(clientId, out _);
+                        Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Client {clientId} left; seat {id} released (Left).", this);
+                        SeatReleased?.Invoke(id, PlayerConnectionStatus.Left);
+                        break;
+                    case SeatDropOutcome.Reserved:
+                        _slots.MarkDisconnected(clientId, Now, out _);
+                        Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Client {clientId} dropped; seat {id} reserved for {_settings.ReconnectGraceSeconds:0.#}s.", this);
+                        SeatReserved?.Invoke(id);
+                        break;
+                    default:
+                        _slots.Release(clientId, out _);
+                        Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Client {clientId} left; seat {id} freed.", this);
+                        break;
+                }
             }
             else if (_slots.ReleaseSpectator(clientId))
             {
                 Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Spectator {clientId} left.", this);
             }
         }
-
         private void HandleServerStopped(bool wasHost)
         {
             _generation++;
             _slots.Clear();
+            _leaving.Clear();
         }
 
         private void OnValidate()
