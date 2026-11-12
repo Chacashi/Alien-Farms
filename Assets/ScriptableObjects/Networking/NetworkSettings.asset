@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Data.NetworkSettings
   _protocolVersion: 2
   _environmentName: dev
-  _maxPlayers: 2
-  _allowSpectator: 0
+  _maxPlayers: 3
+  _allowSpectator: 1
   _reconnectGraceSeconds: 20
   _inputRedundancy: 3
   _inputBufferTarget: 2
@@ -26,4 +26,11 @@ MonoBehaviour:
   _maxRewindSeconds: 0.3
   _tackleRewindTolerance: 0.35
   _throwViewTolerance: 15
+  _throwRequestTimeout: 0.5
   _lagCompDefault: 1
+  _showOwnershipLabels: 1
+  _logOwnership: 1
+  _showPoolStats: 1
+  _logPoolLifecycle: 0
+  _showNameTags: 1
+  _nameTagShowsClientId: 1
