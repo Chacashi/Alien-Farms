@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using AlienFarms.Animals;
 using AlienFarms.Core;
 using AlienFarms.Data;
 using AlienFarms.Match;
@@ -53,6 +55,22 @@ namespace AlienFarms.Tests
         {
             CallLog.Add(enabled ? "Controls(true)" : "Controls(false)");
             ControlsEnabled = enabled;
+            ControlsChanged?.Invoke(enabled);
+        }
+
+        /// <summary>Invoked after every SetPlayerControlsEnabled (e.g. to land the animal a forced drop releases).</summary>
+        public Action<bool> ControlsChanged { get; set; }
+
+        /// <summary>A captured animal landing in <paramref name="zoneOwner"/>'s zone, through the same call MatchManager makes.</summary>
+        public bool Capture(PlayerId zoneOwner, object animal, int points = 1)
+        {
+            return Score.TryCapture(Phase, AnimalState.Captured, zoneOwner, animal, points, null, out _);
+        }
+
+        /// <summary>An animal leaving <paramref name="zoneOwner"/>'s zone, through the same call MatchManager makes.</summary>
+        public bool LeaveZone(PlayerId zoneOwner, object animal)
+        {
+            return Score.TryRelease(Phase, zoneOwner, animal);
         }
 
         public void Tick(float deltaTime) => Machine.Tick(deltaTime);

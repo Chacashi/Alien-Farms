@@ -11,6 +11,8 @@ namespace AlienFarms.Match
 
         public override MatchPhase Phase => MatchPhase.Playing;
 
+        // Invariant: no animal is Captured on entry (the countdown's ResetRound despawns them all and controls are off).
+        // The score only tracks captures made while playing, so an animal already in a pen here would never count.
         public override void Enter()
         {
             Context.SetPlayerControlsEnabled(true);

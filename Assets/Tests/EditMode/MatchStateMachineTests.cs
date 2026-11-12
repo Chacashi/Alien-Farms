@@ -287,6 +287,92 @@ namespace AlienFarms.Tests
             Assert.That(_context.Machine.IsRematchReady, Is.False);
         }
 
+        [Test]
+        public void Results_LateLanding_DoesNotChangeTheFinalScore()
+        {
+            EnterPlaying();
+            Assert.That(_context.Capture(PlayerId.Player1, new object()), Is.True);
+            Assert.That(_context.Capture(PlayerId.Player1, new object()), Is.True);
+            Assert.That(_context.Capture(PlayerId.Player2, new object()), Is.True);
+
+            _context.Advance(MatchDuration + 0.5f, 0.5f);
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.Results));
+
+            // An animal thrown in the last second lands in P1's pen after the round ended.
+            Assert.That(_context.Capture(PlayerId.Player1, new object()), Is.False);
+
+            Assert.That(_results.Count, Is.EqualTo(1));
+            Assert.That(_results[0].GetScore(PlayerId.Player1), Is.EqualTo(2));
+            Assert.That(_context.Score.Get(PlayerId.Player1), Is.EqualTo(_results[0].GetScore(PlayerId.Player1)));
+            Assert.That(_context.Score.Get(PlayerId.Player2), Is.EqualTo(_results[0].GetScore(PlayerId.Player2)));
+        }
+
+        [Test]
+        public void Results_DropForcedByTheFreeze_IsNotCounted_EvenIfItLandsBeforeTheResult()
+        {
+            EnterPlaying();
+            _context.Capture(PlayerId.Player1, new object());
+
+            // Worst case: the animal released by freezing the players is captured inside Results.Enter, before the
+            // result is evaluated.
+            object dropped = new object();
+            _context.ControlsChanged = enabled =>
+            {
+                if (!enabled)
+                {
+                    _context.Capture(PlayerId.Player1, dropped);
+                }
+            };
+
+            _context.Advance(MatchDuration + 0.5f, 0.5f);
+
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.Results));
+            Assert.That(_results[0].GetScore(PlayerId.Player1), Is.EqualTo(1));
+            Assert.That(_context.Score.Get(PlayerId.Player1), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Results_AnimalLeavingAPen_DoesNotChangeTheFinalScore()
+        {
+            EnterPlaying();
+            object animal = new object();
+            _context.Capture(PlayerId.Player2, animal);
+            _context.Advance(MatchDuration + 0.5f, 0.5f);
+
+            Assert.That(_context.LeaveZone(PlayerId.Player2, animal), Is.False);
+            Assert.That(_context.Score.Get(PlayerId.Player2), Is.EqualTo(_results[0].GetScore(PlayerId.Player2)));
+            Assert.That(_context.Score.Get(PlayerId.Player2), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Playing_CaptureOnTheLastFrame_IsInTheResult()
+        {
+            EnterPlaying();
+            _context.Advance(MatchDuration - 0.25f, 0.5f);
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.Playing));
+
+            Assert.That(_context.Capture(PlayerId.Player2, new object()), Is.True);
+            _context.Advance(0.5f, 0.5f);
+
+            Assert.That(_results[0].GetScore(PlayerId.Player2), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Rematch_ScoresAgainAfterTheReset()
+        {
+            EnterResults();
+            Assert.That(_context.Capture(PlayerId.Player1, new object()), Is.False);
+
+            _context.Advance(ResultsInputDelay + 0.1f);
+            _context.Confirm(PlayerId.Player1);
+            Assert.That(_context.Capture(PlayerId.Player1, new object()), Is.False, "countdown does not score");
+
+            _context.Advance(CountdownSeconds + 0.05f);
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.Playing));
+            Assert.That(_context.Capture(PlayerId.Player1, new object()), Is.True);
+            Assert.That(_context.Score.Get(PlayerId.Player1), Is.EqualTo(1));
+        }
+
         private void EnterCountdown()
         {
             _context.JoinedPlayerCount = 2;

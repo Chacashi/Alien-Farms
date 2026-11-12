@@ -11,8 +11,9 @@ namespace AlienFarms.Match
     /// <summary>
     /// Scene composition root of the match: owns the phase state machine, score and timer, and bridges them to the
     /// players (via <see cref="PlayerJoinCoordinator"/>) and the animals (via <see cref="AnimalSpawner"/>).
-    /// The score (sum of each captured animal's points) mirrors zone occupancy from <see cref="GameEvents.OnAnimalCaptured"/> / <see cref="GameEvents.OnAnimalLeftZone"/>;
-    /// it is tracked in every phase but only published while playing.
+    /// The score (sum of each captured animal's points) mirrors zone occupancy from <see cref="GameEvents.OnAnimalCaptured"/> / <see cref="GameEvents.OnAnimalLeftZone"/>
+    /// while playing; outside Playing it is frozen (<see cref="CaptureRules.TracksScore"/>), so the result published on
+    /// entering Results is also the final <see cref="GetScore"/> and what the online score board replicates.
     /// The players come from an <see cref="IPlayerRoster"/>: the serialized coordinator unless another one is bound
     /// with <see cref="Bind"/> before Start.
     /// </summary>
@@ -94,7 +95,7 @@ namespace AlienFarms.Match
             _roster = roster;
         }
 
-        /// <summary>While suspended the state machine is not ticked (timer and countdown frozen); events still update the score.</summary>
+        /// <summary>While suspended the state machine is not ticked (timer and countdown frozen); events still update the score while playing.</summary>
         public void SetSuspended(bool suspended)
         {
             _suspended = suspended;
@@ -184,7 +185,7 @@ namespace AlienFarms.Match
             }
         }
 
-        /// <summary>Points currently in <paramref name="playerId"/>'s pen (published to the HUD only while playing).</summary>
+        /// <summary>Points in <paramref name="playerId"/>'s pen this round; frozen once the round is over (equals the published result).</summary>
         public int GetScore(PlayerId playerId) => _score != null ? _score.Get(playerId) : 0;
 
         public void ResetRound(bool respawnPlayers)
@@ -201,7 +202,8 @@ namespace AlienFarms.Match
                 }
             }
 
-            // Despawning captured animals raises OnAnimalLeftZone; the reset below clears whatever is left anyway.
+            // Despawning captured animals raises OnAnimalLeftZone (ignored outside Playing); the reset below clears the
+            // bookkeeping and publishes the empty pens, whatever the phase.
             _spawner.ResetPopulation();
 
             if (_bombs != null)
@@ -213,6 +215,7 @@ namespace AlienFarms.Match
             // Published regardless of phase: the HUD must show 0-0 for the new round.
             GameEvents.RaiseScoreChanged(PlayerId.Player1, 0);
             GameEvents.RaiseScoreChanged(PlayerId.Player2, 0);
+            PublishEmptyPens();
 
             _timer.Reset(_settings.MatchDuration);
             GameEvents.RaiseMatchTimeChanged(_timer.DisplaySeconds);
@@ -225,12 +228,13 @@ namespace AlienFarms.Match
 
         private void HandleAnimalCaptured(PlayerId zoneOwner, Animal animal)
         {
-            if (_score == null || animal == null || !CaptureRules.CountsForZone(animal.State, zoneOwner))
+            if (_score == null || animal == null)
             {
                 return;
             }
 
-            if (_score.TryAdd(zoneOwner, animal, animal.Points, animal.Data, out PlayerId movedFrom))
+            // Outside Playing the round's bookkeeping is frozen: a late landing must not change the published result.
+            if (_score.TryCapture(CurrentPhase, animal.State, zoneOwner, animal, animal.Points, animal.Data, out PlayerId movedFrom))
             {
                 PublishScore(zoneOwner);
                 PublishPenInventory(zoneOwner, animal.Data);
@@ -244,15 +248,26 @@ namespace AlienFarms.Match
 
         private void HandleAnimalLeftZone(PlayerId zoneOwner, Animal animal)
         {
-            if (_score != null && _score.TryRemove(zoneOwner, animal))
+            if (_score != null && _score.TryRelease(CurrentPhase, zoneOwner, animal))
             {
                 PublishScore(zoneOwner);
                 PublishPenInventory(zoneOwner, animal != null ? animal.Data : null);
             }
         }
 
+        /// <summary>Every type of both pens at 0 (after the bookkeeping reset; listeners skip types they never saw).</summary>
+        private void PublishEmptyPens()
+        {
+            int types = _spawner.TypeCount;
+            for (int i = 0; i < types; i++)
+            {
+                GameEvents.RaisePenInventoryChanged(PlayerId.Player1, i, 0);
+                GameEvents.RaisePenInventoryChanged(PlayerId.Player2, i, 0);
+            }
+        }
+
         /// <summary>
-        /// Pen contents mirror zone occupancy in every phase (unlike the score). The type index is the animal's position
+        /// Pen contents follow the same bookkeeping as the score (frozen outside Playing). The type index is the animal's position
         /// in the spawn settings' entries (<see cref="AnimalSpawner.TryGetTypeIndex"/>).
         /// </summary>
         private void PublishPenInventory(PlayerId playerId, AnimalData type)

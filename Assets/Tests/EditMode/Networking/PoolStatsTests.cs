@@ -221,6 +221,64 @@ namespace AlienFarms.Networking.Tests
         }
 
         [Test]
+        public void TransportTracker_PausedFrame_IsNotTheLongestFrame()
+        {
+            var tracker = new TransportStatsTracker();
+            tracker.Tick(true, 0.016f);
+            tracker.Tick(true, 0.05f);
+
+            // Editor paused for 101 s: the resumed frame carries the whole pause.
+            tracker.NotifyPaused();
+            tracker.Tick(true, 101f);
+            Assert.That(tracker.LongestFrame, Is.EqualTo(0.05f));
+
+            // Only that frame is skipped: a real hitch afterwards still counts.
+            tracker.Tick(true, 0.2f);
+            Assert.That(tracker.LongestFrame, Is.EqualTo(0.2f));
+        }
+
+        [Test]
+        public void TransportTracker_EveryPausedStep_IsSkipped()
+        {
+            var tracker = new TransportStatsTracker();
+            tracker.Tick(true, 0.02f);
+
+            for (int i = 0; i < 3; i++)
+            {
+                tracker.NotifyPaused();
+                tracker.Tick(true, 5f);
+            }
+
+            Assert.That(tracker.LongestFrame, Is.EqualTo(0.02f));
+        }
+
+        [Test]
+        public void TransportTracker_Pause_RebasesTheRate()
+        {
+            var tracker = new TransportStatsTracker();
+            tracker.Tick(true, 0.016f);
+            tracker.SampleRx(0, 0f);
+            Assert.That(tracker.SampleRx(100, 1f), Is.EqualTo(100));
+
+            tracker.NotifyPaused();
+            Assert.That(tracker.RxPerSecond, Is.EqualTo(0));
+            Assert.That(tracker.SampleRx(150, 120f), Is.EqualTo(0), "the pause is not averaged into the rate");
+            Assert.That(tracker.SampleRx(250, 121f), Is.EqualTo(100));
+        }
+
+        [Test]
+        public void TransportTracker_PauseBeforeASession_StillDetectsTheStart()
+        {
+            var tracker = new TransportStatsTracker();
+            tracker.NotifyPaused();
+            Assert.That(tracker.Tick(true, 60f), Is.True, "the session start is still detected");
+            Assert.That(tracker.LongestFrame, Is.EqualTo(0f));
+
+            tracker.Tick(true, 0.3f);
+            Assert.That(tracker.LongestFrame, Is.EqualTo(0.3f));
+        }
+
+        [Test]
         public void Settings_PoolStatsShownAndLifecycleLogOffByDefault()
         {
             var settings = ScriptableObject.CreateInstance<NetworkSettings>();

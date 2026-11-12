@@ -40,5 +40,33 @@ namespace AlienFarms.Tests
         {
             Assert.That(CaptureRules.PublishesScore(phase), Is.EqualTo(expected));
         }
+
+        [TestCase(MatchPhase.None, false)]
+        [TestCase(MatchPhase.WaitingForPlayers, false)]
+        [TestCase(MatchPhase.Countdown, false)]
+        [TestCase(MatchPhase.Playing, true)]
+        [TestCase(MatchPhase.Results, false)]
+        public void TracksScore_OnlyWhilePlaying(MatchPhase phase, bool expected)
+        {
+            Assert.That(CaptureRules.TracksScore(phase), Is.EqualTo(expected));
+        }
+
+        [TestCase(MatchPhase.None, false)]
+        [TestCase(MatchPhase.WaitingForPlayers, false)]
+        [TestCase(MatchPhase.Countdown, false)]
+        [TestCase(MatchPhase.Playing, true)]
+        [TestCase(MatchPhase.Results, false)]
+        public void Capture_CountsOnlyWhilePlaying(MatchPhase phase, bool expected)
+        {
+            Assert.That(CaptureRules.CountsForZone(AnimalState.Captured, PlayerId.Player1, phase), Is.EqualTo(expected));
+            Assert.That(CaptureRules.CountsForZone(AnimalState.Captured, PlayerId.Player2, phase), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void Capture_WhilePlaying_StillNeedsACapturedAnimalInAPlayerZone()
+        {
+            Assert.That(CaptureRules.CountsForZone(AnimalState.Airborne, PlayerId.Player1, MatchPhase.Playing), Is.False);
+            Assert.That(CaptureRules.CountsForZone(AnimalState.Captured, PlayerId.None, MatchPhase.Playing), Is.False);
+        }
     }
 }

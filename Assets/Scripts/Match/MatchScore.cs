@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using AlienFarms.Animals;
 using AlienFarms.Core;
 using AlienFarms.Data;
 
@@ -67,6 +68,28 @@ namespace AlienFarms.Match
             target.Add(animal, (value, typeKey));
             _totals[(int)zoneOwner] += value;
             return true;
+        }
+
+        /// <summary>
+        /// Round rule on top of <see cref="TryAdd(PlayerId, object, int, object, out PlayerId)"/>: the capture is recorded only
+        /// when <see cref="CaptureRules.CountsForZone(AnimalState, PlayerId, MatchPhase)"/> allows it in <paramref name="phase"/>
+        /// (a captured animal in a player zone while playing). False (no change) otherwise.
+        /// </summary>
+        public bool TryCapture(MatchPhase phase, AnimalState state, PlayerId zoneOwner, object animal, int points, object typeKey, out PlayerId movedFrom)
+        {
+            if (!CaptureRules.CountsForZone(state, zoneOwner, phase))
+            {
+                movedFrom = PlayerId.None;
+                return false;
+            }
+
+            return TryAdd(zoneOwner, animal, points, typeKey, out movedFrom);
+        }
+
+        /// <summary>Round rule on top of <see cref="TryRemove"/>: an exit changes the score only while playing.</summary>
+        public bool TryRelease(MatchPhase phase, PlayerId zoneOwner, object animal)
+        {
+            return CaptureRules.TracksScore(phase) && TryRemove(zoneOwner, animal);
         }
 
         /// <summary>Removes <paramref name="animal"/> from <paramref name="zoneOwner"/>'s zone. False if it was not there.</summary>

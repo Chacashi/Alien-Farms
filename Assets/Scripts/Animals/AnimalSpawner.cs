@@ -46,6 +46,9 @@ namespace AlienFarms.Animals
 
         public SimulationRole Role => _role;
 
+        /// <summary>Number of animal types (valid type indices are 0 .. TypeCount - 1; 0 before Awake).</summary>
+        public int TypeCount => _pools != null ? _pools.Length : 0;
+
         private void Awake()
         {
             if (_settings == null || _spawnCenter == null || _animalZone == null)

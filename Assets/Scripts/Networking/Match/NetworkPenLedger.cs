@@ -86,7 +86,11 @@ namespace AlienFarms.Networking.Match
             int index = IndexOf(pen, animalTypeIndex);
             if (index < 0)
             {
-                pen.Add(entry);
+                // A missing entry already reads as 0 (the match publishes empty pens on every reset).
+                if (count != 0)
+                {
+                    pen.Add(entry);
+                }
             }
             else if (!pen[index].Equals(entry))
             {

@@ -6,6 +6,9 @@ using Unity.Netcode.Transports.UTP;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Analytics;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using NetworkSettings = AlienFarms.Data.NetworkSettings;
 
 namespace AlienFarms.Networking.Diagnostics
@@ -16,7 +19,8 @@ namespace AlienFarms.Networking.Diagnostics
     /// receive side (packets per second, mean and max receive-queue usage against the capacity, both over the driver's
     /// lifetime) and the longest frame of the session. Works on host and clients (each has its own
     /// <see cref="NetworkSpawnRegistry"/>). The session is tracked every frame even while hidden; the label is sampled at
-    /// <see cref="_refreshInterval"/> and rewritten only when a number changed, without allocating.
+    /// <see cref="_refreshInterval"/> and rewritten only when a number changed, without allocating. Editor pauses and steps
+    /// and application suspensions are not counted as frames.
     /// Visibility follows <c>NetworkSettings.ShowPoolStats</c> unless <see cref="PoolStatsToggle"/> overrides it (F1–F4).
     /// </summary>
     [DisallowMultipleComponent]
@@ -55,12 +59,18 @@ namespace AlienFarms.Networking.Diagnostics
         private void OnEnable()
         {
             PoolStatsToggle.Changed += ApplyVisibility;
+#if UNITY_EDITOR
+            EditorApplication.pauseStateChanged += HandleEditorPauseStateChanged;
+#endif
             ApplyVisibility();
         }
 
         private void OnDisable()
         {
             PoolStatsToggle.Changed -= ApplyVisibility;
+#if UNITY_EDITOR
+            EditorApplication.pauseStateChanged -= HandleEditorPauseStateChanged;
+#endif
 
             // Not ticked while disabled: re-enabling counts as shown again (packet rate re-based).
             _visible = false;
@@ -68,6 +78,14 @@ namespace AlienFarms.Networking.Diagnostics
 
         private void Update()
         {
+#if UNITY_EDITOR
+            // Frame step while paused: its delta is the time since the previous step.
+            if (EditorApplication.isPaused)
+            {
+                _tracker.NotifyPaused();
+            }
+#endif
+
             // Every frame, visible or not: a session that starts while hidden still resets its counters.
             _tracker.Tick(IsDriverRunning(), Time.unscaledDeltaTime);
 
@@ -91,6 +109,28 @@ namespace AlienFarms.Networking.Diagnostics
                 _label.SetCharArray(_buffer, 0, NetworkStatsFormatter.Write(_buffer, sample));
             }
         }
+
+        private void OnApplicationPause(bool paused)
+        {
+            if (paused)
+            {
+                _tracker.NotifyPaused();
+            }
+        }
+
+        private void OnApplicationFocus(bool focus)
+        {
+            // Without Run In Background the player stops updating while unfocused: the next frame spans that gap.
+            if (!focus && !Application.runInBackground)
+            {
+                _tracker.NotifyPaused();
+            }
+        }
+
+#if UNITY_EDITOR
+        // Pausing and resuming: the first frame after either spans the pause.
+        private void HandleEditorPauseStateChanged(PauseState state) => _tracker.NotifyPaused();
+#endif
 
         private bool IsDriverRunning()
         {

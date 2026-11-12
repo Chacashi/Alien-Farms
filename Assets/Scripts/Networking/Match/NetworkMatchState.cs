@@ -156,7 +156,8 @@ namespace AlienFarms.Networking.Match
             _countdownEndTime.Value = phase == MatchPhase.Countdown && settings != null ? now + settings.CountdownSeconds : 0d;
             _roundEndTime.Value = now + _match.RemainingTime;
 
-            // The HUD only shows scores published while playing (and the final ones on the results screen).
+            // The HUD only shows scores published while playing (and the final ones on the results screen). The match's
+            // score is frozen outside Playing, so in Results it is exactly the published result.
             bool published = phase == MatchPhase.Playing || phase == MatchPhase.Results;
             _scoreBoard.Value = published
                 ? new ScoreBoard(_match.GetScore(PlayerId.Player1), _match.GetScore(PlayerId.Player2))
