@@ -15,6 +15,8 @@ namespace AlienFarms.Networking.Match
     /// <item>Pure clients: derive and raise the same GameEvents the server's match raises (phase, countdown ticks and
     /// GO, the 1 Hz round time, scores, and the match result from Phase == Results + score board), and apply the
     /// obstacle layout. The timer costs no messages: seconds are derived from <c>RoundEndTime</c>.</item>
+    /// <item>Suspension (reconnection grace): the server freezes the round clock (<see cref="ServerFreezeClock"/>) and
+    /// clients show the frozen seconds; <see cref="ServerResumeClock"/> rewrites <c>RoundEndTime</c> in the same tick.</item>
     /// </list>
     /// Clients process the values in Update, after every variable of the tick has been applied, so a phase change and
     /// the scores it depends on are always seen together.
@@ -24,6 +26,9 @@ namespace AlienFarms.Networking.Match
     {
         // A drift of the server's round timer from the replicated end time beyond this is re-sent (s).
         private const double RoundEndResyncThreshold = 0.1d;
+
+        /// <summary>Value of <c>_frozenRemaining</c> while the round clock runs.</summary>
+        public const float ClockRunning = -1f;
 
         [Header("References")]
         [SerializeField, Tooltip("Match (runs on the server; its settings give clients the countdown, GO and round length).")]
@@ -43,6 +48,10 @@ namespace AlienFarms.Networking.Match
 
         private readonly NetworkVariable<ScoreBoard> _scoreBoard = new NetworkVariable<ScoreBoard>(
             default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+        // Round seconds left while the match is suspended (reconnection grace); ClockRunning (-1) while it runs.
+        private readonly NetworkVariable<float> _frozenRemaining = new NetworkVariable<float>(
+            ClockRunning, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
         private readonly NetworkVariable<ObstacleLayoutState> _obstacleLayout = new NetworkVariable<ObstacleLayoutState>(
             default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -65,6 +74,12 @@ namespace AlienFarms.Networking.Match
         public double RoundEndTime => _roundEndTime.Value;
 
         public ScoreBoard Scores => _scoreBoard.Value;
+
+        /// <summary>True while the round clock is frozen (<see cref="ServerFreezeClock"/>).</summary>
+        public bool IsClockFrozen => _frozenRemaining.Value >= 0f;
+
+        /// <summary>Frozen round seconds left, or <see cref="ClockRunning"/> while the clock runs.</summary>
+        public float FrozenRemaining => _frozenRemaining.Value;
 
         private bool IsServerSpawned => IsSpawned && IsServer;
 
@@ -141,6 +156,39 @@ namespace AlienFarms.Networking.Match
 
         #region Server
 
+        /// <summary>
+        /// Server: freezes the round clock every instance shows at the match's remaining time (the match is suspended by
+        /// a reconnection grace, so its own timer is not ticking). Idempotent: a second freeze keeps the first value.
+        /// </summary>
+        public void ServerFreezeClock()
+        {
+            if (!IsServerSpawned || _match == null || IsClockFrozen)
+            {
+                return;
+            }
+
+            _frozenRemaining.Value = Mathf.Max(0f, _match.RemainingTime);
+        }
+
+        /// <summary>
+        /// Server: lets the round clock run again from where it froze. The end time is rewritten from the remaining time
+        /// in the same tick as the unfreeze, so clients never count down from the stale end time. No-op when not frozen.
+        /// </summary>
+        public void ServerResumeClock()
+        {
+            if (!IsServerSpawned || !IsClockFrozen)
+            {
+                return;
+            }
+
+            if (_match != null)
+            {
+                _roundEndTime.Value = ServerNow + _match.RemainingTime;
+            }
+
+            _frozenRemaining.Value = ClockRunning;
+        }
+
         /// <summary>Everything the match did before this object spawned (initial phase, scores, layout).</summary>
         private void ServerWriteSnapshot()
         {
@@ -155,6 +203,7 @@ namespace AlienFarms.Networking.Match
             MatchSettings settings = Settings;
             _countdownEndTime.Value = phase == MatchPhase.Countdown && settings != null ? now + settings.CountdownSeconds : 0d;
             _roundEndTime.Value = now + _match.RemainingTime;
+            _frozenRemaining.Value = _match.IsSuspended ? Mathf.Max(0f, _match.RemainingTime) : ClockRunning;
 
             // The HUD only shows scores published while playing (and the final ones on the results screen). The match's
             // score is frozen outside Playing, so in Results it is exactly the published result.
@@ -182,6 +231,10 @@ namespace AlienFarms.Networking.Match
             else if (current == MatchPhase.Playing && _match != null)
             {
                 _roundEndTime.Value = now + _match.RemainingTime;
+                if (!_match.IsSuspended)
+                {
+                    _frozenRemaining.Value = ClockRunning;
+                }
             }
 
             _phase.Value = current;
@@ -283,7 +336,7 @@ namespace AlienFarms.Networking.Match
 
             double now = ServerNow;
             MatchSettings matchSettings = Settings;
-            int time = MatchClock.DisplaySeconds(phase, _roundEndTime.Value, now, matchSettings != null ? matchSettings.MatchDuration : 0f);
+            int time = MatchClock.DisplaySeconds(phase, _roundEndTime.Value, now, matchSettings != null ? matchSettings.MatchDuration : 0f, _frozenRemaining.Value);
             if (time != _shownTime)
             {
                 _shownTime = time;

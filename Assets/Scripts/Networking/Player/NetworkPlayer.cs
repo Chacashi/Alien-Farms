@@ -1,3 +1,4 @@
+using System;
 using AlienFarms.Core;
 using AlienFarms.Data;
 using AlienFarms.Networking.Data;
@@ -88,11 +89,21 @@ namespace AlienFarms.Networking.Player
         private byte _pendingCharacter = PlayerSlot.NoCharacter;
         private FixedString32Bytes _pendingName;
 
+        // Sanitized string of _displayName, rebuilt only when the replicated name changes.
+        private FixedString32Bytes _cachedNameSource;
+        private string _cachedName = string.Empty;
+
         public PlayerId PlayerId => _playerId.Value;
 
         public int CharacterIndex => _characterIndex.Value == PlayerSlot.NoCharacter ? -1 : _characterIndex.Value;
 
         public FixedString32Bytes DisplayName => _displayName.Value;
+
+        /// <summary>Sanitized display name as a string (allocated only when the replicated name changes); empty when none.</summary>
+        public string DisplayNameText => _cachedName;
+
+        /// <summary>Raised on every instance once on spawn and whenever the replicated display name changes.</summary>
+        public event Action<NetworkPlayer> DisplayNameChanged;
 
         public NetworkPlayerMotion Motion => _motion;
 
@@ -157,12 +168,15 @@ namespace AlienFarms.Networking.Player
 
             _playerId.OnValueChanged += HandlePlayerIdChanged;
             _characterIndex.OnValueChanged += HandleCharacterChanged;
+            _displayName.OnValueChanged += HandleDisplayNameChanged;
 
             ApplyOwnership();
             ApplyRoles();
             ApplyIdentity();
             ApplyAppearance();
             RaiseClientJoin();
+            RefreshDisplayNameText();
+            DisplayNameChanged?.Invoke(this);
 
             if (IsOwner && _anchor != null)
             {
@@ -201,6 +215,7 @@ namespace AlienFarms.Networking.Player
 
             _playerId.OnValueChanged -= HandlePlayerIdChanged;
             _characterIndex.OnValueChanged -= HandleCharacterChanged;
+            _displayName.OnValueChanged -= HandleDisplayNameChanged;
 
             if (!IsServer && _raisedJoinFor != PlayerId.None)
             {
@@ -231,6 +246,28 @@ namespace AlienFarms.Networking.Player
             {
                 GameEvents.RaisePlayerCharacterAssigned(_raisedJoinFor, Character);
             }
+        }
+
+        private void HandleDisplayNameChanged(FixedString32Bytes previous, FixedString32Bytes current)
+        {
+            if (RefreshDisplayNameText())
+            {
+                DisplayNameChanged?.Invoke(this);
+            }
+        }
+
+        // Rebuilds the cached string when the replicated name differs from the one it was built from. True when it changed.
+        private bool RefreshDisplayNameText()
+        {
+            FixedString32Bytes current = _displayName.Value;
+            if (current.Equals(_cachedNameSource))
+            {
+                return false;
+            }
+
+            _cachedNameSource = current;
+            _cachedName = current.Length > 0 ? DisplayNameSanitizer.Sanitize(current.ToString()) : string.Empty;
+            return true;
         }
 
         private void ApplyOwnership()

@@ -1,3 +1,4 @@
+using System;
 using AlienFarms.Core;
 using AlienFarms.Data;
 using AlienFarms.Networking.Data;
@@ -14,6 +15,9 @@ namespace AlienFarms.Networking.Player
     /// <see cref="GameEvents.OnPlayerCharacterAssigned"/> / <see cref="GameEvents.OnPlayerJoined"/> /
     /// <see cref="GameEvents.OnPlayerLeft"/> on the server. Inert on clients (they raise those from NetworkPlayer).
     /// Lives under the gameplay scene's OnlineModeRoot; the GameModeRouter binds it to the match.
+    /// Reconnection grace: a dropped player's pose is saved in its seat before its avatar despawns, and the avatar of
+    /// the returning client is placed there (<see cref="PlayerSpawned"/> with restored = true). Spectators have no
+    /// avatar.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class NetworkPlayerRoster : MonoBehaviour, IPlayerRoster
@@ -42,6 +46,9 @@ namespace AlienFarms.Networking.Player
         private NetworkSceneLoader _sceneLoader;
         private bool _controlsEnabled = true;
         private bool _active;
+
+        /// <summary>Server: an avatar spawned for a seat; true when it was restored at the pose a reservation saved.</summary>
+        public event Action<PlayerId, bool> PlayerSpawned;
 
         public int JoinedCount
         {
@@ -176,6 +183,9 @@ namespace AlienFarms.Networking.Player
 
                 PlayerId id = (PlayerId)(i + 1);
                 NetworkPlayer player = _players[i];
+
+                // Before anything moves it: a reserved seat restores its player here (no-op for a released seat).
+                SavePose(_rigs[i], id);
                 DropCarried(_rigs[i], id, clientId);
 
                 // Its avatar is the server's now (DontDestroyWithOwner): with two avatars owned by client 0, client
@@ -196,6 +206,21 @@ namespace AlienFarms.Networking.Player
 
                 GameEvents.RaisePlayerLeft(id);
             }
+        }
+
+        // Stores where the leaving player stood and faced in its seat. The approval handler runs first (it subscribed
+        // earlier, on the NetworkRoot): a released seat is already empty and TrySavePose refuses it.
+        private void SavePose(PlayerRig rig, PlayerId id)
+        {
+            ServerSlotDirectory slots = _anchor != null ? _anchor.Slots : null;
+            if (slots == null || rig == null)
+            {
+                return;
+            }
+
+            Vector3 facing = rig.Movement != null ? rig.Movement.Facing : rig.transform.forward;
+            float yaw = Mathf.Atan2(facing.x, facing.z) * Mathf.Rad2Deg;
+            slots.TrySavePose(id, rig.transform.position, yaw);
         }
 
         /// <summary>
@@ -229,6 +254,12 @@ namespace AlienFarms.Networking.Player
         private void TrySpawn(ulong clientId)
         {
             ServerSlotDirectory slots = _anchor.Slots;
+            if (slots != null && slots.TryGetSpectator(clientId, out _))
+            {
+                // A spectator watches without an avatar.
+                return;
+            }
+
             if (slots == null || !slots.TryGetByClient(clientId, out PlayerSlot slot))
             {
                 Debug.LogWarning($"[{nameof(NetworkPlayerRoster)}] Client {clientId} has no seat; no player spawned.", this);
@@ -248,11 +279,16 @@ namespace AlienFarms.Networking.Player
             }
 
             Transform spawn = _spawnPoints[index];
-            int characterIndex = slot.CharacterIndex != PlayerSlot.NoCharacter ? slot.CharacterIndex : index;
+            int characterIndex = ResolveCharacter(slots, slot, index);
             CharacterDefinition character = _characters != null ? _characters.Get(characterIndex) : null;
 
+            // A seat given back after a drop keeps the pose saved when its avatar despawned.
+            bool restored = slot.HasSavedPose;
+            Vector3 position = restored ? slot.SavedPosition : spawn.position;
+            Quaternion rotation = restored ? Quaternion.Euler(0f, slot.SavedFacingYaw, 0f) : spawn.rotation;
+
             // One instantiation per join (not a hot path); the instance becomes the client's player object.
-            NetworkObject instance = Instantiate(_playerPrefab, spawn.position, spawn.rotation);
+            NetworkObject instance = Instantiate(_playerPrefab, position, rotation);
             if (!instance.TryGetComponent(out NetworkPlayer player) || !instance.TryGetComponent(out PlayerRig rig))
             {
                 Debug.LogError($"[{nameof(NetworkPlayerRoster)}] Player prefab '{_playerPrefab.name}' needs NetworkPlayer and PlayerRig.", this);
@@ -264,6 +300,12 @@ namespace AlienFarms.Networking.Player
             instance.SpawnAsPlayerObject(clientId, true);
 
             rig.Configure(slot.Id, spawn, character);
+            if (restored)
+            {
+                rig.PlaceAt(slot.SavedPosition, slot.SavedFacingYaw);
+                slots.ClearSavedPose(slot.Id);
+            }
+
             rig.SetControlsEnabled(_controlsEnabled);
             if (player.Motion != null)
             {
@@ -274,11 +316,45 @@ namespace AlienFarms.Networking.Player
             _players[index] = player;
             _clientIds[index] = clientId;
 
-            Debug.Log($"[{nameof(NetworkPlayerRoster)}] Spawned {slot.Id} for client {clientId}.", this);
+            Debug.Log($"[{nameof(NetworkPlayerRoster)}] Spawned {slot.Id} for client {clientId}{(restored ? " (restored at its saved pose)" : string.Empty)}.", this);
 
             // Character first: HUD listeners know who the player is when PlayerJoined arrives.
             GameEvents.RaisePlayerCharacterAssigned(slot.Id, character);
             GameEvents.RaisePlayerJoined(slot.Id);
+            PlayerSpawned?.Invoke(slot.Id, restored);
+        }
+
+        // The seat's pick; without one, CharacterPickRules (its own index, or the next one when the other seat uses it).
+        // The default is stored in the seat so a reconnection gets the same character back.
+        private int ResolveCharacter(ServerSlotDirectory slots, in PlayerSlot slot, int index)
+        {
+            if (slot.HasCharacter)
+            {
+                return slot.CharacterIndex;
+            }
+
+            int other = OtherSeatCharacter(slots, index);
+            int count = _characters != null ? _characters.Count : 0;
+            int pick = CharacterPickRules.Pick(index, other, count);
+            if (pick < PlayerSlot.NoCharacter)
+            {
+                slots.TrySetCharacter(slot.Id, (byte)pick);
+            }
+
+            return pick;
+        }
+
+        // Character the other seat uses: its pick, else its spawned avatar's; -1 when none.
+        private int OtherSeatCharacter(ServerSlotDirectory slots, int index)
+        {
+            int otherIndex = index == 0 ? 1 : 0;
+            if (slots.TryGet((PlayerId)(otherIndex + 1), out PlayerSlot other) && other.HasCharacter)
+            {
+                return other.CharacterIndex;
+            }
+
+            NetworkPlayer otherPlayer = _players[otherIndex];
+            return otherPlayer != null ? otherPlayer.CharacterIndex : -1;
         }
 
         private void OnValidate()

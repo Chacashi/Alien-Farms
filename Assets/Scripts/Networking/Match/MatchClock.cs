@@ -35,6 +35,21 @@ namespace AlienFarms.Networking.Match
             }
         }
 
+        /// <summary>
+        /// Same as <see cref="DisplaySeconds(MatchPhase, double, double, float)"/>, but while playing with the clock frozen
+        /// (<paramref name="frozenRemaining"/> &gt;= 0, the match suspended by a reconnection grace) it shows the frozen
+        /// seconds, rounded up, instead of counting down. A negative value means the clock runs.
+        /// </summary>
+        public static int DisplaySeconds(MatchPhase phase, double roundEndTime, double now, float fullDuration, float frozenRemaining)
+        {
+            if (phase == MatchPhase.Playing && frozenRemaining >= 0f)
+            {
+                return Math.Max(0, CeilSeconds(frozenRemaining));
+            }
+
+            return DisplaySeconds(phase, roundEndTime, now, fullDuration);
+        }
+
         private static int CeilSeconds(double seconds)
         {
             if (double.IsNaN(seconds))

@@ -8,7 +8,8 @@ namespace AlienFarms.UI
     /// <summary>
     /// Shows the "press a button to join" prompt while the lobby is not full. When a MainMenu session is ready the
     /// players join by themselves at Start, so the prompt stays hidden for the first frame and only shows afterwards
-    /// if a session player could not be joined.
+    /// if a session player could not be joined. Online mode never shows it: players join by connecting, and an avatar
+    /// despawned during a reconnection grace raises <see cref="GameEvents.OnPlayerLeft"/> without anyone able to join.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class JoinPromptView : MonoBehaviour
@@ -21,15 +22,17 @@ namespace AlienFarms.UI
         [SerializeField, Min(1), Tooltip("Players needed before the prompt hides. Keep in sync with PlayerInputManager Max Player Count.")]
         private int _maxPlayers = 2;
 
-        [SerializeField, Tooltip("Optional: MainMenu session. When ready, the prompt starts hidden.")]
+        [SerializeField, Tooltip("Optional: MainMenu session. When ready, the prompt starts hidden; in online mode it never shows.")]
         private MatchSession _session;
 
         // Bit (int)PlayerId set while that player is joined; idempotent against repeated events.
         private int _joinedMask;
         private bool _suppressedBySession;
+        private bool _suppressedByMode;
 
         private void Awake()
         {
+            _suppressedByMode = _session != null && _session.Mode == GameMode.Online;
             _suppressedBySession = _session != null && _session.IsReady;
         }
 
@@ -85,7 +88,7 @@ namespace AlienFarms.UI
         {
             if (_promptRoot != null)
             {
-                _promptRoot.SetActive(!_suppressedBySession && CountJoined() < _maxPlayers);
+                _promptRoot.SetActive(!_suppressedByMode && !_suppressedBySession && CountJoined() < _maxPlayers);
             }
         }
 
