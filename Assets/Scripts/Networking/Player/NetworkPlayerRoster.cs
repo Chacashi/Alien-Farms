@@ -176,6 +176,14 @@ namespace AlienFarms.Networking.Player
 
                 PlayerId id = (PlayerId)(i + 1);
                 NetworkPlayer player = _players[i];
+                DropCarried(_rigs[i], id, clientId);
+
+                // Its avatar is the server's now (DontDestroyWithOwner): with two avatars owned by client 0, client
+                // lookups must not see the leaving one (host == P1 invariant).
+                if (player != null && _anchor != null)
+                {
+                    _anchor.UnregisterPlayer(player);
+                }
 
                 // Unregister before PlayerLeft so listeners already see the updated count.
                 _rigs[i] = null;
@@ -188,6 +196,25 @@ namespace AlienFarms.Networking.Player
 
                 GameEvents.RaisePlayerLeft(id);
             }
+        }
+
+        /// <summary>
+        /// NGO already gave the leaving client's objects (DontDestroyWithOwner) to the server, the avatar included, and
+        /// the NetworkRigidbody already made the carried body non-kinematic. The avatar is still spawned, so dropping now
+        /// takes the normal release path (unparented, teleported, server holder cleared) before it despawns. This only
+        /// works because it runs synchronously in NGO's disconnect stack: do not defer it to another frame.
+        /// </summary>
+        private void DropCarried(PlayerRig rig, PlayerId id, ulong clientId)
+        {
+            PlayerGrabber grabber = rig != null ? rig.Grabber : null;
+            if (grabber == null || !grabber.IsHolding)
+            {
+                return;
+            }
+
+            string heldName = grabber.Held is Component held && held != null ? held.name : "object";
+            grabber.ForceDrop(DropReason.Forced, Vector3.zero);
+            Debug.Log($"[{nameof(NetworkPlayerRoster)}] {CarriableOwnerRules.SeatTag(id)} (client {clientId}) disconnected while carrying '{heldName}': dropped, owned by the server again.", this);
         }
 
         private void SpawnAllConnected()

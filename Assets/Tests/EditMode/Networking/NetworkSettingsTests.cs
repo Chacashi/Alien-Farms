@@ -34,5 +34,12 @@ namespace AlienFarms.Networking.Tests
             Assert.That(_settings.MaxRewindSeconds, Is.EqualTo(0.3f));
             Assert.That(_settings.TackleRewindTolerance, Is.EqualTo(0.35f));
         }
+
+        [Test]
+        public void Defaults_ShowOwnershipLabelsAndLogOwnership()
+        {
+            Assert.That(_settings.ShowOwnershipLabels, Is.True);
+            Assert.That(_settings.LogOwnership, Is.True);
+        }
     }
 }

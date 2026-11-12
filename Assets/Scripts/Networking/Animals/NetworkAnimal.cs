@@ -34,6 +34,9 @@ namespace AlienFarms.Networking.Animals
 
         public override IGrabbable Grabbable => _animal;
 
+        public override PlayerId Claimant =>
+            _state.Value.State == AnimalState.Carried ? _state.Value.Holder : PlayerId.None;
+
         protected override void Awake()
         {
             base.Awake();
@@ -124,6 +127,7 @@ namespace AlienFarms.Networking.Animals
             }
 
             _state.Value = Capture();
+            NotifyViewChanged();
         }
 
         /// <summary>Raised right after the transition out of Carried: only the reason is new.</summary>
@@ -141,6 +145,7 @@ namespace AlienFarms.Networking.Animals
         private void HandleReplicatedStateChanged(AnimalNetState previous, AnimalNetState current)
         {
             ApplyReplicated(current);
+            NotifyViewChanged();
         }
 
         private void ApplyReplicated(AnimalNetState state)

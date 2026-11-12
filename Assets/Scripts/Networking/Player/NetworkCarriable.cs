@@ -1,5 +1,6 @@
 using System;
 using AlienFarms.Core;
+using AlienFarms.Data;
 using AlienFarms.Networking.Data;
 using AlienFarms.Player;
 using Unity.Netcode;
@@ -19,30 +20,66 @@ namespace AlienFarms.Networking.Player
     /// the owner. The owner asks the server to throw with <see cref="TryRequestThrow"/>.</item>
     /// </list>
     /// The pool handlers / spawn registry inject the runtime anchor with <see cref="Bind"/> (no prefab wiring).
+    /// Presentation (ownership tint, debug label) listens to <see cref="ViewChanged"/>: raised on every instance after
+    /// spawn, on each ownership change, when the replicated <see cref="Claimant"/> may have changed and on despawn.
     /// </summary>
     [RequireComponent(typeof(NetworkObject))]
     public abstract class NetworkCarriable : NetworkBehaviour
     {
+        [Header("Config")]
+        [SerializeField, Tooltip("Online settings: ownership log switch and debug label default.")]
+        private NetworkSettings _settings;
+
         [Header("Network carry")]
         [SerializeField, Tooltip("NetworkTransform on this root (Server authority); teleported on release.")]
         private NetworkTransform _networkTransform;
-
-        [SerializeField, Tooltip("Logs every ownership change of this object (debug / course demo).")]
-        private bool _logOwnership;
 
         private NetworkRuntimeAnchor _anchor;
         private PlayerId _serverHolder = PlayerId.None;
         private bool _serverParented;
         private PlayerId _mirroredHolder = PlayerId.None;
         private PlayerId _pendingMirror = PlayerId.None;
+        private bool _inPlay;
+
+        // Seat of the current owner's avatar, cached for the next change's log: when a client disconnects NGO hands its
+        // avatar (DontDestroyWithOwner) to the server first, so the previous owner can no longer be looked up.
+        private PlayerId _ownerSeat = PlayerId.None;
 
         /// <summary>Raised on every instance when the owner changes. Payload: this object, previous and new owner client id.</summary>
         public event Action<NetworkCarriable, ulong, ulong> OwnershipChanged;
 
+        /// <summary>Raised on every instance when what the ownership views show may have changed (see class summary).</summary>
+        public event Action<NetworkCarriable> ViewChanged;
+
         /// <summary>The gameplay object this adapter replicates.</summary>
         public abstract IGrabbable Grabbable { get; }
 
-        protected NetworkRuntimeAnchor Anchor => _anchor;
+        /// <summary>
+        /// Seat that claims this object according to the replicated state, identical on every instance: the holder while
+        /// carried (an armed bomb: its thrower); None otherwise.
+        /// </summary>
+        public abstract PlayerId Claimant { get; }
+
+        /// <summary>Runtime anchor injected with <see cref="Bind"/> (players by seat / client, local player).</summary>
+        public NetworkRuntimeAnchor Anchor => _anchor;
+
+        public NetworkSettings Settings => _settings;
+
+        /// <summary>Between the end of OnNetworkSpawn and OnNetworkDespawn (IsSpawned is still true during despawn).</summary>
+        public bool IsInPlay => _inPlay && IsSpawned;
+
+        /// <summary>Owner as the views show it (server, a seat, or a client not resolved yet). No allocation.</summary>
+        public CarriableOwner ResolveOwner()
+        {
+            if (!IsInPlay)
+            {
+                return CarriableOwner.Server;
+            }
+
+            ulong owner = OwnerClientId;
+            PlayerId seat = SeatOfClient(owner);
+            return CarriableOwnerRules.Resolve(owner, NetworkManager.ServerClientId, Claimant, seat);
+        }
 
         /// <summary>Injects the runtime anchor (players by seat). Called before Spawn on the server and on instantiation on clients.</summary>
         public void Bind(NetworkRuntimeAnchor anchor)
@@ -73,24 +110,67 @@ namespace AlienFarms.Networking.Player
             }
         }
 
+        protected override void OnNetworkPostSpawn()
+        {
+            base.OnNetworkPostSpawn();
+            _inPlay = true;
+            _ownerSeat = SeatOfClient(OwnerClientId);
+            NotifyViewChanged();
+        }
+
         public override void OnNetworkDespawn()
         {
             ClearMirror();
             _pendingMirror = PlayerId.None;
             _serverHolder = PlayerId.None;
             _serverParented = false;
+            _inPlay = false;
+            _ownerSeat = PlayerId.None;
+            NotifyViewChanged();
         }
 
         protected override void OnOwnershipChanged(ulong previous, ulong current)
         {
             base.OnOwnershipChanged(previous, current);
-            if (_logOwnership)
+            PlayerId previousSeat = CarriableOwnerRules.PreviousOwnerSeat(SeatOfClient(previous), _ownerSeat, Claimant);
+            _ownerSeat = SeatOfClient(current);
+            if (_settings != null && _settings.LogOwnership)
             {
-                Debug.Log($"[{GetType().Name}] '{name}' owner: client {previous} -> client {current} (IsOwner {IsOwner}, server authority).", this);
+                ulong server = NetworkManager.ServerClientId;
+                Debug.Log($"[{GetType().Name}] '{name}' owner: {CarriableOwnerRules.DescribeClient(previous, server, previousSeat)} -> {CarriableOwnerRules.DescribeClient(current, server, _ownerSeat)} (here: IsOwner {IsOwner}, HasAuthority {HasAuthority}).", this);
+            }
+
+            // NGO can change ownership on its own (the thrower of an armed bomb disconnects) and the NetworkRigidbody
+            // resets the body's kinematic state on every change: put the simulation's setup back (idempotent).
+            if (IsServer)
+            {
+                RestoreAuthorityPhysics();
             }
 
             OwnershipChanged?.Invoke(this, previous, current);
+            NotifyViewChanged();
         }
+
+        public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
+        {
+            base.OnNetworkObjectParentChanged(parentNetworkObject);
+
+            // NGO moves children to the root when their parent despawns (e.g. the holder's avatar): never try to
+            // unparent again later.
+            if (IsServer && parentNetworkObject == null)
+            {
+                _serverParented = false;
+            }
+        }
+
+        /// <summary>Derived classes call it after the replicated state that feeds <see cref="Claimant"/> was written or received.</summary>
+        protected void NotifyViewChanged()
+        {
+            ViewChanged?.Invoke(this);
+        }
+
+        private PlayerId SeatOfClient(ulong clientId) =>
+            _anchor != null && _anchor.TryGetPlayerByClient(clientId, out NetworkPlayer player) ? player.PlayerId : PlayerId.None;
 
         /// <summary>
         /// The NetworkRigidbody resets the body's kinematic state when ownership changes: the derived class puts the
@@ -269,6 +349,11 @@ namespace AlienFarms.Networking.Player
 
         protected virtual void OnValidate()
         {
+            if (_settings == null)
+            {
+                Debug.LogWarning($"[{GetType().Name}] Missing NetworkSettings on '{name}'; ownership changes are not logged.", this);
+            }
+
             if (_networkTransform == null)
             {
                 TryGetComponent(out _networkTransform);

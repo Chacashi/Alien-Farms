@@ -62,6 +62,13 @@ namespace AlienFarms.Data
         [SerializeField, Tooltip("Lag compensation enabled by default.")]
         private bool _lagCompDefault = true;
 
+        [Header("Debug")]
+        [SerializeField, Tooltip("Ownership labels over carried objects visible by default (the debug overlay can override it at runtime).")]
+        private bool _showOwnershipLabels = true;
+
+        [SerializeField, Tooltip("Logs every ownership change of carried objects (animals, bombs) on every instance.")]
+        private bool _logOwnership = true;
+
         public int ProtocolVersion => _protocolVersion;
         public string EnvironmentName => _environmentName;
         public int MaxPlayers => _maxPlayers;
@@ -78,6 +85,8 @@ namespace AlienFarms.Data
         public float ThrowViewTolerance => _throwViewTolerance;
         public float ThrowRequestTimeout => _throwRequestTimeout;
         public bool LagCompDefault => _lagCompDefault;
+        public bool ShowOwnershipLabels => _showOwnershipLabels;
+        public bool LogOwnership => _logOwnership;
 
         private void OnValidate()
         {

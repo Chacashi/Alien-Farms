@@ -103,6 +103,9 @@ namespace AlienFarms.Networking.Player
 
         public PlayerRig Rig => _rig;
 
+        /// <summary>This avatar's camera (enabled only on the owner): world-space debug labels face it.</summary>
+        public Camera ViewCamera => _camera;
+
         /// <summary>Character for <see cref="CharacterIndex"/> (null when none or out of range).</summary>
         public CharacterDefinition Character => _characters != null ? _characters.Get(CharacterIndex) : null;
 

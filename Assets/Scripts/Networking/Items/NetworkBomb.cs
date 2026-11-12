@@ -37,6 +37,18 @@ namespace AlienFarms.Networking.Items
 
         public override IGrabbable Grabbable => _bomb;
 
+        /// <summary>Carried: the holder. Armed: the thrower (it keeps ownership until the detonation).</summary>
+        public override PlayerId Claimant
+        {
+            get
+            {
+                BombNetState state = _state.Value;
+                return state.State == BombState.Carried ? state.Holder
+                    : state.State == BombState.Armed ? state.Thrower
+                    : PlayerId.None;
+            }
+        }
+
         protected override void Awake()
         {
             base.Awake();
@@ -139,6 +151,7 @@ namespace AlienFarms.Networking.Items
             }
 
             _state.Value = Capture();
+            NotifyViewChanged();
         }
 
         private void HandleDetonated(Bomb bomb, Vector3 center, float radius)
@@ -176,6 +189,7 @@ namespace AlienFarms.Networking.Items
         private void HandleReplicatedStateChanged(BombNetState previous, BombNetState current)
         {
             ApplyReplicated(current);
+            NotifyViewChanged();
         }
 
         private void ApplyReplicated(BombNetState state)

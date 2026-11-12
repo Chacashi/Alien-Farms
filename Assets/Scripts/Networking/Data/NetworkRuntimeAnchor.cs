@@ -146,6 +146,30 @@ namespace AlienFarms.Networking.Data
             return player != null;
         }
 
+        /// <summary>
+        /// Spawned avatar owned by NGO client <paramref name="clientId"/> on this machine. No allocation. Invariant: the
+        /// host is always P1 (seat index 0), so the first seat wins for client 0 even while a leaving client's avatar is
+        /// briefly owned by the server too (the roster unregisters that avatar right after the drop).
+        /// </summary>
+        public bool TryGetPlayerByClient(ulong clientId, out NetworkPlayer player)
+        {
+            if (IsCurrent)
+            {
+                for (int i = 0; i < _players.Length; i++)
+                {
+                    NetworkPlayer candidate = _players[i];
+                    if (candidate != null && candidate.IsSpawned && candidate.OwnerClientId == clientId)
+                    {
+                        player = candidate;
+                        return true;
+                    }
+                }
+            }
+
+            player = null;
+            return false;
+        }
+
         /// <summary>Unregisters <paramref name="player"/> when it is the registered local avatar.</summary>
         public void ClearLocalPlayer(NetworkPlayer player)
         {
