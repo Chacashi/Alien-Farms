@@ -22,6 +22,7 @@ namespace AlienFarms.Networking.Data
         [NonSerialized] private NetworkPlayer _localPlayer;
         [NonSerialized] private string _disconnectReason;
         [NonSerialized] private string _rejoinSessionId;
+        [NonSerialized] private Camera _spectatorCamera;
 
         // Spawned avatars by seat on this machine (index = (int)PlayerId - 1), on server and clients alike.
         [NonSerialized] private readonly NetworkPlayer[] _players = new NetworkPlayer[2];
@@ -44,6 +45,50 @@ namespace AlienFarms.Networking.Data
 
         /// <summary>Avatar owned by this machine in the gameplay scene (null when none is spawned).</summary>
         public NetworkPlayer LocalPlayer => IsCurrent && _localPlayer != null ? _localPlayer : null;
+
+        /// <summary>
+        /// Camera this machine views the match through: the local avatar's camera, else the spectator camera. Null when
+        /// neither exists (or was destroyed). World-space tags and labels face it. No allocation.
+        /// </summary>
+        public Camera ViewCamera
+        {
+            get
+            {
+                NetworkPlayer local = LocalPlayer;
+                Camera camera = local != null ? local.ViewCamera : null;
+                if (camera != null)
+                {
+                    return camera;
+                }
+
+                return IsCurrent && _spectatorCamera != null ? _spectatorCamera : null;
+            }
+        }
+
+        /// <summary>Registers the spectator camera (called by SpectatorModeController while this machine spectates).</summary>
+        public void SetSpectatorCamera(Camera camera)
+        {
+            if (!IsCurrent)
+            {
+                _generation = s_generation;
+                _root = null;
+                _localPlayer = null;
+                _disconnectReason = null;
+                ClearPlayers();
+                _rejoinSessionId = null;
+            }
+
+            _spectatorCamera = camera;
+        }
+
+        /// <summary>Unregisters <paramref name="camera"/> when it is the registered spectator camera.</summary>
+        public void ClearSpectatorCamera(Camera camera)
+        {
+            if (ReferenceEquals(_spectatorCamera, camera))
+            {
+                _spectatorCamera = null;
+            }
+        }
 
         /// <summary>True on a running server (host included).</summary>
         public bool IsServer
@@ -81,6 +126,7 @@ namespace AlienFarms.Networking.Data
                 _disconnectReason = null;
                 ClearPlayers();
                 _rejoinSessionId = null;
+                _spectatorCamera = null;
             }
 
             _generation = s_generation;
@@ -96,6 +142,7 @@ namespace AlienFarms.Networking.Data
                 _root = null;
                 ClearPlayers();
                 _rejoinSessionId = null;
+                _spectatorCamera = null;
             }
 
             _localPlayer = player;
@@ -117,6 +164,7 @@ namespace AlienFarms.Networking.Data
                 _disconnectReason = null;
                 ClearPlayers();
                 _rejoinSessionId = null;
+                _spectatorCamera = null;
             }
 
             int index = (int)player.PlayerId - 1;
@@ -193,6 +241,7 @@ namespace AlienFarms.Networking.Data
                 _localPlayer = null;
                 ClearPlayers();
                 _rejoinSessionId = null;
+                _spectatorCamera = null;
             }
 
             _disconnectReason = reason;
@@ -227,6 +276,7 @@ namespace AlienFarms.Networking.Data
                 _disconnectReason = null;
                 ClearPlayers();
                 _rejoinSessionId = null;
+                _spectatorCamera = null;
             }
 
             _rejoinSessionId = sessionId;

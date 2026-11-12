@@ -18,7 +18,8 @@ namespace AlienFarms.Tests.Localization
             typeof(PlayerSlotStatusView),
             typeof(CharacterCardView),
             typeof(OnlinePanelView),
-            typeof(TitleStatsView)
+            typeof(TitleStatsView),
+            typeof(ConnectionStatusView)
         };
 
         [TestCaseSource(nameof(Views))]

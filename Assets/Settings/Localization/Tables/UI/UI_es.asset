@@ -374,6 +374,54 @@ MonoBehaviour:
     m_Localized: "El anfitri\xF3n no pudo verificar que est\xE9s en esta sala."
     m_Metadata:
       m_Items: []
+  - m_Id: 4174257857482752
+    m_Localized: 'Esperando a {0}: {1} s'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425792
+    m_Localized: "{0} volvi\xF3"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425793
+    m_Localized: "{0} sali\xF3"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425794
+    m_Localized: "{0} no volvi\xF3"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425795
+    m_Localized: "Est\xE1s mirando"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425796
+    m_Localized: Salir
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425797
+    m_Localized: Reconectar ({0} s)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425798
+    m_Localized: Tu nombre
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425799
+    m_Localized: "Escribe tu nombre\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425800
+    m_Localized: "Se perdi\xF3 la conexi\xF3n con la sala."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425801
+    m_Localized: No se pudo recuperar tu lugar en la sala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425802
+    m_Localized: "Se acab\xF3 el tiempo para reconectar."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

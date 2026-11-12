@@ -27,6 +27,9 @@ namespace AlienFarms.UI
         [SerializeField, Tooltip("'Signed in as {0}' format (non-Smart).")]
         private LocalizedString _signedInEntry = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.OnlineHubSignedInAs);
 
+        [SerializeField, Tooltip("'Reconnect ({0} s)' format (non-Smart): used as a TextMeshPro SetText template, so only {0} may hold braces.")]
+        private LocalizedString _rejoinEntry = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.OnlineHubRejoin);
+
         [SerializeField, Tooltip("Room hint entry; the key is replaced at runtime.")]
         private LocalizedString _hintEntry = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.OnlineRoomWaitingPlayer);
 
@@ -75,6 +78,16 @@ namespace AlienFarms.UI
         [SerializeField, Tooltip("Join code input (max 6 chars, upper case).")]
         private TMP_InputField _codeInput;
 
+        [Header("Hub")]
+        [SerializeField, Tooltip("BTN_Rejoin: shown while a reconnection offer is valid.")]
+        private UnityEngine.UI.Button _rejoinButton;
+
+        [SerializeField, Tooltip("Label of BTN_Rejoin ('Reconnect (n s)'), written from code.")]
+        private TMP_Text _rejoinLabel;
+
+        [SerializeField, Tooltip("INP_Name: name typed by the player (saved on end edit). Its character limit is set from code.")]
+        private TMP_InputField _nameInput;
+
         [Header("Room")]
         [SerializeField, Tooltip("One card per selectable character (matched by character, any order).")]
         private CharacterCardView[] _cards = new CharacterCardView[0];
@@ -103,9 +116,14 @@ namespace AlienFarms.UI
         private LocalizedStringBinding _busyBinding;
         private LocalizedStringBinding _signedInBinding;
         private LocalizedStringBinding _hintBinding;
+        private LocalizedStringBinding _rejoinBinding;
         private Action<CharacterDefinition> _cardClickedHandler;
         private Action<CharacterDefinition> _cardSelectedHandler;
         private UnityEngine.Events.UnityAction<string> _codeSubmitHandler;
+        private UnityEngine.Events.UnityAction<string> _nameEndEditHandler;
+        private int _rejoinSeconds = -1;
+        private int _nameEndEditFrame = -1;
+        private bool _rejoinVisible;
         private string _signedInName;
         private string _codeText;
         private string _spectatorText;
@@ -122,8 +140,20 @@ namespace AlienFarms.UI
         /// <summary>The join code input was submitted (Enter / pad Submit while editing).</summary>
         public event Action CodeSubmitted;
 
+        /// <summary>The name input finished an edit (Enter, pad Submit, click outside, Cancel); carries the raw text.</summary>
+        public event Action<string> NameEdited;
+
         /// <summary>Text typed in the join code input (null without input).</summary>
         public string CodeText => _codeInput != null ? _codeInput.text : null;
+
+        /// <summary>Hub 'Reconnect' button (null when not assigned).</summary>
+        public GameObject RejoinSelectable => _rejoinButton != null ? _rejoinButton.gameObject : null;
+
+        /// <summary>
+        /// True while the name input is being edited, and on the frame its edit ended: the field's own Cancel (end edit)
+        /// and the owner's latched Cancel arrive in different updates, and the latter must not leave the hub.
+        /// </summary>
+        public bool IsEditingName => _nameInput != null && (_nameInput.isFocused || Time.frameCount - _nameEndEditFrame <= 1);
 
         /// <summary>Room 'Leave' button.</summary>
         public GameObject LeaveSelectable => _roomLeave;
@@ -137,9 +167,18 @@ namespace AlienFarms.UI
             _busyBinding = new LocalizedStringBinding(_busyEntry, RefreshBusy);
             _signedInBinding = new LocalizedStringBinding(_signedInEntry, RefreshSignedIn);
             _hintBinding = new LocalizedStringBinding(_hintEntry, RefreshHint);
+            _rejoinBinding = new LocalizedStringBinding(_rejoinEntry, RefreshRejoin);
             _cardClickedHandler = HandleCardClicked;
             _cardSelectedHandler = HandleCardSelected;
             _codeSubmitHandler = HandleCodeSubmitted;
+            _nameEndEditHandler = HandleNameEndEdit;
+            if (_nameInput != null)
+            {
+                _nameInput.characterLimit = DisplayNameSanitizer.MaxTypedLength;
+                // Pending from 2.2 (INP_Code): an active field swallows the D-pad. This one only starts editing on
+                // Submit / click, so pad navigation passes over it; Submit or Cancel end the edit.
+                _nameInput.shouldActivateOnSelect = false;
+            }
         }
 
         private void OnEnable()
@@ -148,9 +187,15 @@ namespace AlienFarms.UI
             _busyBinding.Enable();
             _signedInBinding.Enable();
             _hintBinding.Enable();
+            _rejoinBinding.Enable();
             if (_codeInput != null)
             {
                 _codeInput.onSubmit.AddListener(_codeSubmitHandler);
+            }
+
+            if (_nameInput != null)
+            {
+                _nameInput.onEndEdit.AddListener(_nameEndEditHandler);
             }
 
             for (int i = 0; i < _cardButtons.Length; i++)
@@ -169,9 +214,15 @@ namespace AlienFarms.UI
             _busyBinding.Disable();
             _signedInBinding.Disable();
             _hintBinding.Disable();
+            _rejoinBinding.Disable();
             if (_codeInput != null)
             {
                 _codeInput.onSubmit.RemoveListener(_codeSubmitHandler);
+            }
+
+            if (_nameInput != null)
+            {
+                _nameInput.onEndEdit.RemoveListener(_nameEndEditHandler);
             }
 
             for (int i = 0; i < _cardButtons.Length; i++)
@@ -249,6 +300,45 @@ namespace AlienFarms.UI
             }
 
             RefreshSignedIn();
+        }
+
+        /// <summary>
+        /// Hub 'Reconnect (n s)' button: shown with <paramref name="seconds"/> while <paramref name="visible"/>. The label
+        /// is rewritten only when the second changes (SetText with the localized template, no allocation).
+        /// </summary>
+        public void SetRejoin(bool visible, int seconds)
+        {
+            _rejoinVisible = visible;
+            SetActive(RejoinSelectable, visible);
+            if (visible && seconds != _rejoinSeconds)
+            {
+                _rejoinSeconds = seconds;
+                RefreshRejoin();
+            }
+        }
+
+        /// <summary>Shows <paramref name="displayName"/> in the name input, unless the player is editing it.</summary>
+        public void SetNameText(string displayName)
+        {
+            if (_nameInput == null || _nameInput.isFocused)
+            {
+                return;
+            }
+
+            displayName ??= string.Empty;
+            if (!string.Equals(_nameInput.text, displayName, StringComparison.Ordinal))
+            {
+                _nameInput.SetTextWithoutNotify(displayName);
+            }
+        }
+
+        /// <summary>Ends an edit in progress of the name input (its end edit saves the name).</summary>
+        public void EndNameEdit()
+        {
+            if (_nameInput != null && _nameInput.isFocused)
+            {
+                _nameInput.DeactivateInputField();
+            }
         }
 
         /// <summary>Room code (null clears it).</summary>
@@ -396,6 +486,24 @@ namespace AlienFarms.UI
 
         private void HandleCodeSubmitted(string text) => CodeSubmitted?.Invoke();
 
+        private void HandleNameEndEdit(string text)
+        {
+            _nameEndEditFrame = Time.frameCount;
+            NameEdited?.Invoke(text);
+        }
+
+        // On second or language change only. The localized format is the TMP template itself ({0} = seconds).
+        private void RefreshRejoin()
+        {
+            string format = _rejoinBinding?.Value;
+            if (_rejoinLabel == null || format == null || !_rejoinVisible || _rejoinSeconds < 0)
+            {
+                return;
+            }
+
+            _rejoinLabel.SetText(format, _rejoinSeconds);
+        }
+
         private void HandleCardClicked(CharacterDefinition character) => CardClicked?.Invoke(character);
 
         private void HandleCardSelected(CharacterDefinition character) => CardSelected?.Invoke(character);
@@ -447,7 +555,8 @@ namespace AlienFarms.UI
         private void OnValidate()
         {
             if (_errorEntry == null || _errorEntry.IsEmpty || _busyEntry == null || _busyEntry.IsEmpty
-                || _signedInEntry == null || _signedInEntry.IsEmpty || _hintEntry == null || _hintEntry.IsEmpty)
+                || _signedInEntry == null || _signedInEntry.IsEmpty || _hintEntry == null || _hintEntry.IsEmpty
+                || _rejoinEntry == null || _rejoinEntry.IsEmpty)
             {
                 Debug.LogWarning($"[{nameof(OnlinePanelView)}] Empty localized string on '{name}'.", this);
             }
@@ -480,6 +589,15 @@ namespace AlienFarms.UI
                 || _seats == null || _seats.Length != OnlineLobbyChannel.MaxSeats)
             {
                 Debug.LogWarning($"[{nameof(OnlinePanelView)}] '{name}' needs one button per card and {OnlineLobbyChannel.MaxSeats} seats.", this);
+            }
+
+            if (_rejoinButton == null || _rejoinLabel == null || _nameInput == null)
+            {
+                Debug.LogWarning($"[{nameof(OnlinePanelView)}] Missing BTN_Rejoin, its label or INP_Name on '{name}'.", this);
+            }
+            else if (_rejoinLabel.TryGetComponent(out LocalizedText _))
+            {
+                Debug.LogWarning($"[{nameof(OnlinePanelView)}] The rejoin label on '{name}' is written from code: remove its LocalizedText.", this);
             }
 
             if (_startButton == null || _spectatorRow == null || _spectatorName == null || _spectatorBanner == null)

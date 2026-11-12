@@ -374,6 +374,54 @@ MonoBehaviour:
     m_Localized: The host could not verify that you are in this room.
     m_Metadata:
       m_Items: []
+  - m_Id: 4174257857482752
+    m_Localized: 'Waiting for {0}: {1} s'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425792
+    m_Localized: '{0} is back'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425793
+    m_Localized: '{0} left'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425794
+    m_Localized: '{0} did not come back'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425795
+    m_Localized: You are watching
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425796
+    m_Localized: Leave
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425797
+    m_Localized: Reconnect ({0} s)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425798
+    m_Localized: Your name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425799
+    m_Localized: "Type your name\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425800
+    m_Localized: The connection to the room was lost.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425801
+    m_Localized: Your place in the room could not be restored.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4174257899425802
+    m_Localized: The time to reconnect has run out.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

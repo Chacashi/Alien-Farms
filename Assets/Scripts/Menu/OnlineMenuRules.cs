@@ -80,6 +80,22 @@ namespace AlienFarms.Menu
         }
 
         /// <summary>
+        /// The hub shows 'Reconnect (n s)' while this machine holds a rejoin offer that has not expired at
+        /// <paramref name="now"/> (same clock as <paramref name="expiresAt"/>: realtime since startup).
+        /// </summary>
+        public static bool ShowsRejoin(bool hasOffer, double expiresAt, double now)
+        {
+            return hasOffer && now < expiresAt;
+        }
+
+        /// <summary>Whole seconds left on the rejoin offer, rounded up (0 once expired).</summary>
+        public static int RejoinSecondsLeft(double expiresAt, double now)
+        {
+            double left = expiresAt - now;
+            return left > 0d ? (int)System.Math.Ceiling(left) : 0;
+        }
+
+        /// <summary>
         /// Room hint key: syncing until the lobby appears, the spectator notice, then waiting for a player, for both picks
         /// or for the host. Null when nothing is missing for the host (Start is available).
         /// </summary>

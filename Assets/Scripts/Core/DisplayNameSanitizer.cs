@@ -15,6 +15,12 @@ namespace AlienFarms.Core
         /// <summary>Longest name kept, in UTF-16 characters (the connection payload already holds at most 29 UTF-8 bytes).</summary>
         public const int MaxLength = 32;
 
+        /// <summary>
+        /// Longest name the player may type (input field limit). Below <see cref="MaxLength"/> so a typed name with
+        /// accents (2 UTF-8 bytes each) still fits the connection payload's 29 bytes, and stays readable in a name tag.
+        /// </summary>
+        public const int MaxTypedLength = 14;
+
         /// <summary>The cleaned <paramref name="name"/>; never null. Returns the same instance when nothing changes.</summary>
         public static string Sanitize(string name)
         {

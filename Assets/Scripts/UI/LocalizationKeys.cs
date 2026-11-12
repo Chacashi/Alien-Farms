@@ -79,6 +79,17 @@ namespace AlienFarms.UI
         public const string OnlineBusyStarting = "online.busy.starting";
         public const string OnlineBusyCancel = "online.busy.cancel";
 
+        // UI table: connection status, spectator, rejoin and name (task 2.7).
+        public const string OnlineStatusReconnecting = "online.status.reconnecting";
+        public const string OnlineStatusReturned = "online.status.returned";
+        public const string OnlineStatusLeft = "online.status.left";
+        public const string OnlineStatusTimedOut = "online.status.timed_out";
+        public const string OnlineSpectatorWatching = "online.spectator.watching";
+        public const string OnlineSpectatorLeave = "online.spectator.leave";
+        public const string OnlineHubRejoin = "online.hub.rejoin";
+        public const string OnlineHubNameLabel = "online.hub.name_label";
+        public const string OnlineHubNamePlaceholder = "online.hub.name_placeholder";
+
         // UI table: title stats (task 2.2, written from 2.8).
         public const string StatsHeader = "stats.header";
         public const string StatsMatches = "stats.matches";
@@ -102,6 +113,9 @@ namespace AlienFarms.UI
         public const string OnlineErrorAlreadyConnected = OnlineSessionErrorKeys.AlreadyConnected;
         public const string OnlineErrorNotSessionMember = OnlineSessionErrorKeys.NotSessionMember;
         public const string OnlineErrorHostLeft = OnlineSessionErrorKeys.HostLeft;
+        public const string OnlineErrorConnectionLost = OnlineSessionErrorKeys.ConnectionLost;
+        public const string OnlineErrorReconnectDenied = OnlineSessionErrorKeys.ReconnectDenied;
+        public const string OnlineErrorRejoinExpired = OnlineSessionErrorKeys.RejoinExpired;
         public const string OnlineErrorRelayFailed = OnlineSessionErrorKeys.RelayFailed;
         public const string OnlineErrorConnectionFailed = OnlineSessionErrorKeys.ConnectionFailed;
         public const string OnlineErrorJoinFailed = OnlineSessionErrorKeys.JoinFailed;

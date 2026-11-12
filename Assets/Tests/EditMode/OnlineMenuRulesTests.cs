@@ -152,5 +152,26 @@ namespace AlienFarms.Tests
         {
             Assert.That(OnlineMenuRules.HintKey(phase, seats, allPicked, isHost, isSpectator), Is.EqualTo(expected));
         }
+
+        [TestCase(true, 120.0, 100.0, true)]
+        [TestCase(true, 100.5, 100.0, true)]
+        [TestCase(true, 100.0, 100.0, false)]
+        [TestCase(true, 90.0, 100.0, false)]
+        [TestCase(false, 120.0, 100.0, false)]
+        [TestCase(false, 0.0, 100.0, false)]
+        public void ShowsRejoin_OnlyWithAnUnexpiredOffer(bool hasOffer, double expiresAt, double now, bool expected)
+        {
+            Assert.That(OnlineMenuRules.ShowsRejoin(hasOffer, expiresAt, now), Is.EqualTo(expected));
+        }
+
+        [TestCase(120.0, 100.0, 20)]
+        [TestCase(119.2, 100.0, 20)]
+        [TestCase(100.01, 100.0, 1)]
+        [TestCase(100.0, 100.0, 0)]
+        [TestCase(95.0, 100.0, 0)]
+        public void RejoinSecondsLeft_RoundsUpAndClampsAtZero(double expiresAt, double now, int expected)
+        {
+            Assert.That(OnlineMenuRules.RejoinSecondsLeft(expiresAt, now), Is.EqualTo(expected));
+        }
     }
 }

@@ -47,6 +47,8 @@ namespace AlienFarms.Menu
         private bool _shownReadOnly;
         private bool _shownLocked;
         private bool _shownCanStart;
+        private bool _shownRejoin;
+        private int _shownRejoinSeconds = -1;
 
         /// <summary>The player backed out of the hub (Back / Cancel): the menu flow returns to the title.</summary>
         public event Action ExitRequested;
@@ -82,6 +84,7 @@ namespace AlienFarms.Menu
                 _view.CardClicked += HandleCardClicked;
                 _view.CardSelected += HandleCardSelected;
                 _view.CodeSubmitted += HandleCodeSubmitted;
+                _view.NameEdited += HandleNameEdited;
             }
 
             // Changes may have happened while disabled (or before this scene loaded): rebuild everything.
@@ -106,11 +109,14 @@ namespace AlienFarms.Menu
                 _view.CardClicked -= HandleCardClicked;
                 _view.CardSelected -= HandleCardSelected;
                 _view.CodeSubmitted -= HandleCodeSubmitted;
+                _view.NameEdited -= HandleNameEdited;
             }
         }
 
         private void Update()
         {
+            TickRejoin();
+
             // Strictly after the frame that marked it: changes may come from a button click inside the event system.
             if (!_isActive || !_dirty || Time.frameCount <= _dirtyFrame)
             {
@@ -164,6 +170,7 @@ namespace AlienFarms.Menu
             _isActive = false;
             _owner = null;
             _dirty = false;
+            _shownRejoin = false;
             _focusPending = false;
             _focusOverride = null;
             if (_view != null)
@@ -209,6 +216,13 @@ namespace AlienFarms.Menu
                 case OnlineScreen.Busy:
                     return CancelBusyInternal();
                 default:
+                    // Cancel while typing the name only ends the edit (it is saved); it never leaves the hub.
+                    if (_view != null && _view.IsEditingName)
+                    {
+                        _view.EndNameEdit();
+                        return true;
+                    }
+
                     ExitRequested?.Invoke();
                     return true;
             }
@@ -233,6 +247,28 @@ namespace AlienFarms.Menu
             }
 
             _session.RequestCreate();
+        }
+
+        /// <summary>
+        /// Hub 'Reconnect (n s)': rejoins the session this machine dropped from (the channel checks the offer and reports
+        /// <c>rejoin_expired</c> when it ran out). Signed out: retries the sign-in instead.
+        /// </summary>
+        public void RejoinRoom()
+        {
+            if (!_isActive || _session == null || CurrentScreen != OnlineScreen.Hub)
+            {
+                return;
+            }
+
+            _session.ClearError();
+            if (Status == OnlineSessionStatus.SignedOut)
+            {
+                _session.RequestSignIn();
+                return;
+            }
+
+            _session.RequestRejoin();
+            MarkDirty();
         }
 
         /// <summary>Hub 'Join room': opens the code screen.</summary>
@@ -347,6 +383,62 @@ namespace AlienFarms.Menu
             return true;
         }
 
+        // 1 Hz redraw of 'Reconnect (n s)' while it shows: only compares the whole second (no allocation per frame).
+        private void TickRejoin()
+        {
+            if (!_isActive || !_shownRejoin || _session == null)
+            {
+                return;
+            }
+
+            double now = Time.realtimeSinceStartupAsDouble;
+            double expiresAt = _session.RejoinExpiresAt;
+            if (!OnlineMenuRules.ShowsRejoin(_session.HasRejoinOffer, expiresAt, now))
+            {
+                // Expired: a full refresh hides it and moves the focus off it.
+                if (!_dirty)
+                {
+                    MarkDirty();
+                }
+
+                return;
+            }
+
+            int seconds = OnlineMenuRules.RejoinSecondsLeft(expiresAt, now);
+            if (seconds != _shownRejoinSeconds)
+            {
+                _shownRejoinSeconds = seconds;
+                _view.SetRejoin(true, seconds);
+            }
+        }
+
+        /// <summary>Renders BTN_Rejoin on the hub; asks to move the focus off it when it just hid under the owner's cursor.</summary>
+        private void RenderRejoin()
+        {
+            double now = Time.realtimeSinceStartupAsDouble;
+            bool hasOffer = _session != null && _session.HasRejoinOffer;
+            double expiresAt = hasOffer ? _session.RejoinExpiresAt : 0d;
+            bool visible = OnlineMenuRules.ShowsRejoin(hasOffer, expiresAt, now);
+            int seconds = visible ? OnlineMenuRules.RejoinSecondsLeft(expiresAt, now) : 0;
+            if (_shownRejoin && !visible && _owner != null && _owner.CurrentSelection == _view.RejoinSelectable)
+            {
+                _focusPending = true;
+            }
+
+            _shownRejoin = visible;
+            _shownRejoinSeconds = seconds;
+            _view.SetRejoin(visible, seconds);
+        }
+
+        private void HandleNameEdited(string text)
+        {
+            if (_session != null)
+            {
+                // Sanitized and persisted by the channel; its Changed redraws the field with the clean name.
+                _session.SetDisplayName(text);
+            }
+        }
+
         private void MarkDirty()
         {
             _dirty = true;
@@ -422,6 +514,11 @@ namespace AlienFarms.Menu
             OnlineScreen screen = OnlineMenuRules.Resolve(status, phase, _wantsJoin);
             _view.ShowScreen(screen);
             _view.ShowError(GetErrorKey(screen));
+            if (screen != OnlineScreen.Hub)
+            {
+                // BTN_Rejoin lives in the hub: no countdown to tick elsewhere.
+                _shownRejoin = false;
+            }
 
             bool readOnly = false;
             bool locked = false;
@@ -430,6 +527,8 @@ namespace AlienFarms.Menu
             {
                 case OnlineScreen.Hub:
                     _view.SetSignedInAs(GetLocalDisplayName());
+                    _view.SetNameText(_session != null ? _session.DisplayName : null);
+                    RenderRejoin();
                     break;
                 case OnlineScreen.Busy:
                     _view.SetBusy(OnlineMenuRules.BusyKey(status, phase), OnlineMenuRules.CanCancelBusy(status));
@@ -504,6 +603,11 @@ namespace AlienFarms.Menu
                 // First card the other player has not taken; all taken -> Leave.
                 GameObject card = _view.GetFirstFreeCard();
                 target = card != null ? card : _view.LeaveSelectable;
+            }
+            else if (screen == OnlineScreen.Hub && _shownRejoin && _view.RejoinSelectable != null)
+            {
+                // Back from a drop: reconnecting is the likely next step.
+                target = _view.RejoinSelectable;
             }
             else
             {
