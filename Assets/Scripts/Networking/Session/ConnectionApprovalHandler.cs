@@ -338,6 +338,15 @@ namespace AlienFarms.Networking.Session
             if (_slots.TryGetByClient(clientId, out PlayerSlot seat))
             {
                 PlayerId id = seat.Id;
+
+                // The server is stopping (every client drops at once): nothing will be reconnected to this run.
+                if (_manager.ShutdownInProgress)
+                {
+                    _slots.Release(clientId, out _);
+                    Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Client {clientId} dropped during shutdown; seat {id} freed.", this);
+                    return;
+                }
+
                 switch (SeatGraceRules.OnDisconnect(noticed, _graceEnabled))
                 {
                     case SeatDropOutcome.Left:
@@ -361,6 +370,7 @@ namespace AlienFarms.Networking.Session
                 Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Spectator {clientId} left.", this);
             }
         }
+
         private void HandleServerStopped(bool wasHost)
         {
             _generation++;

@@ -39,14 +39,22 @@ namespace AlienFarms.Networking.Tests
         }
 
         [Test]
-        public void ExpiresAt_LastsTheGrace_AndExpiresAtTheEdge()
+        public void ExpiresAt_EndsAMarginBeforeTheGrace_AndExpiresAtTheEdge()
         {
             double expiresAt = RejoinOfferRules.ExpiresAt(100d, 20f);
+            double edge = 100d + 20f - RejoinOfferRules.ExpiryMarginSeconds;
 
-            Assert.That(expiresAt, Is.EqualTo(120d));
-            Assert.That(RejoinOfferRules.IsExpired(expiresAt, 119.99d), Is.False);
-            Assert.That(RejoinOfferRules.IsExpired(expiresAt, 120d), Is.True);
+            Assert.That(RejoinOfferRules.ExpiryMarginSeconds, Is.GreaterThan(0f));
+            Assert.That(expiresAt, Is.EqualTo(edge));
+            Assert.That(RejoinOfferRules.IsExpired(expiresAt, edge - 0.01d), Is.False);
+            Assert.That(RejoinOfferRules.IsExpired(expiresAt, edge), Is.True);
+        }
+
+        [Test]
+        public void ExpiresAt_NeverBeforeNow()
+        {
             Assert.That(RejoinOfferRules.ExpiresAt(100d, -5f), Is.EqualTo(100d));
+            Assert.That(RejoinOfferRules.ExpiresAt(100d, RejoinOfferRules.ExpiryMarginSeconds * 0.5f), Is.EqualTo(100d));
         }
 
         [TestCase(OnlineSessionErrorKeys.AlreadyConnected, true)]

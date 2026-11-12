@@ -85,6 +85,12 @@ namespace AlienFarms.UI
         [SerializeField, Tooltip("Label of BTN_Rejoin ('Reconnect (n s)'), written from code.")]
         private TMP_Text _rejoinLabel;
 
+        [SerializeField, Tooltip("Hub BTN_Join (Explicit navigation): its Down goes to BTN_Rejoin while shown, else to the hub Back button.")]
+        private UnityEngine.UI.Selectable _hubJoinButton;
+
+        [SerializeField, Tooltip("Hub BTN_Back (Explicit navigation): its Up goes to BTN_Rejoin while shown, else to the hub Join button.")]
+        private UnityEngine.UI.Selectable _hubBackButton;
+
         [SerializeField, Tooltip("INP_Name: name typed by the player (saved on end edit). Its character limit is set from code.")]
         private TMP_InputField _nameInput;
 
@@ -124,6 +130,7 @@ namespace AlienFarms.UI
         private int _rejoinSeconds = -1;
         private int _nameEndEditFrame = -1;
         private bool _rejoinVisible;
+        private bool _hasRejoinVisibility;
         private string _signedInName;
         private string _codeText;
         private string _spectatorText;
@@ -308,6 +315,12 @@ namespace AlienFarms.UI
         /// </summary>
         public void SetRejoin(bool visible, int seconds)
         {
+            if (!_hasRejoinVisibility || visible != _rejoinVisible)
+            {
+                _hasRejoinVisibility = true;
+                RewireHubNavigation(visible);
+            }
+
             _rejoinVisible = visible;
             SetActive(RejoinSelectable, visible);
             if (visible && seconds != _rejoinSeconds)
@@ -492,6 +505,32 @@ namespace AlienFarms.UI
             NameEdited?.Invoke(text);
         }
 
+        // On a visibility change of BTN_Rejoin only: Join and Back go through it while shown and skip it while hidden
+        // (Navigation is a struct: no allocation). BTN_Rejoin's own Up / Down (Join / Back) live in the prefab.
+        private void RewireHubNavigation(bool rejoinVisible)
+        {
+            UnityEngine.UI.Selectable rejoin = rejoinVisible ? _rejoinButton : null;
+            if (_hubJoinButton != null)
+            {
+                UnityEngine.UI.Navigation navigation = _hubJoinButton.navigation;
+                if (navigation.mode == UnityEngine.UI.Navigation.Mode.Explicit)
+                {
+                    navigation.selectOnDown = rejoin != null ? rejoin : _hubBackButton;
+                    _hubJoinButton.navigation = navigation;
+                }
+            }
+
+            if (_hubBackButton != null)
+            {
+                UnityEngine.UI.Navigation navigation = _hubBackButton.navigation;
+                if (navigation.mode == UnityEngine.UI.Navigation.Mode.Explicit)
+                {
+                    navigation.selectOnUp = rejoin != null ? rejoin : _hubJoinButton;
+                    _hubBackButton.navigation = navigation;
+                }
+            }
+        }
+
         // On second or language change only. The localized format is the TMP template itself ({0} = seconds).
         private void RefreshRejoin()
         {
@@ -598,6 +637,11 @@ namespace AlienFarms.UI
             else if (_rejoinLabel.TryGetComponent(out LocalizedText _))
             {
                 Debug.LogWarning($"[{nameof(OnlinePanelView)}] The rejoin label on '{name}' is written from code: remove its LocalizedText.", this);
+            }
+
+            if (_hubJoinButton == null || _hubBackButton == null)
+            {
+                Debug.LogWarning($"[{nameof(OnlinePanelView)}] Missing the hub Join or Back button on '{name}': their navigation does not follow BTN_Rejoin.", this);
             }
 
             if (_startButton == null || _spectatorRow == null || _spectatorName == null || _spectatorBanner == null)

@@ -32,10 +32,13 @@ namespace AlienFarms.Networking.Session
         private const float PendingEndWaitSeconds = 5f;
         private const float OrphanReleaseTimeoutSeconds = 5f;
 
-        // Rejoin: how long a session handed back by ReconnectToSessionAsync may take to connect NGO, and how long the
-        // fallback join waits for NGO to finish stopping after a failed attempt.
-        private const float ReconnectNetworkWaitSeconds = 3f;
+        // Rejoin: how long a session handed back by ReconnectToSessionAsync may take to start NGO at all (R1), and how
+        // long the fallback join waits for NGO to finish stopping after a failed attempt.
+        private const float ReconnectStartWaitSeconds = 3f;
         private const float ManagerStopWaitSeconds = 3f;
+
+        // The connect wait of a started reconnection always outlasts NGO's own pending-client timeout by this much.
+        private const float ReconnectBufferMarginSeconds = 2f;
 
         // Leaves / remote ends still running, by session: a later start waits for them before freeing the type.
         private static readonly Dictionary<ISession, Task> s_pendingEnds = new Dictionary<ISession, Task>();
@@ -63,6 +66,9 @@ namespace AlienFarms.Networking.Session
 
         [SerializeField, Range(0f, 10f), Tooltip("Seconds a client dropped by the host waits for the session's Deleted / RemovedFromSession before releasing it locally (it never calls LeaveAsync on a deleted lobby).")]
         private float _hostLeftWaitSeconds = 3f;
+
+        [SerializeField, Range(5f, 60f), Tooltip("Seconds a reconnection whose NGO client already started may take to be approved and synchronized. At runtime it is never below the NetworkManager's Client Connection Buffer Timeout plus a margin, so NGO's own answer arrives first.")]
+        private float _reconnectConnectWaitSeconds = 15f;
 
         private string _joinCode;
         private string _displayName = string.Empty;
@@ -288,16 +294,29 @@ namespace AlienFarms.Networking.Session
 
             var start = RelaySessionStart.Succeeded(session, handler);
 
-            // R1: the SDK may hand the session back without (re)starting the network; give a late start a moment.
-            float deadline = Time.realtimeSinceStartup + ReconnectNetworkWaitSeconds;
+            // R1: the SDK may hand the session back without (re)starting the network; give a late start a moment. Once
+            // started, the approval may take up to NGO's pending-client timeout (the host waits for lobby membership).
+            float now = Time.realtimeSinceStartup;
+            float startDeadline = now + ReconnectStartWaitSeconds;
+            float connectDeadline = now + Mathf.Max(_reconnectConnectWaitSeconds,
+                manager.NetworkConfig.ClientConnectionBufferTimeout + ReconnectBufferMarginSeconds);
             while (!(handler.Started && manager.IsConnectedClient))
             {
-                if (cancellationToken.IsCancellationRequested || !Application.isPlaying || handler.Retired || Time.realtimeSinceStartup >= deadline)
+                now = Time.realtimeSinceStartup;
+                bool timedOut = handler.Started ? now >= connectDeadline : now >= startDeadline;
+                if (cancellationToken.IsCancellationRequested || !Application.isPlaying || handler.Retired || timedOut)
                 {
-                    Debug.LogWarning($"[{nameof(RelaySessionConnection)}] Reconnected to session {sessionId} but NGO did not connect (started: {handler.Started}); leaving it to join by code.");
                     string key = OnlineSessionErrorMapper.FromDisconnectReason(handler.DisconnectReason);
-                    await LeaveAsync(start);
-                    return RelaySessionStart.Failed(cancellationToken.IsCancellationRequested ? null : key);
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        // The player gave up the rejoin: leaving the lobby releases the reserved seat on the host.
+                        await LeaveAsync(start);
+                        return RelaySessionStart.Failed(null);
+                    }
+
+                    Debug.LogWarning($"[{nameof(RelaySessionConnection)}] Reconnected to session {sessionId} but NGO did not connect (started: {handler.Started}); detaching it locally to join by code.");
+                    await DetachAsync(start);
+                    return RelaySessionStart.Failed(key);
                 }
 
                 await Task.Yield();
@@ -444,6 +463,40 @@ namespace AlienFarms.Networking.Session
             }
 
             await StopHandlerAsync(start);
+        }
+
+        /// <summary>
+        /// Drops <paramref name="start"/> on this machine only, keeping the lobby membership: its NGO run is stopped and
+        /// the session, if still registered in the SDK, released locally (see <see cref="SessionSdkWorkarounds"/>). The
+        /// host keeps the reserved seat (no PlayerHasLeft), so a later join by code reclaims it as a reconnection.
+        /// Never throws.
+        /// </summary>
+        private static Task DetachAsync(RelaySessionStart start)
+        {
+            if (start == null || !start.IsSuccess)
+            {
+                return Task.CompletedTask;
+            }
+
+            return TrackEndAsync(start.Session, DetachCoreAsync(start));
+        }
+
+        private static async Task DetachCoreAsync(RelaySessionStart start)
+        {
+            await StopHandlerAsync(start);
+
+            ISession session = start.Session;
+            try
+            {
+                if (SessionSdkWorkarounds.IsRegistered(session))
+                {
+                    await SessionSdkWorkarounds.ReleaseOrphanAsync(session, OrphanReleaseTimeoutSeconds);
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[{nameof(RelaySessionConnection)}] Detaching the session failed: {exception.Message}");
+            }
         }
 
         private static async Task EndAfterHostLeftCoreAsync(RelaySessionStart start, float waitSeconds)

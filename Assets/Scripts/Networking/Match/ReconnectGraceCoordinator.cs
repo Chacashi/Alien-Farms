@@ -118,6 +118,12 @@ namespace AlienFarms.Networking.Match
 
         private void HandleSeatReserved(PlayerId id)
         {
+            // Defensive: the approval handler frees seats without reserving them while the server stops.
+            if (_manager.ShutdownInProgress)
+            {
+                return;
+            }
+
             ServerSlotDirectory slots = _anchor.Slots;
             int index = (int)id - 1;
             if (slots != null && index >= 0 && index < SeatCount && slots.TryGet(id, out PlayerSlot seat))

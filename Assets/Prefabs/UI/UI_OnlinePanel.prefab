@@ -3827,6 +3827,8 @@ MonoBehaviour:
   _codeInput: {fileID: 289392764648528638}
   _rejoinButton: {fileID: 2546416446211395867}
   _rejoinLabel: {fileID: 2773037238969587946}
+  _hubJoinButton: {fileID: 1171852103923958337}
+  _hubBackButton: {fileID: 7805058281727053039}
   _nameInput: {fileID: 6866228560120802896}
   _cards:
   - {fileID: 4408478114780496148}

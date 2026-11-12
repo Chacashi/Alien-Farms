@@ -20,10 +20,20 @@ namespace AlienFarms.Networking.Session
                 && !string.IsNullOrEmpty(code);
         }
 
-        /// <summary>When an offer armed at <paramref name="now"/> expires: the same length as the server's grace.</summary>
+        /// <summary>
+        /// Seconds the offer ends before the server's grace: the client notices the drop after the server (transport
+        /// timeout) and a rejoin still needs time to reach the host, so the button must not outlive the reserved seat.
+        /// </summary>
+        public const float ExpiryMarginSeconds = 2f;
+
+        /// <summary>
+        /// When an offer armed at <paramref name="now"/> expires: the server's grace minus <see cref="ExpiryMarginSeconds"/>
+        /// (never before <paramref name="now"/>).
+        /// </summary>
         public static double ExpiresAt(double now, float graceSeconds)
         {
-            return now + (graceSeconds > 0f ? graceSeconds : 0f);
+            float lasts = graceSeconds - ExpiryMarginSeconds;
+            return now + (lasts > 0f ? lasts : 0f);
         }
 
         public static bool IsExpired(double expiresAt, double now)

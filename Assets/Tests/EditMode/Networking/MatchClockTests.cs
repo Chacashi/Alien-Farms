@@ -82,6 +82,16 @@ namespace AlienFarms.Networking.Tests
         }
 
         [Test]
+        public void Countdown_TicksOnlyWhileTheClockRuns()
+        {
+            Assert.That(MatchClock.TicksCountdown(MatchPhase.Countdown, -1f), Is.True);
+            Assert.That(MatchClock.TicksCountdown(MatchPhase.Countdown, 0f), Is.False);
+            Assert.That(MatchClock.TicksCountdown(MatchPhase.Countdown, 120f), Is.False);
+            Assert.That(MatchClock.TicksCountdown(MatchPhase.Playing, -1f), Is.False);
+            Assert.That(MatchClock.TicksCountdown(MatchPhase.WaitingForPlayers, -1f), Is.False);
+        }
+
+        [Test]
         public void GarbageTimes_StayInRange()
         {
             Assert.That(MatchClock.DisplaySeconds(MatchPhase.Playing, double.NaN, 0d, 300f), Is.EqualTo(0));

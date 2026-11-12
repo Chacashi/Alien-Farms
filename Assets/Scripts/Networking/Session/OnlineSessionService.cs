@@ -395,7 +395,9 @@ namespace AlienFarms.Networking.Session
                 return;
             }
 
-            double expiresAt = RejoinOfferRules.ExpiresAt(Time.realtimeSinceStartupAsDouble, _settings.ReconnectGraceSeconds);
+            // Ends RejoinOfferRules.ExpiryMarginSeconds before the server's grace, so the button never outlives the seat.
+            double now = Time.realtimeSinceStartupAsDouble;
+            double expiresAt = RejoinOfferRules.ExpiresAt(now, _settings.ReconnectGraceSeconds);
             NetworkRuntimeAnchor anchor = _root.Anchor;
             if (anchor != null)
             {
@@ -403,7 +405,7 @@ namespace AlienFarms.Networking.Session
             }
 
             _channel.SetRejoinOffer(code, expiresAt);
-            Debug.Log($"[{nameof(OnlineSessionService)}] Connection lost; rejoin offered for session {sessionId} / {code} ({_settings.ReconnectGraceSeconds:0.#}s).", this);
+            Debug.Log($"[{nameof(OnlineSessionService)}] Connection lost; rejoin offered for session {sessionId} / {code} ({expiresAt - now:0.#}s of {_settings.ReconnectGraceSeconds:0.#}s grace).", this);
         }
 
         // Only a cheap check while an offer exists.

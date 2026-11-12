@@ -50,6 +50,16 @@ namespace AlienFarms.Networking.Match
             return DisplaySeconds(phase, roundEndTime, now, fullDuration);
         }
 
+        /// <summary>
+        /// True when a client derives countdown ticks in <paramref name="phase"/>: only in Countdown with the clock running.
+        /// With the clock frozen (<paramref name="frozenRemaining"/> &gt;= 0) the host's countdown is suspended, so the
+        /// number already shown stays; the server rewrites the countdown end time when it restarts the countdown.
+        /// </summary>
+        public static bool TicksCountdown(MatchPhase phase, float frozenRemaining)
+        {
+            return phase == MatchPhase.Countdown && frozenRemaining < 0f;
+        }
+
         private static int CeilSeconds(double seconds)
         {
             if (double.IsNaN(seconds))

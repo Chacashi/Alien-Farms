@@ -343,7 +343,8 @@ namespace AlienFarms.Networking.Match
                 GameEvents.RaiseMatchTimeChanged(time);
             }
 
-            if (phase == MatchPhase.Countdown)
+            // Frozen (reconnection grace): keep the number already shown, as the host's suspended countdown does.
+            if (MatchClock.TicksCountdown(phase, _frozenRemaining.Value))
             {
                 int countdown = MatchClock.CountdownSecondsLeft(_countdownEndTime.Value, now);
                 if (countdown != _shownCountdown)
