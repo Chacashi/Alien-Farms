@@ -246,6 +246,8 @@ namespace AlienFarms.Networking.Session
                 start = RelaySessionStart.Failed(OnlineSessionErrorKeys.ConnectionFailed);
             }
 
+            DropOfferForLeftSession(start);
+
             await CompleteStartAsync(operation, cancellation, start, false);
         }
 
@@ -318,6 +320,10 @@ namespace AlienFarms.Networking.Session
             string displayName = ResolveDisplayName();
             _connection.SetDisplayName(displayName);
             _manager.NetworkConfig.ConnectionData = BuildPayload(displayName).ToBytes();
+
+            // Before NGO starts: the host may approve and sync the gameplay scene (match in progress) before the start
+            // returns, and its GameModeRouter reads the mode in Awake. A failure or cancellation sets Local again.
+            SetMode(OnlineModeRules.ModeFor(status));
             return true;
         }
 
@@ -344,6 +350,8 @@ namespace AlienFarms.Networking.Session
                 start = RelaySessionStart.Failed(OnlineSessionErrorKeys.ConnectionFailed);
             }
 
+            DropOfferForLeftSession(start);
+
             // A cancellation (null key) or a transient failure keeps the offer for another try while it lasts.
             if (!start.IsSuccess && start.ErrorKey != null && !RejoinOfferRules.KeepsOfferAfterFailure(start.ErrorKey))
             {
@@ -363,6 +371,22 @@ namespace AlienFarms.Networking.Session
         public Task TryRemovePlayerAsync(string ugsPlayerId)
         {
             return _connection != null ? _connection.TryRemovePlayerAsync(ugsPlayerId) : Task.CompletedTask;
+        }
+
+        // The start gave up the membership of another session (stale one left before joining by code): when that is the
+        // session of the rejoin offer, there is no seat to come back to anymore, whatever the start's own outcome.
+        private void DropOfferForLeftSession(RelaySessionStart start)
+        {
+            if (start == null || start.LeftSessionId == null || _root == null)
+            {
+                return;
+            }
+
+            NetworkRuntimeAnchor anchor = _root.Anchor;
+            if (anchor != null && string.Equals(anchor.RejoinSessionId, start.LeftSessionId, StringComparison.Ordinal))
+            {
+                ClearRejoinOffer(anchor);
+            }
         }
 
         private void ClearRejoinOffer(NetworkRuntimeAnchor anchor)
@@ -455,6 +479,9 @@ namespace AlienFarms.Networking.Session
 
             if (!start.IsSuccess)
             {
+                // Mode first: the channel's listeners must already see Local when they see Ready (and a listener that
+                // throws must not leave the mode Online).
+                SetMode(GameMode.Local);
                 _channel.SetError(start.ErrorKey ?? OnlineSessionErrorKeys.ConnectionFailed);
                 _channel.TrySetStatus(OnlineSessionStatus.Ready);
                 return;
@@ -467,6 +494,8 @@ namespace AlienFarms.Networking.Session
 
                 // In a session again (rejoined or another one): an older seat offer no longer applies.
                 ClearRejoinOffer();
+
+                // Already Online since BeginStart; kept in case a MainMenu reload cleared the MatchSession meanwhile.
                 SetMode(GameMode.Online);
                 SubscribeSession(session);
                 _channel.SetSession(session.Code, session.IsHost);
@@ -732,6 +761,9 @@ namespace AlienFarms.Networking.Session
 
             SubscribeAuthentication();
             _channel.SetLocalPlayerId(_bootstrapper.PlayerId);
+
+            // What the hub shows when the player typed no name (never the raw player id).
+            _channel.SetLocalPlayerName(DisplayNameResolver.Resolve(null, _bootstrapper.PlayerName, _displayName, _bootstrapper.Profile));
             _channel.TrySetStatus(OnlineSessionStatus.Ready);
         }
 

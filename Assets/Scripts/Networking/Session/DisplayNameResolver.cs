@@ -5,7 +5,8 @@ namespace AlienFarms.Networking.Session
     /// <summary>
     /// Name sent in the connection payload and the session: the one typed on this device, else the generated UGS name,
     /// else the serialized fallback tagged with this process's instance (MPPM clones share PlayerPrefs and, without UGS,
-    /// would all be "Player"). Pure; every candidate is sanitized (<see cref="DisplayNameSanitizer"/>).
+    /// would all be "Player"). Pure; every candidate is sanitized and fitted to the payload's bytes keeping a UGS
+    /// discriminator ("Name#1234"; see <see cref="DisplayNameSanitizer.FitToPayload"/>), so every machine shows the same.
     /// </summary>
     public static class DisplayNameResolver
     {
@@ -20,13 +21,13 @@ namespace AlienFarms.Networking.Session
             string typed = DisplayNameSanitizer.Sanitize(typedName);
             if (typed.Length > 0)
             {
-                return typed;
+                return DisplayNameSanitizer.FitToPayload(typed);
             }
 
             string ugs = DisplayNameSanitizer.Sanitize(ugsName);
             if (ugs.Length > 0)
             {
-                return ugs;
+                return DisplayNameSanitizer.FitToPayload(ugs);
             }
 
             string fallback = DisplayNameSanitizer.Sanitize(fallbackName);
@@ -36,7 +37,8 @@ namespace AlienFarms.Networking.Session
             }
 
             string tag = DisplayNameSanitizer.Sanitize(instanceTag);
-            return tag.Length > 0 ? DisplayNameSanitizer.Sanitize(fallback + " " + tag) : fallback;
+            string resolved = tag.Length > 0 ? DisplayNameSanitizer.Sanitize(fallback + " " + tag) : fallback;
+            return DisplayNameSanitizer.FitToPayload(resolved);
         }
     }
 }

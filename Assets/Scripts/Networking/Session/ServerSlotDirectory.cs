@@ -238,6 +238,37 @@ namespace AlienFarms.Networking.Session
             return false;
         }
 
+        /// <summary>
+        /// <paramref name="ugsPlayerId"/> still holds a place here: a seat (connected or awaiting its reconnection) or a
+        /// spectator place. E.g. a late disconnection of an old client id after that player reconnected must not remove
+        /// it from the online session. False for an empty id. No allocation.
+        /// </summary>
+        public bool IsUgsIdInUse(in FixedString64Bytes ugsPlayerId)
+        {
+            if (ugsPlayerId.Length == 0)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < _slots.Length; i++)
+            {
+                if (_slots[i].IsOccupied && _slots[i].UgsPlayerId.Equals(ugsPlayerId))
+                {
+                    return true;
+                }
+            }
+
+            for (int i = 0; i < _spectators.Length; i++)
+            {
+                if (_spectators[i].InUse && _spectators[i].UgsPlayerId.Equals(ugsPlayerId))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         /// <summary>Seat of the connected client <paramref name="clientId"/> (a dropped seat no longer matches).</summary>
         public bool TryGetByClient(ulong clientId, out PlayerSlot slot)
         {

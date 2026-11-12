@@ -17,6 +17,15 @@ namespace AlienFarms.Tests
             Assert.That(MatchSuspendRules.SuspendsIn(phase), Is.EqualTo(expected));
         }
 
+        [TestCase(false, true, true)]
+        [TestCase(true, true, false)]
+        [TestCase(false, false, false)]
+        [TestCase(true, false, false)]
+        public void AllowsRematch_NeverWhileSuspended(bool suspended, bool stateReady, bool expected)
+        {
+            Assert.That(MatchSuspendRules.AllowsRematch(suspended, stateReady), Is.EqualTo(expected));
+        }
+
         [TestCase(MatchPhase.None, true, MatchResumeAction.None)]
         [TestCase(MatchPhase.WaitingForPlayers, true, MatchResumeAction.None)]
         [TestCase(MatchPhase.Countdown, true, MatchResumeAction.RestartCountdown)]

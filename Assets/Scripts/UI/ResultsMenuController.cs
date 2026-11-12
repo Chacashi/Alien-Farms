@@ -2,13 +2,16 @@ using AlienFarms.Core;
 using AlienFarms.Match;
 using AlienFarms.Player;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace AlienFarms.UI
 {
     /// <summary>
-    /// Gives the results menu to the winner (Player 1 on a draw) once the match accepts a rematch
-    /// (<see cref="MatchManager.IsRematchReady"/>, the same clock that gates the rematch), so a button held at the end of
+    /// Gives the results menu to the winner (Player 1 on a draw) once Results accepts input
+    /// (<see cref="MatchManager.IsResultsInputReady"/>, the same clock that gates the rematch), so a button held at the end of
     /// the round does not click it. Handed to the other player if the owner loses its device; released when leaving Results.
+    /// The rematch button (<c>_firstSelected</c>) looks disabled while the rematch is not ready or the match is suspended
+    /// (online: a player's seat awaits its reconnection).
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class ResultsMenuController : MonoBehaviour
@@ -34,12 +37,28 @@ namespace AlienFarms.UI
         // Mirrored match (online client, MatchManager disabled): the menu opens after the results input delay.
         private float _replicaReadyTime;
 
+        // Rematch button (on _firstSelected); while in Results it is interactable only when IsRematchReady && !IsSuspended.
+        private Selectable _rematchButton;
+        private bool _inResults;
+
+        // Bit (int)PlayerId set while that seat is Reconnecting (online presence; the match is suspended meanwhile).
+        private int _awayMask;
+
+        private void Awake()
+        {
+            if (_firstSelected != null)
+            {
+                _firstSelected.TryGetComponent(out _rematchButton);
+            }
+        }
+
         private void OnEnable()
         {
             GameEvents.OnMatchEnded += HandleMatchEnded;
             GameEvents.OnMatchPhaseChanged += HandleMatchPhaseChanged;
             GameEvents.OnPlayerDeviceLost += HandlePlayerDeviceLost;
             GameEvents.OnPlayerDeviceRegained += HandlePlayerDeviceRegained;
+            GameEvents.OnPlayerConnectionChanged += HandlePlayerConnectionChanged;
         }
 
         private void OnDisable()
@@ -48,13 +67,22 @@ namespace AlienFarms.UI
             GameEvents.OnMatchPhaseChanged -= HandleMatchPhaseChanged;
             GameEvents.OnPlayerDeviceLost -= HandlePlayerDeviceLost;
             GameEvents.OnPlayerDeviceRegained -= HandlePlayerDeviceRegained;
+            GameEvents.OnPlayerConnectionChanged -= HandlePlayerConnectionChanged;
             _pendingOwner = PlayerId.None;
+            _awayMask = 0;
+            LeaveResults();
             Release();
         }
 
         private void Update()
         {
-            if (_pendingOwner == PlayerId.None || _match == null || !IsRematchReady)
+            if (_inResults)
+            {
+                // Cheap: one bool compared per frame, the button only touched when it changes.
+                SetRematchInteractable(_match != null && IsRematchReady && !IsSuspended);
+            }
+
+            if (_pendingOwner == PlayerId.None || _match == null || !IsResultsInputReady)
             {
                 return;
             }
@@ -72,9 +100,23 @@ namespace AlienFarms.UI
             _pendingOwner = result.IsDraw ? PlayerId.Player1 : result.Winner;
             float delay = _match != null && _match.Settings != null ? _match.Settings.ResultsInputDelay : 0f;
             _replicaReadyTime = Time.time + delay;
+            _inResults = true;
+            SetRematchInteractable(false);
         }
 
-        /// <summary>The match's own gate; when the match does not run here (online client) the same delay, timed locally.</summary>
+        /// <summary>The match is frozen: suspended by the server, or (online client) a seat awaits its player.</summary>
+        private bool IsSuspended => _awayMask != 0 || (_match.isActiveAndEnabled && _match.IsSuspended);
+
+        /// <summary>
+        /// The menu can be routed (Results accepts input; also while suspended, so "back to menu" stays reachable). When
+        /// the match does not run here (online client) the same delay, timed locally. A suspension that froze the match
+        /// clock before its delay elapsed falls back to that local timer too.
+        /// </summary>
+        private bool IsResultsInputReady => _match.isActiveAndEnabled
+            ? _match.IsResultsInputReady || (_match.IsSuspended && Time.time >= _replicaReadyTime)
+            : Time.time >= _replicaReadyTime;
+
+        /// <summary>The rematch button's gate: the match's own (never while suspended), or the local delay on a client.</summary>
         private bool IsRematchReady => _match.isActiveAndEnabled ? _match.IsRematchReady : Time.time >= _replicaReadyTime;
 
         private void HandleMatchPhaseChanged(MatchPhase previous, MatchPhase current)
@@ -85,7 +127,40 @@ namespace AlienFarms.UI
             }
 
             _pendingOwner = PlayerId.None;
+            LeaveResults();
             Release();
+        }
+
+        private void HandlePlayerConnectionChanged(PlayerId playerId, PlayerConnectionStatus status, float graceLeft)
+        {
+            if (playerId == PlayerId.None)
+            {
+                return;
+            }
+
+            int bit = 1 << (int)playerId;
+            // Only a reserved seat suspends the match; a released one (Left / TimedOut) ends it through the roster instead.
+            _awayMask = status == PlayerConnectionStatus.Reconnecting ? _awayMask | bit : _awayMask & ~bit;
+        }
+
+        private void LeaveResults()
+        {
+            if (!_inResults)
+            {
+                return;
+            }
+
+            // Out of Results the button is back to its scene state (the next match end disables it again).
+            _inResults = false;
+            SetRematchInteractable(true);
+        }
+
+        private void SetRematchInteractable(bool interactable)
+        {
+            if (_rematchButton != null && _rematchButton.interactable != interactable)
+            {
+                _rematchButton.interactable = interactable;
+            }
         }
 
         private void HandlePlayerDeviceLost(PlayerId playerId)
@@ -149,9 +224,17 @@ namespace AlienFarms.UI
             {
                 Debug.LogWarning($"[{nameof(ResultsMenuController)}] Missing results menu root or first selected button on '{name}'.", this);
             }
-            else if (!_firstSelected.transform.IsChildOf(_menuRoot.transform))
+            else
             {
-                Debug.LogWarning($"[{nameof(ResultsMenuController)}] First selected button on '{name}' is not under the results menu root.", this);
+                if (!_firstSelected.TryGetComponent(out Selectable _))
+                {
+                    Debug.LogWarning($"[{nameof(ResultsMenuController)}] First selected '{_firstSelected.name}' on '{name}' has no Selectable (Button); the rematch button cannot be disabled while the rematch is not ready.", this);
+                }
+
+                if (!_firstSelected.transform.IsChildOf(_menuRoot.transform))
+                {
+                    Debug.LogWarning($"[{nameof(ResultsMenuController)}] First selected button on '{name}' is not under the results menu root.", this);
+                }
             }
         }
     }

@@ -9,11 +9,12 @@ namespace AlienFarms.Networking.Session
     /// </summary>
     internal sealed class RelaySessionStart
     {
-        private RelaySessionStart(ISession session, NgoSessionNetworkHandler handler, string errorKey)
+        private RelaySessionStart(ISession session, NgoSessionNetworkHandler handler, string errorKey, string leftSessionId = null)
         {
             Session = session;
             Handler = handler;
             ErrorKey = errorKey;
+            LeftSessionId = leftSessionId;
         }
 
         /// <summary>Session created or joined (null when the start failed or was cancelled).</summary>
@@ -25,7 +26,19 @@ namespace AlienFarms.Networking.Session
         /// <summary>Error key (<see cref="AlienFarms.Core.OnlineSessionErrorKeys"/>) of a failure; null on success or cancellation.</summary>
         public string ErrorKey { get; }
 
+        /// <summary>
+        /// Id of another session whose lobby membership this start gave up on the way (a stale membership left before
+        /// joining by code), whatever its outcome; null when none. A rejoin offer for that session no longer applies.
+        /// </summary>
+        public string LeftSessionId { get; }
+
         public bool IsSuccess => Session != null;
+
+        /// <summary>This same outcome, recording that the membership of <paramref name="sessionId"/> was left.</summary>
+        public RelaySessionStart WithLeftSession(string sessionId)
+        {
+            return new RelaySessionStart(Session, Handler, ErrorKey, sessionId);
+        }
 
         public static RelaySessionStart Succeeded(ISession session, NgoSessionNetworkHandler handler)
         {

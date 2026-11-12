@@ -15,6 +15,15 @@ namespace AlienFarms.Match
         }
 
         /// <summary>
+        /// A rematch may start only when the Results state accepts it (<paramref name="stateReady"/>: delay elapsed, both
+        /// players present) and the match is not suspended (a seat awaits its reconnecting player).
+        /// </summary>
+        public static bool AllowsRematch(bool suspended, bool stateReady)
+        {
+            return !suspended && stateReady;
+        }
+
+        /// <summary>
         /// Action to apply when the suspension ends in <paramref name="phase"/>. With a player still missing
         /// (<paramref name="playersComplete"/> false) nothing is done: the state aborts to WaitingForPlayers by itself.
         /// </summary>

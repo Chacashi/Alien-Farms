@@ -1,5 +1,6 @@
 using AlienFarms.Networking.Session;
 using NUnit.Framework;
+using Unity.Collections;
 
 namespace AlienFarms.Networking.Tests
 {
@@ -24,6 +25,24 @@ namespace AlienFarms.Networking.Tests
         public void NoTypedName_UsesUgsName(string typed)
         {
             Assert.That(DisplayNameResolver.Resolve(typed, "Brave#1234", "Player", "player2"), Is.EqualTo("Brave#1234"));
+        }
+
+        [Test]
+        public void LongUgsName_FitsThePayload_KeepingTheDiscriminator()
+        {
+            string resolved = DisplayNameResolver.Resolve(null, "ExceptionalDenyingLightbulb#78609", "Player", null);
+
+            Assert.That(resolved, Is.EqualTo("ExceptionalDenyingLight#78609"));
+            Assert.That(System.Text.Encoding.UTF8.GetByteCount(resolved), Is.LessThanOrEqualTo(FixedString32Bytes.UTF8MaxLengthInBytes));
+        }
+
+        [Test]
+        public void LongTypedName_FitsThePayload()
+        {
+            // 14 three-byte characters (42 bytes): cut on a code point to 29 bytes or less.
+            string resolved = DisplayNameResolver.Resolve(new string('あ', 14), null, "Player", null);
+
+            Assert.That(resolved, Is.EqualTo(new string('あ', 9)));
         }
 
         [Test]

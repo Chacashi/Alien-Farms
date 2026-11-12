@@ -23,6 +23,9 @@ namespace AlienFarms.Match
         /// <summary>True when <see cref="OnConfirmPressed"/> would start a rematch right now.</summary>
         public virtual bool IsRematchReady => false;
 
+        /// <summary>True when the results input delay has elapsed (Results only), whether or not both players are present.</summary>
+        public virtual bool IsResultsInputReady => false;
+
         public virtual void Enter()
         {
         }

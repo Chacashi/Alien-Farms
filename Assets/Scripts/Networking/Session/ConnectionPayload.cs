@@ -32,6 +32,7 @@ namespace AlienFarms.Networking.Session
 
         /// <summary>
         /// Builds a payload; the name and the UGS id are truncated to what their fixed strings hold (29 / 61 UTF-8 bytes).
+        /// The name keeps a trailing UGS discriminator ("Name#1234") when cut (<see cref="DisplayNameSanitizer.FitToPayload"/>).
         /// </summary>
         public static ConnectionPayload Create(int protocolVersion, string displayName, string ugsPlayerId = null)
         {
@@ -39,7 +40,7 @@ namespace AlienFarms.Networking.Session
 
             if (!string.IsNullOrEmpty(displayName))
             {
-                payload.DisplayName.CopyFromTruncated(displayName);
+                payload.DisplayName.CopyFromTruncated(DisplayNameSanitizer.FitToPayload(displayName));
             }
 
             if (!string.IsNullOrEmpty(ugsPlayerId))

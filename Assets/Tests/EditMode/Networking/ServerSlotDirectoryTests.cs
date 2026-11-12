@@ -369,6 +369,34 @@ namespace AlienFarms.Networking.Tests
         }
 
         [Test]
+        public void IsUgsIdInUse_CoversSeatsAwaitingSeatsAndSpectators()
+        {
+            Admit(1, Payload("A", "u1"), out _);
+            Admit(2, Payload("B", "u2"), out _);
+            _slots.MarkDisconnected(2, 10d, out _);
+            _slots.TryAddSpectator(3, Payload("S", "u3"));
+
+            Assert.That(_slots.IsUgsIdInUse(new FixedString64Bytes("u1")), Is.True, "Connected seat.");
+            Assert.That(_slots.IsUgsIdInUse(new FixedString64Bytes("u2")), Is.True, "Seat awaiting its reconnection.");
+            Assert.That(_slots.IsUgsIdInUse(new FixedString64Bytes("u3")), Is.True, "Spectator.");
+            Assert.That(_slots.IsUgsIdInUse(new FixedString64Bytes("u9")), Is.False);
+            Assert.That(_slots.IsUgsIdInUse(default), Is.False, "Empty id.");
+        }
+
+        [Test]
+        public void IsUgsIdInUse_SpectatorReconnectedUnderANewClientId_StaysInUseAfterTheOldOneIsReleased()
+        {
+            // The spectator came back as client 4 before the server noticed client 3 dropping.
+            _slots.TryAddSpectator(3, Payload("S", "u3"));
+            _slots.ReleaseSpectator(3);
+            Assert.That(_slots.IsUgsIdInUse(new FixedString64Bytes("u3")), Is.False, "Released: may be removed from the session.");
+
+            Admit(1, Payload("A", "u1"), out _);
+            _slots.TryAddSpectator(4, Payload("S", "u3"));
+            Assert.That(_slots.IsUgsIdInUse(new FixedString64Bytes("u3")), Is.True, "A newer connection of that member holds a place.");
+        }
+
+        [Test]
         public void CountAwaiting_FollowsDropsReconnectionsAndExpiry()
         {
             Admit(1, Payload("A", "u1"), out PlayerId first);

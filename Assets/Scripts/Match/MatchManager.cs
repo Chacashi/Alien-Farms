@@ -54,8 +54,14 @@ namespace AlienFarms.Match
         /// <summary>True while the state machine is not ticked (see <see cref="SetSuspended"/>).</summary>
         public bool IsSuspended => _suspended;
 
-        /// <summary>True when <see cref="RequestRematch"/> would start a new round now.</summary>
-        public bool IsRematchReady => _machine != null && _machine.IsRematchReady;
+        /// <summary>
+        /// Results with its input delay elapsed, suspended or not and with a player missing or not: the results menu is
+        /// routed on it, so a suspended host still gets "back to menu". The rematch itself uses <see cref="IsRematchReady"/>.
+        /// </summary>
+        public bool IsResultsInputReady => _machine != null && _machine.IsResultsInputReady;
+
+        /// <summary>True when <see cref="RequestRematch"/> would start a new round now (never while suspended).</summary>
+        public bool IsRematchReady => _machine != null && MatchSuspendRules.AllowsRematch(_suspended, _machine.IsRematchReady);
 
         /// <summary>Round timing this match uses (also read by replicas that only mirror the match).</summary>
         public MatchSettings Settings => _settings;
@@ -216,9 +222,10 @@ namespace AlienFarms.Match
         /// <summary>Asks the Results state for a rematch; it honors <see cref="MatchSettings.ResultsInputDelay"/> and needs both players.</summary>
         public void RequestRematch()
         {
-            if (isActiveAndEnabled)
+            // Refused while suspended: a reconnecting player must not find the next round already running.
+            if (isActiveAndEnabled && IsRematchReady)
             {
-                _machine?.OnConfirmPressed(PlayerId.None);
+                _machine.OnConfirmPressed(PlayerId.None);
             }
         }
 

@@ -288,6 +288,30 @@ namespace AlienFarms.Tests
         }
 
         [Test]
+        public void IsResultsInputReady_AfterDelay_EvenWithAPlayerMissing()
+        {
+            EnterPlaying();
+            _context.Advance(MatchDuration + 0.5f, 0.5f);
+            Assert.That(_context.Machine.IsResultsInputReady, Is.False, "Delay not elapsed yet.");
+
+            _context.Advance(ResultsInputDelay + 0.1f);
+            _context.JoinedPlayerCount = 1;
+
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.Results));
+            Assert.That(_context.Machine.IsResultsInputReady, Is.True, "The menu (back to title) stays reachable.");
+            Assert.That(_context.Machine.IsRematchReady, Is.False, "No rematch without both players.");
+        }
+
+        [Test]
+        public void IsResultsInputReady_OutsideResults_IsFalse()
+        {
+            Assert.That(_context.Machine.IsResultsInputReady, Is.False);
+
+            EnterPlaying();
+            Assert.That(_context.Machine.IsResultsInputReady, Is.False);
+        }
+
+        [Test]
         public void Results_LateLanding_DoesNotChangeTheFinalScore()
         {
             EnterPlaying();

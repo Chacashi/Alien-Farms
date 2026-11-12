@@ -21,11 +21,15 @@ namespace AlienFarms.Match
         {
             get
             {
-                if (Context.JoinedPlayerCount < RequiredPlayers)
-                {
-                    return false;
-                }
+                return Context.JoinedPlayerCount >= RequiredPlayers && IsResultsInputReady;
+            }
+        }
 
+        /// <summary>The results input delay has elapsed (scaled time, the match clock), players present or not.</summary>
+        public override bool IsResultsInputReady
+        {
+            get
+            {
                 float delay = Context.Settings != null ? Context.Settings.ResultsInputDelay : 0f;
                 return _elapsed >= delay;
             }

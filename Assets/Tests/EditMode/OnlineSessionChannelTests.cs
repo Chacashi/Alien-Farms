@@ -136,6 +136,24 @@ namespace AlienFarms.Tests
         }
 
         [Test]
+        public void LocalPlayerName_IsKeptAcrossSessions_AndClearedOnSignOut()
+        {
+            MoveToInSession();
+            _channel.SetLocalPlayerName("Brave#1234");
+            int changes = _changed;
+
+            _channel.SetLocalPlayerName("Brave#1234");
+            Assert.That(_changed, Is.EqualTo(changes), "Same name: no change raised.");
+
+            _channel.TrySetStatus(OnlineSessionStatus.Leaving);
+            _channel.TrySetStatus(OnlineSessionStatus.Ready);
+            Assert.That(_channel.LocalPlayerName, Is.EqualTo("Brave#1234"));
+
+            _channel.TrySetStatus(OnlineSessionStatus.SignedOut);
+            Assert.That(_channel.LocalPlayerName, Is.Null);
+        }
+
+        [Test]
         public void SetParticipants_CapsAtThreeAndSkipsUnchanged()
         {
             OnlineParticipant[] four =

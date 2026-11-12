@@ -27,6 +27,7 @@ namespace AlienFarms.Data
         [NonSerialized] private string _code;
         [NonSerialized] private bool _isHost;
         [NonSerialized] private string _localPlayerId;
+        [NonSerialized] private string _localPlayerName;
         [NonSerialized] private string _lastErrorKey;
         [NonSerialized] private int _participantCount;
         [NonSerialized] private string _rejoinCode;
@@ -64,6 +65,12 @@ namespace AlienFarms.Data
 
         /// <summary>Unity Authentication id of this machine (null when signed out).</summary>
         public string LocalPlayerId => IsCurrent ? _localPlayerId : null;
+
+        /// <summary>
+        /// Name this machine goes by when the player typed none (the generated UGS name, else the tagged fallback),
+        /// published by the service after the sign-in; null when signed out. The hub shows <see cref="DisplayName"/> first.
+        /// </summary>
+        public string LocalPlayerName => IsCurrent ? _localPlayerName : null;
 
         /// <summary>Localization key of the last failure (<see cref="OnlineSessionErrorKeys"/>), null when none.</summary>
         public string LastErrorKey => IsCurrent ? _lastErrorKey : null;
@@ -283,6 +290,7 @@ namespace AlienFarms.Data
             if (status == OnlineSessionStatus.SignedOut)
             {
                 _localPlayerId = null;
+                _localPlayerName = null;
                 _rejoinCode = null;
                 _rejoinExpiresAt = 0d;
                 ClearSessionData();
@@ -305,6 +313,19 @@ namespace AlienFarms.Data
             }
 
             _localPlayerId = playerId;
+            Changed?.Invoke();
+        }
+
+        /// <summary>Name this machine goes by without a typed one (see <see cref="LocalPlayerName"/>).</summary>
+        public void SetLocalPlayerName(string playerName)
+        {
+            EnsureCurrent();
+            if (string.Equals(_localPlayerName, playerName, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _localPlayerName = playerName;
             Changed?.Invoke();
         }
 
@@ -413,6 +434,7 @@ namespace AlienFarms.Data
             _generation = s_generation;
             _status = OnlineSessionStatus.SignedOut;
             _localPlayerId = null;
+            _localPlayerName = null;
             _lastErrorKey = null;
             _rejoinCode = null;
             _rejoinExpiresAt = 0d;

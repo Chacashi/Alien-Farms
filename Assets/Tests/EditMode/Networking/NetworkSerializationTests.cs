@@ -428,6 +428,23 @@ namespace AlienFarms.Networking.Tests
         }
 
         [Test]
+        public void Payload_LongUgsNameKeepsItsDiscriminator()
+        {
+            ConnectionPayload payload = ConnectionPayload.Create(Protocol, "ExceptionalDenyingLightbulb#78609", "id");
+
+            bool parsed = ConnectionPayload.TryParse(payload.ToBytes(), out ConnectionPayload result);
+
+            Assert.That(parsed, Is.True);
+            Assert.That(result.DisplayName.ToString(), Is.EqualTo("ExceptionalDenyingLight#78609"));
+        }
+
+        [Test]
+        public void Payload_NameBudgetMatchesTheFixedString()
+        {
+            Assert.That(DisplayNameSanitizer.MaxPayloadBytes, Is.EqualTo(FixedString32Bytes.UTF8MaxLengthInBytes));
+        }
+
+        [Test]
         public void Payload_UgsIdLengthPrefixOverCapacityIsRejected()
         {
             byte[] bytes = ConnectionPayload.Create(Protocol, "Ana", "id").ToBytes();

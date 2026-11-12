@@ -365,9 +365,19 @@ namespace AlienFarms.Networking.Session
                         break;
                 }
             }
-            else if (_slots.ReleaseSpectator(clientId))
+            else if (_slots.TryGetSpectator(clientId, out SpectatorSeat spectator) && _slots.ReleaseSpectator(clientId))
             {
                 Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Spectator {clientId} left.", this);
+
+                // No seat is held for a spectator: drop its lobby membership too (as an expired player seat), so joining
+                // again by code is a fresh join instead of 'already in a session'. A voluntary leave already left the
+                // lobby itself; a server shutdown deletes the whole session. A late drop of an old client id whose member
+                // already holds a place again (reconnected) keeps the membership.
+                if (!noticed && !_manager.ShutdownInProgress && spectator.UgsPlayerId.Length > 0 && _sessionConnection != null
+                    && !_slots.IsUgsIdInUse(spectator.UgsPlayerId))
+                {
+                    _ = _sessionConnection.TryRemovePlayerAsync(spectator.UgsPlayerId.ToString());
+                }
             }
         }
 

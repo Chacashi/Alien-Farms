@@ -212,6 +212,28 @@ namespace AlienFarms.Networking.Session
             _startsInFlight++;
             try
             {
+                // The dropped session is usually still registered locally (its end after the drop is in flight, or the
+                // SDK kept it): reconnecting over it fails on the lobby events (SDK error 23000, join_failed). Free the
+                // type first (awaits that end, releases an orphan) and let NGO finish stopping.
+                if (SessionSdkWorkarounds.GetRegistered(SessionType) != null)
+                {
+                    Debug.Log($"[{nameof(RelaySessionConnection)}] A previous session is still registered; freeing it before rejoining.");
+                    if (!await FreeSessionTypeAsync(cancellationToken))
+                    {
+                        Debug.LogWarning($"[{nameof(RelaySessionConnection)}] The previous session could not be freed yet; rejoining anyway.");
+                    }
+                }
+
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return RelaySessionStart.Failed(null);
+                }
+
+                if (!await WaitForManagerStoppedAsync(manager, cancellationToken))
+                {
+                    return RelaySessionStart.Failed(cancellationToken.IsCancellationRequested ? null : OnlineSessionErrorKeys.Busy);
+                }
+
                 RelaySessionStart reconnected = await ReconnectCoreAsync(manager, sessionId, cancellationToken);
 
                 // The dropped session may still be registered (its end is in flight): free the type and retry once.
@@ -238,7 +260,9 @@ namespace AlienFarms.Networking.Session
                 }
 
                 Debug.Log($"[{nameof(RelaySessionConnection)}] Reconnection to session {sessionId} failed ({reconnected.ErrorKey ?? "no network"}); joining again by code.");
-                return await StartCoreAsync(manager, code, cancellationToken);
+
+                // The lobby may still list this player: the reclaim path reconnects to that membership instead of failing.
+                return await JoinWithReclaimCoreAsync(manager, code, cancellationToken);
             }
             finally
             {
@@ -571,7 +595,9 @@ namespace AlienFarms.Networking.Session
             _startsInFlight++;
             try
             {
-                return await StartCoreAsync(manager, joinCode, cancellationToken);
+                return joinCode != null
+                    ? await JoinWithReclaimCoreAsync(manager, joinCode, cancellationToken)
+                    : await StartCoreAsync(manager, null, cancellationToken);
             }
             finally
             {
@@ -585,6 +611,20 @@ namespace AlienFarms.Networking.Session
                     _startsInFlight--;
                 }
             }
+        }
+
+        // Join by code; refused as 'already in a session' (the lobby still lists this player), the held membership is
+        // reclaimed (see ReclaimMembershipAsync). Callers count the start in flight.
+        private async Task<RelaySessionStart> JoinWithReclaimCoreAsync(NetworkManager manager, string joinCode, CancellationToken cancellationToken)
+        {
+            RelaySessionStart start = await StartCoreAsync(manager, joinCode, cancellationToken);
+            if (start.ErrorKey != OnlineSessionErrorKeys.AlreadyInSession || cancellationToken.IsCancellationRequested)
+            {
+                return start;
+            }
+
+            RelaySessionStart reclaimed = await ReclaimMembershipAsync(manager, joinCode, cancellationToken);
+            return reclaimed ?? start;
         }
 
         private async Task<RelaySessionStart> StartCoreAsync(NetworkManager manager, string joinCode, CancellationToken cancellationToken)
@@ -627,6 +667,125 @@ namespace AlienFarms.Networking.Session
 
                     return RelaySessionStart.Failed(key);
                 }
+            }
+        }
+
+        // A join by code refused as 'already in a session' although nothing is registered locally: the lobby still lists
+        // this player (dropped without leaving, e.g. a spectator whose membership the host has not removed yet). With
+        // exactly one joined session, that session is identified first WITHOUT the network (a probe handler that never
+        // starts NGO), so another game's host never sees this client: the session of joinCode is then reconnected for
+        // real (ReconnectToSessionAsync starts the network); any other one is a stale membership, left before joining by
+        // code once more. Null keeps the original failure.
+        private async Task<RelaySessionStart> ReclaimMembershipAsync(NetworkManager manager, string joinCode, CancellationToken cancellationToken)
+        {
+            List<string> joined;
+            try
+            {
+                joined = await MultiplayerService.Instance.GetJoinedSessionIdsAsync();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[{nameof(RelaySessionConnection)}] Could not list the joined sessions: {exception.Message}");
+                return null;
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return RelaySessionStart.Failed(null);
+            }
+
+            if (joined == null || joined.Count != 1 || string.IsNullOrEmpty(joined[0]) || !Application.isPlaying)
+            {
+                return null;
+            }
+
+            string sessionId = joined[0];
+            RelaySessionStart probe = await ProbeSessionAsync(manager, sessionId, cancellationToken);
+            if (cancellationToken.IsCancellationRequested)
+            {
+                // Cancelling once the probe is in gives that membership up, as cancelling a rejoin does: the player chose
+                // not to come back, and leaving the lobby releases a seat still reserved for it.
+                await LeaveAsync(probe);
+                RelaySessionStart cancelled = RelaySessionStart.Failed(null);
+                return probe.IsSuccess ? cancelled.WithLeftSession(sessionId) : cancelled;
+            }
+
+            if (!probe.IsSuccess)
+            {
+                return null;
+            }
+
+            MembershipMatch match = MembershipRules.Classify(probe.Session.Code, joinCode);
+            if (match == MembershipMatch.Unknown)
+            {
+                // Not identified: it may be this very session, so it is neither reconnected to nor left (leaving would
+                // release its seat as Left). Only the probe's local registration goes; the original failure stands.
+                Debug.LogWarning($"[{nameof(RelaySessionConnection)}] The joined session {sessionId} could not be identified (no code); keeping its membership.");
+                await DetachAsync(probe);
+                return null;
+            }
+
+            if (match == MembershipMatch.Same)
+            {
+                Debug.Log($"[{nameof(RelaySessionConnection)}] Join by code refused as 'already in a session': reconnecting to its session {sessionId}.");
+
+                // Keeps the lobby membership (no PlayerHasLeft on the host); only the probe's local registration goes.
+                await DetachAsync(probe);
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return RelaySessionStart.Failed(null);
+                }
+
+                RelaySessionStart reconnected = await ReconnectCoreAsync(manager, sessionId, cancellationToken);
+                if (reconnected.IsSuccess)
+                {
+                    return reconnected;
+                }
+
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return RelaySessionStart.Failed(null);
+                }
+
+                // The host's own answer (room full, seat refused...) explains more than 'already in a session'.
+                return IsNgoRejection(reconnected.ErrorKey) ? reconnected : null;
+            }
+
+            // Other: whatever happens next, that membership is gone (the caller drops a rejoin offer for it).
+            Debug.LogWarning($"[{nameof(RelaySessionConnection)}] The joined session {sessionId} is not the one of code {joinCode}; leaving that stale membership and joining again.");
+            await LeaveAsync(probe);
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return RelaySessionStart.Failed(null).WithLeftSession(sessionId);
+            }
+
+            if (!await WaitForManagerStoppedAsync(manager, cancellationToken))
+            {
+                string key = cancellationToken.IsCancellationRequested ? null : OnlineSessionErrorKeys.Busy;
+                return RelaySessionStart.Failed(key).WithLeftSession(sessionId);
+            }
+
+            // Once: StartCoreAsync's own retry is the last one (no further reclaim).
+            RelaySessionStart joinedAgain = await StartCoreAsync(manager, joinCode, cancellationToken);
+            return joinedAgain.WithLeftSession(sessionId);
+        }
+
+        // Reconnects to sessionId with a handler retired beforehand: its StartAsync returns without starting NGO (see
+        // NgoSessionNetworkHandler), so the session (its code) can be read without this client reaching that host.
+        private async Task<RelaySessionStart> ProbeSessionAsync(NetworkManager manager, string sessionId, CancellationToken cancellationToken)
+        {
+            var probe = new NgoSessionNetworkHandler(manager, _transport, _connectTimeoutSeconds);
+            probe.Retire();
+            try
+            {
+                var options = new ReconnectSessionOptions { Type = SessionType }.WithNetworkHandler(probe);
+                ISession session = await MultiplayerService.Instance.ReconnectToSessionAsync(sessionId, options, cancellationToken);
+                return RelaySessionStart.Succeeded(session, probe);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[{nameof(RelaySessionConnection)}] Could not identify the joined session {sessionId}: {exception.Message}");
+                return RelaySessionStart.Failed(Fail(exception, probe, true, cancellationToken));
             }
         }
 

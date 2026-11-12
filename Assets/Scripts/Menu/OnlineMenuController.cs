@@ -732,7 +732,10 @@ namespace AlienFarms.Menu
             return null;
         }
 
-        /// <summary>Local participant's name when known, else the signed-in player id (null when signed out).</summary>
+        /// <summary>
+        /// Local participant's name when known, else the typed name, else the name published after the sign-in (UGS
+        /// name); the raw player id only as a last resort (null when signed out).
+        /// </summary>
         private string GetLocalDisplayName()
         {
             if (_session == null)
@@ -750,7 +753,21 @@ namespace AlienFarms.Menu
                 }
             }
 
-            return _session.LocalPlayerId;
+            // Signed out: no "signed in as" line at all.
+            if (string.IsNullOrEmpty(_session.LocalPlayerId))
+            {
+                return null;
+            }
+
+            string typed = _session.DisplayName;
+            if (!string.IsNullOrEmpty(typed))
+            {
+                // As the others will see it (the payload holds 29 bytes).
+                return DisplayNameSanitizer.FitToPayload(DisplayNameSanitizer.Sanitize(typed));
+            }
+
+            string published = _session.LocalPlayerName;
+            return !string.IsNullOrEmpty(published) ? published : _session.LocalPlayerId;
         }
 
         private void OnValidate()
