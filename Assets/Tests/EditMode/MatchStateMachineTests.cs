@@ -373,6 +373,146 @@ namespace AlienFarms.Tests
             Assert.That(_context.Score.Get(PlayerId.Player1), Is.EqualTo(1));
         }
 
+        // ---------------------------------------------------------------- Suspension (online reconnection grace)
+
+        [Test]
+        public void Playing_Suspended_FreezesControlsAndTimer_AndDoesNotAbortWithAPlayerMissing()
+        {
+            EnterPlaying();
+            _context.Advance(10f);
+            float remaining = _context.Timer.Remaining;
+            _context.CallLog.Clear();
+
+            _context.SetSuspended(true);
+            _context.JoinedPlayerCount = 1;
+            _context.Advance(30f);
+
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.Playing));
+            Assert.That(_context.Timer.Remaining, Is.EqualTo(remaining));
+            Assert.That(_context.ControlsEnabled, Is.False);
+            Assert.That(_context.CallLog, Is.EqualTo(new[] { "Controls(false)" }));
+        }
+
+        [Test]
+        public void SetSuspended_IsIdempotent()
+        {
+            EnterPlaying();
+            _context.CallLog.Clear();
+
+            _context.SetSuspended(true);
+            _context.SetSuspended(true);
+            _context.SetSuspended(false);
+            _context.SetSuspended(false);
+
+            Assert.That(_context.CallLog, Is.EqualTo(new[] { "Controls(false)", "Controls(true)" }));
+        }
+
+        [Test]
+        public void Playing_ResumedWithBothPlayers_GivesControlsBack_AndTheTimerContinues()
+        {
+            EnterPlaying();
+            _context.Advance(10f);
+            _context.SetSuspended(true);
+            _context.JoinedPlayerCount = 1;
+            _context.Advance(5f);
+            float remaining = _context.Timer.Remaining;
+
+            _context.JoinedPlayerCount = 2;
+            _context.SetSuspended(false);
+            _context.Advance(1f);
+
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.Playing));
+            Assert.That(_context.ControlsEnabled, Is.True);
+            Assert.That(_context.Timer.Remaining, Is.EqualTo(remaining - 1f).Within(0.001f));
+        }
+
+        [Test]
+        public void Playing_ResumedWithAPlayerMissing_AbortsToWaitingOnTheNextTick()
+        {
+            EnterPlaying();
+            TestScores.AddAnimals(_context.Score, PlayerId.Player1, 2);
+            _context.SetSuspended(true);
+            _context.JoinedPlayerCount = 1;
+            _context.CallLog.Clear();
+
+            _context.SetSuspended(false);
+
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.Playing), "Nothing happens on resume itself.");
+            Assert.That(_context.CallLog, Is.Empty);
+
+            _context.Tick(0.016f);
+
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.WaitingForPlayers));
+            Assert.That(_context.ControlsEnabled, Is.True);
+            Assert.That(_context.Score.Get(PlayerId.Player1), Is.EqualTo(0));
+        }
+
+        [Test]
+        public void Countdown_ResumedWithBothPlayers_RestartsTheCountdown()
+        {
+            EnterCountdown();
+            _context.Advance(2f);
+            _context.SetSuspended(true);
+            int resetsBefore = _context.ResetRoundWithRespawnCount;
+            _countdownTicks.Clear();
+
+            _context.SetSuspended(false);
+
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.Countdown));
+            Assert.That(_context.ResetRoundWithRespawnCount, Is.EqualTo(resetsBefore + 1));
+            Assert.That(_countdownTicks, Is.EqualTo(new[] { CountdownSeconds }));
+            _context.Advance(CountdownSeconds - 0.1f);
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.Countdown));
+        }
+
+        [Test]
+        public void Countdown_SuspendedWithAPlayerMissing_DoesNotAbort_ThenAbortsAfterResume()
+        {
+            EnterCountdown();
+            _context.SetSuspended(true);
+            _context.JoinedPlayerCount = 1;
+            _context.Advance(CountdownSeconds + 1f);
+
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.Countdown));
+
+            _context.SetSuspended(false);
+            _context.Tick(0.016f);
+
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.WaitingForPlayers));
+        }
+
+        [Test]
+        public void Results_ResumedWithBothPlayers_StaysInResultsWithoutControls()
+        {
+            EnterResults();
+            _context.SetSuspended(true);
+            _context.JoinedPlayerCount = 1;
+            _context.Advance(5f);
+            _context.JoinedPlayerCount = 2;
+            _context.CallLog.Clear();
+
+            _context.SetSuspended(false);
+            _context.Advance(ResultsInputDelay + 0.1f);
+
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.Results));
+            Assert.That(_context.ControlsEnabled, Is.False);
+            Assert.That(_context.CallLog, Is.Empty);
+            Assert.That(_context.Machine.IsRematchReady, Is.True);
+        }
+
+        [Test]
+        public void Waiting_Suspended_KeepsControls()
+        {
+            _context.JoinedPlayerCount = 1;
+            _context.CallLog.Clear();
+
+            _context.SetSuspended(true);
+            _context.SetSuspended(false);
+
+            Assert.That(_context.ControlsEnabled, Is.True);
+            Assert.That(_context.CallLog, Is.Empty);
+        }
+
         private void EnterCountdown()
         {
             _context.JoinedPlayerCount = 2;

@@ -100,6 +100,16 @@ namespace AlienFarms.Player
                 return;
             }
 
+            PlaceAt(spawn.position, spawn.eulerAngles.y);
+        }
+
+        /// <summary>
+        /// Places the player at a saved pose without going through a spawn point (e.g. an online seat restored after a
+        /// reconnection): drops anything carried (Forced), teleports it facing <paramref name="yaw"/> (degrees) and aligns
+        /// its camera.
+        /// </summary>
+        public void PlaceAt(Vector3 position, float yaw)
+        {
             if (_grabber != null)
             {
                 _grabber.ForceDrop(DropReason.Forced, Vector3.zero);
@@ -107,12 +117,12 @@ namespace AlienFarms.Player
 
             if (_movement != null)
             {
-                _movement.Teleport(spawn.position, spawn.rotation);
+                _movement.Teleport(position, Quaternion.Euler(0f, yaw, 0f));
             }
 
             if (_camera != null)
             {
-                _camera.SnapYaw(spawn.eulerAngles.y);
+                _camera.SnapYaw(yaw);
             }
         }
 

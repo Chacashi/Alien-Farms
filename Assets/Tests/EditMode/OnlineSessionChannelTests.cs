@@ -10,10 +10,17 @@ namespace AlienFarms.Tests
     {
         private OnlineSessionChannel _channel;
         private int _changed;
+        private bool _hadSavedName;
+        private string _savedName;
 
         [SetUp]
         public void SetUp()
         {
+            // The display name lives in the editor's PlayerPrefs: keep the developer's value and restore it afterwards.
+            _hadSavedName = PlayerPrefs.HasKey(OnlineSessionChannel.DisplayNamePrefsKey);
+            _savedName = PlayerPrefs.GetString(OnlineSessionChannel.DisplayNamePrefsKey, string.Empty);
+            PlayerPrefs.DeleteKey(OnlineSessionChannel.DisplayNamePrefsKey);
+
             _channel = ScriptableObject.CreateInstance<OnlineSessionChannel>();
             _channel.Changed += CountChange;
             _changed = 0;
@@ -24,6 +31,17 @@ namespace AlienFarms.Tests
         {
             _channel.Changed -= CountChange;
             Object.DestroyImmediate(_channel);
+
+            if (_hadSavedName)
+            {
+                PlayerPrefs.SetString(OnlineSessionChannel.DisplayNamePrefsKey, _savedName);
+            }
+            else
+            {
+                PlayerPrefs.DeleteKey(OnlineSessionChannel.DisplayNamePrefsKey);
+            }
+
+            PlayerPrefs.Save();
         }
 
         // ---- Transition rules ----
@@ -264,6 +282,190 @@ namespace AlienFarms.Tests
             Assert.That(first, Is.True);
             Assert.That(second, Is.True);
             Assert.That(requests, Is.EqualTo(1));
+        }
+
+        // ---- Rejoin offer (2.7) ----
+
+        [Test]
+        public void NewChannel_HasNoRejoinOffer()
+        {
+            Assert.That(_channel.HasRejoinOffer, Is.False);
+            Assert.That(_channel.RejoinCode, Is.Null);
+            Assert.That(_channel.RejoinExpiresAt, Is.EqualTo(0d));
+        }
+
+        [Test]
+        public void SetRejoinOffer_StoresItOnceAndClearRemovesIt()
+        {
+            MoveToReady();
+            _changed = 0;
+            double expiresAt = Time.realtimeSinceStartupAsDouble + 20d;
+
+            _channel.SetRejoinOffer("BCD789", expiresAt);
+            _channel.SetRejoinOffer("BCD789", expiresAt);
+
+            Assert.That(_channel.HasRejoinOffer, Is.True);
+            Assert.That(_channel.RejoinCode, Is.EqualTo("BCD789"));
+            Assert.That(_channel.RejoinExpiresAt, Is.EqualTo(expiresAt));
+            Assert.That(_changed, Is.EqualTo(1));
+
+            _channel.ClearRejoinOffer();
+            _channel.ClearRejoinOffer();
+
+            Assert.That(_channel.HasRejoinOffer, Is.False);
+            Assert.That(_channel.RejoinCode, Is.Null);
+            Assert.That(_changed, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void SetRejoinOffer_EmptyCode_ClearsTheOffer()
+        {
+            _channel.SetRejoinOffer("BCD789", Time.realtimeSinceStartupAsDouble + 20d);
+
+            _channel.SetRejoinOffer(null, 0d);
+
+            Assert.That(_channel.HasRejoinOffer, Is.False);
+        }
+
+        [Test]
+        public void RejoinOffer_SurvivesReturningToReady_ButNotSigningOut()
+        {
+            MoveToInSession();
+            _channel.SetRejoinOffer("CODE1", Time.realtimeSinceStartupAsDouble + 20d);
+
+            _channel.TrySetStatus(OnlineSessionStatus.Ready);
+            Assert.That(_channel.RejoinCode, Is.EqualTo("CODE1"), "The dropped client is back in the Hub (Ready) with its offer.");
+
+            _channel.TrySetStatus(OnlineSessionStatus.SignedOut);
+            Assert.That(_channel.HasRejoinOffer, Is.False);
+        }
+
+        [Test]
+        public void RequestRejoin_ValidOffer_Dispatches()
+        {
+            MoveToReady();
+            _channel.SetRejoinOffer("BCD789", Time.realtimeSinceStartupAsDouble + 20d);
+            _channel.SetError(OnlineSessionErrorKeys.ConnectionLost);
+            int requests = 0;
+            void OnRejoin() => requests++;
+            _channel.RejoinRequested += OnRejoin;
+
+            bool accepted = _channel.RequestRejoin();
+            _channel.RejoinRequested -= OnRejoin;
+
+            Assert.That(accepted, Is.True);
+            Assert.That(requests, Is.EqualTo(1));
+            Assert.That(_channel.HasError, Is.False);
+            Assert.That(_channel.HasRejoinOffer, Is.True, "The service clears the offer once it is used.");
+        }
+
+        [Test]
+        public void RequestRejoin_ExpiredOffer_IsRejectedAndCleared()
+        {
+            MoveToReady();
+            _channel.SetRejoinOffer("BCD789", Time.realtimeSinceStartupAsDouble - 0.5d);
+            bool dispatched = false;
+            void OnRejoin() => dispatched = true;
+            _channel.RejoinRequested += OnRejoin;
+
+            bool accepted = _channel.RequestRejoin();
+            _channel.RejoinRequested -= OnRejoin;
+
+            Assert.That(accepted, Is.False);
+            Assert.That(dispatched, Is.False);
+            Assert.That(_channel.LastErrorKey, Is.EqualTo(OnlineSessionErrorKeys.RejoinExpired));
+            Assert.That(_channel.HasRejoinOffer, Is.False);
+        }
+
+        [Test]
+        public void RequestRejoin_WithoutOffer_IsRejoinExpired()
+        {
+            MoveToReady();
+            _channel.RejoinRequested += NoOp;
+            bool accepted = _channel.RequestRejoin();
+            _channel.RejoinRequested -= NoOp;
+
+            Assert.That(accepted, Is.False);
+            Assert.That(_channel.LastErrorKey, Is.EqualTo(OnlineSessionErrorKeys.RejoinExpired));
+        }
+
+        [Test]
+        public void RequestRejoin_WithoutService_IsNotConfigured()
+        {
+            MoveToReady();
+            _channel.SetRejoinOffer("BCD789", Time.realtimeSinceStartupAsDouble + 20d);
+
+            Assert.That(_channel.RequestRejoin(), Is.False);
+            Assert.That(_channel.LastErrorKey, Is.EqualTo(OnlineSessionErrorKeys.NotConfigured));
+            Assert.That(_channel.HasRejoinOffer, Is.True);
+        }
+
+        [Test]
+        public void RequestRejoin_InSession_IsAlreadyInSession()
+        {
+            MoveToInSession();
+            _channel.SetRejoinOffer("BCD789", Time.realtimeSinceStartupAsDouble + 20d);
+            _channel.RejoinRequested += NoOp;
+            bool accepted = _channel.RequestRejoin();
+            _channel.RejoinRequested -= NoOp;
+
+            Assert.That(accepted, Is.False);
+            Assert.That(_channel.LastErrorKey, Is.EqualTo(OnlineSessionErrorKeys.AlreadyInSession));
+        }
+
+        // ---- Display name (2.7) ----
+
+        [Test]
+        public void DisplayName_EmptyByDefault()
+        {
+            Assert.That(_channel.DisplayName, Is.Empty);
+        }
+
+        [Test]
+        public void SetDisplayName_SanitizesPersistsAndRaisesChangedOnce()
+        {
+            _channel.SetDisplayName("  Ana<b>  ");
+            _channel.SetDisplayName("Anab");
+
+            Assert.That(_channel.DisplayName, Is.EqualTo("Anab"));
+            Assert.That(_changed, Is.EqualTo(1));
+            Assert.That(PlayerPrefs.GetString(OnlineSessionChannel.DisplayNamePrefsKey, null), Is.EqualTo("Anab"));
+
+            var other = ScriptableObject.CreateInstance<OnlineSessionChannel>();
+            try
+            {
+                Assert.That(other.DisplayName, Is.EqualTo("Anab"), "Read back from PlayerPrefs.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(other);
+            }
+        }
+
+        [Test]
+        public void SetDisplayName_Empty_ClearsTheSavedName()
+        {
+            _channel.SetDisplayName("Ana");
+
+            _channel.SetDisplayName("   ");
+
+            Assert.That(_channel.DisplayName, Is.Empty);
+            Assert.That(PlayerPrefs.HasKey(OnlineSessionChannel.DisplayNamePrefsKey), Is.False);
+        }
+
+        [Test]
+        public void DisplayName_SavedValueIsSanitizedOnLoad()
+        {
+            PlayerPrefs.SetString(OnlineSessionChannel.DisplayNamePrefsKey, " <Bob> ");
+            var other = ScriptableObject.CreateInstance<OnlineSessionChannel>();
+            try
+            {
+                Assert.That(other.DisplayName, Is.EqualTo("Bob"));
+            }
+            finally
+            {
+                Object.DestroyImmediate(other);
+            }
         }
 
         // ---- Code format ----

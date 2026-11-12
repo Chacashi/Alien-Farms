@@ -1,5 +1,6 @@
 using System;
 using AlienFarms.Core;
+using Unity.Collections;
 using UnityEngine;
 
 namespace AlienFarms.Networking.Session
@@ -34,6 +35,24 @@ namespace AlienFarms.Networking.Session
                 for (int i = 0; i < _slots.Length; i++)
                 {
                     if (_slots[i].IsOccupied && _slots[i].Connected)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+
+        /// <summary>Seats held for a dropped player that may still reconnect (expired or not: see <see cref="ReleaseExpired"/>).</summary>
+        public int CountAwaiting
+        {
+            get
+            {
+                int count = 0;
+                for (int i = 0; i < _slots.Length; i++)
+                {
+                    if (_slots[i].IsAwaitingReconnect)
                     {
                         count++;
                     }
@@ -182,6 +201,43 @@ namespace AlienFarms.Networking.Session
             return true;
         }
 
+        /// <summary>Forgets the saved pose of seat <paramref name="id"/> (used once restored). False when it had none.</summary>
+        public bool ClearSavedPose(PlayerId id)
+        {
+            int index = (int)id - 1;
+            if (index < 0 || index >= _slots.Length || !_slots[index].IsOccupied || !_slots[index].HasSavedPose)
+            {
+                return false;
+            }
+
+            _slots[index].HasSavedPose = false;
+            _slots[index].SavedPosition = Vector3.zero;
+            _slots[index].SavedFacingYaw = 0f;
+            return true;
+        }
+
+        /// <summary>
+        /// The seat awaiting a reconnection from <paramref name="ugsPlayerId"/> (e.g. to release it when that member left
+        /// the online session). False for an empty id or when no dropped seat belongs to it.
+        /// </summary>
+        public bool TryFindAwaiting(in FixedString64Bytes ugsPlayerId, out PlayerId id)
+        {
+            if (ugsPlayerId.Length > 0)
+            {
+                for (int i = 0; i < _slots.Length; i++)
+                {
+                    if (_slots[i].IsAwaitingReconnect && _slots[i].UgsPlayerId.Equals(ugsPlayerId))
+                    {
+                        id = _slots[i].Id;
+                        return true;
+                    }
+                }
+            }
+
+            id = PlayerId.None;
+            return false;
+        }
+
         /// <summary>Seat of the connected client <paramref name="clientId"/> (a dropped seat no longer matches).</summary>
         public bool TryGetByClient(ulong clientId, out PlayerSlot slot)
         {
@@ -256,6 +312,22 @@ namespace AlienFarms.Networking.Session
 
             id = PlayerId.None;
             return false;
+        }
+
+        /// <summary>
+        /// Frees the seat <paramref name="id"/>, connected or awaiting a reconnection (e.g. its dropped player left the
+        /// session for good). False when the seat is invalid or empty.
+        /// </summary>
+        public bool ReleaseSeat(PlayerId id)
+        {
+            int index = (int)id - 1;
+            if (index < 0 || index >= _slots.Length || !_slots[index].IsOccupied)
+            {
+                return false;
+            }
+
+            _slots[index] = default;
+            return true;
         }
 
         /// <summary>Frees the spectator place of <paramref name="clientId"/>. False when it held none.</summary>

@@ -141,7 +141,8 @@ namespace AlienFarms.Networking.Session
 
         /// <summary>
         /// Key of a stable NGO disconnect / rejection reason (<see cref="DisconnectReasons"/>); null when the reason is not
-        /// one the game sends (raw transport text).
+        /// one the game sends (raw transport text: pass it through <see cref="DisconnectReasons.Normalize"/> first to get
+        /// <see cref="OnlineSessionErrorKeys.ConnectionLost"/>).
         /// </summary>
         public static string FromDisconnectReason(string reason)
         {
@@ -159,6 +160,10 @@ namespace AlienFarms.Networking.Session
                     return OnlineSessionErrorKeys.ConnectionFailed;
                 case DisconnectReasons.NotSessionMember:
                     return OnlineSessionErrorKeys.NotSessionMember;
+                case DisconnectReasons.ReconnectDenied:
+                    return OnlineSessionErrorKeys.ReconnectDenied;
+                case DisconnectReasons.ConnectionLost:
+                    return OnlineSessionErrorKeys.ConnectionLost;
                 default:
                     return null;
             }

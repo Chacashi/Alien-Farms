@@ -439,8 +439,9 @@ namespace AlienFarms.Networking.Session
 
         private string MapDisconnectReason()
         {
+            // A drop without a game reason normalizes to connection_lost; an explicit host shutdown sends host_disconnected.
             return OnlineSessionErrorMapper.FromDisconnectReason(DisconnectReasons.Normalize(_manager.DisconnectReason))
-                ?? OnlineSessionErrorKeys.HostLeft;
+                ?? OnlineSessionErrorKeys.ConnectionLost;
         }
 
         private void HandleSessionRemoved()

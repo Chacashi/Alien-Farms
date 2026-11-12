@@ -19,6 +19,12 @@ namespace AlienFarms.Core
         /// <summary>The host could not confirm this player as a member of its online session.</summary>
         public const string NotSessionMember = "online.error.not_session_member";
         public const string HostLeft = "online.error.host_left";
+        /// <summary>This machine's connection dropped without notice (it may rejoin while the offer lasts).</summary>
+        public const string ConnectionLost = "online.error.connection_lost";
+        /// <summary>The host refused to give back a reserved seat to this player.</summary>
+        public const string ReconnectDenied = "online.error.reconnect_denied";
+        /// <summary>The reconnection offer ran out (the reserved seat was released).</summary>
+        public const string RejoinExpired = "online.error.rejoin_expired";
         public const string RelayFailed = "online.error.relay_failed";
         public const string ConnectionFailed = "online.error.connection_failed";
         /// <summary>Join refused without a specific reason (e.g. invalid code).</summary>

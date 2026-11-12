@@ -20,7 +20,7 @@ namespace AlienFarms.Data
         [SerializeField, Range(2, 3), Tooltip("Maximum connections per session (2 players, plus a spectator when allowed).")]
         private int _maxPlayers = 2;
 
-        [SerializeField, Tooltip("Accept a third connection as a spectator instead of answering 'Room full'. Keep off until the gameplay scene supports a client without avatar (2.7).")]
+        [SerializeField, Tooltip("Accept a third connection as a spectator (no avatar, no game input; watches the match) instead of answering 'Room full'. Needs Max Players 3.")]
         private bool _allowSpectator;
 
         [SerializeField, Min(0f), Tooltip("Seconds a disconnected player keeps its slot and pose while it reconnects.")]
@@ -75,6 +75,13 @@ namespace AlienFarms.Data
         [SerializeField, Tooltip("Logs every network spawn / despawn of a pooled animal or bomb (first use or reused, pool counters). Off by default: noisy.")]
         private bool _logPoolLifecycle;
 
+        [Header("Name tags")]
+        [SerializeField, Tooltip("Floating name tag over every remote player avatar (never over the local one).")]
+        private bool _showNameTags = true;
+
+        [SerializeField, Tooltip("Debug: adds a 'client N' line (the avatar owner's NGO client id) under each name tag, to see the new id after a reconnection.")]
+        private bool _nameTagShowsClientId;
+
         public int ProtocolVersion => _protocolVersion;
         public string EnvironmentName => _environmentName;
         public int MaxPlayers => _maxPlayers;
@@ -95,6 +102,8 @@ namespace AlienFarms.Data
         public bool LogOwnership => _logOwnership;
         public bool ShowPoolStats => _showPoolStats;
         public bool LogPoolLifecycle => _logPoolLifecycle;
+        public bool ShowNameTags => _showNameTags;
+        public bool NameTagShowsClientId => _nameTagShowsClientId;
 
         private void OnValidate()
         {

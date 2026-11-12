@@ -33,6 +33,9 @@ namespace AlienFarms.Tests
         public int ResetRoundCount { get; private set; }
         public int ResetRoundWithRespawnCount { get; private set; }
 
+        /// <summary>While true <see cref="Tick"/> does nothing, like MatchManager.Update while suspended.</summary>
+        public bool Suspended { get; private set; }
+
         /// <summary>Ordered log of side effects (shared with test event handlers to assert ordering).</summary>
         public List<string> CallLog { get; } = new List<string>();
 
@@ -73,7 +76,44 @@ namespace AlienFarms.Tests
             return Score.TryRelease(Phase, zoneOwner, animal);
         }
 
-        public void Tick(float deltaTime) => Machine.Tick(deltaTime);
+        public void Tick(float deltaTime)
+        {
+            if (!Suspended)
+            {
+                Machine.Tick(deltaTime);
+            }
+        }
+
+        /// <summary>Same steps as MatchManager.SetSuspended (idempotent, MatchSuspendRules on both edges).</summary>
+        public void SetSuspended(bool suspended)
+        {
+            if (Suspended == suspended)
+            {
+                return;
+            }
+
+            Suspended = suspended;
+            if (suspended)
+            {
+                if (MatchSuspendRules.SuspendsIn(Phase))
+                {
+                    SetPlayerControlsEnabled(false);
+                }
+
+                return;
+            }
+
+            switch (MatchSuspendRules.OnResume(Phase, JoinedPlayerCount >= 2))
+            {
+                case MatchResumeAction.EnableControls:
+                    SetPlayerControlsEnabled(true);
+                    break;
+                case MatchResumeAction.RestartCountdown:
+                    // MatchManager.RestartRound outside WaitingForPlayers.
+                    ChangeState(MatchPhase.Countdown);
+                    break;
+            }
+        }
 
         public void Confirm(PlayerId playerId) => Machine.OnConfirmPressed(playerId);
 

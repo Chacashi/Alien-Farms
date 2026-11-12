@@ -1,6 +1,7 @@
 using AlienFarms.Core;
 using AlienFarms.Networking.Session;
 using NUnit.Framework;
+using Unity.Collections;
 using UnityEngine;
 
 namespace AlienFarms.Networking.Tests
@@ -301,6 +302,137 @@ namespace AlienFarms.Networking.Tests
         {
             Assert.That(_slots.TrySavePose(PlayerId.Player1, Vector3.zero, 0f), Is.False);
             Assert.That(_slots.TrySavePose(PlayerId.None, Vector3.zero, 0f), Is.False);
+        }
+
+        // ---------------------------------------------------------------- Grace bookkeeping (2.7)
+
+        [Test]
+        public void ReleaseSeat_FreesAConnectedOrAwaitingSeat()
+        {
+            Admit(1, Payload("A", "u1"), out PlayerId first);
+            Admit(2, Payload("B", "u2"), out PlayerId second);
+            _slots.MarkDisconnected(2, 10d, out _);
+
+            Assert.That(_slots.ReleaseSeat(second), Is.True, "Awaiting a reconnection.");
+            Assert.That(_slots.ReleaseSeat(first), Is.True, "Connected.");
+
+            Assert.That(_slots.TryGet(first, out _), Is.False);
+            Assert.That(_slots.TryGet(second, out _), Is.False);
+            Assert.That(_slots.CountAwaiting, Is.EqualTo(0));
+            Assert.That(_slots.ConnectedCount, Is.EqualTo(0));
+        }
+
+        [TestCase(PlayerId.None)]
+        [TestCase((PlayerId)3)]
+        [TestCase(PlayerId.Player2)]
+        public void ReleaseSeat_InvalidOrEmptySeat_ReturnsFalse(PlayerId id)
+        {
+            Admit(1, Payload("A", "u1"), out _);
+
+            Assert.That(_slots.ReleaseSeat(id), Is.False);
+            Assert.That(_slots.ConnectedCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void ReleaseSeat_KeepsSpectators()
+        {
+            Admit(1, Payload("A", "u1"), out PlayerId id);
+            _slots.TryAddSpectator(3, Payload("S", "u3"));
+
+            _slots.ReleaseSeat(id);
+
+            Assert.That(_slots.SpectatorCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void TryFindAwaiting_FindsOnlyDroppedSeatsOfThatUgsId()
+        {
+            Admit(1, Payload("A", "u1"), out _);
+            Admit(2, Payload("B", "u2"), out PlayerId second);
+            _slots.MarkDisconnected(2, 10d, out _);
+
+            Assert.That(_slots.TryFindAwaiting(new FixedString64Bytes("u2"), out PlayerId found), Is.True);
+            Assert.That(found, Is.EqualTo(second));
+            Assert.That(_slots.TryFindAwaiting(new FixedString64Bytes("u1"), out found), Is.False, "Still connected.");
+            Assert.That(found, Is.EqualTo(PlayerId.None));
+            Assert.That(_slots.TryFindAwaiting(new FixedString64Bytes("u9"), out _), Is.False);
+            Assert.That(_slots.TryFindAwaiting(default, out _), Is.False, "Empty id.");
+        }
+
+        [Test]
+        public void TryFindAwaiting_DroppedSeatWithoutUgsId_IsNeverMatchedByAnEmptyId()
+        {
+            Admit(1, Payload("Dev"), out _);
+            _slots.MarkDisconnected(1, 10d, out _);
+
+            Assert.That(_slots.TryFindAwaiting(default, out _), Is.False);
+        }
+
+        [Test]
+        public void CountAwaiting_FollowsDropsReconnectionsAndExpiry()
+        {
+            Admit(1, Payload("A", "u1"), out PlayerId first);
+            Admit(2, Payload("B", "u2"), out _);
+            Assert.That(_slots.CountAwaiting, Is.EqualTo(0));
+
+            _slots.MarkDisconnected(1, 0d, out _);
+            _slots.MarkDisconnected(2, 5d, out _);
+            Assert.That(_slots.CountAwaiting, Is.EqualTo(2));
+
+            _slots.TryApply(ApprovalDecision.Reconnect(first), 7, Payload("A", "u1"));
+            Assert.That(_slots.CountAwaiting, Is.EqualTo(1));
+
+            _slots.ReleaseExpired(25d, 20f);
+            Assert.That(_slots.CountAwaiting, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void ClearSavedPose_ForgetsThePoseButKeepsTheSeat()
+        {
+            Admit(1, Payload("A", "u1"), out PlayerId id);
+            _slots.TrySetCharacter(id, 2);
+            _slots.TrySavePose(id, new Vector3(1f, 0f, 3f), 45f);
+
+            Assert.That(_slots.ClearSavedPose(id), Is.True);
+            Assert.That(_slots.ClearSavedPose(id), Is.False, "Nothing left to clear.");
+
+            _slots.TryGet(id, out PlayerSlot slot);
+            Assert.That(slot.HasSavedPose, Is.False);
+            Assert.That(slot.SavedPosition, Is.EqualTo(Vector3.zero));
+            Assert.That(slot.CharacterIndex, Is.EqualTo(2));
+            Assert.That(slot.Connected, Is.True);
+        }
+
+        [TestCase(PlayerId.None)]
+        [TestCase((PlayerId)3)]
+        [TestCase(PlayerId.Player2)]
+        public void ClearSavedPose_InvalidOrEmptySeat_ReturnsFalse(PlayerId id)
+        {
+            Admit(1, Payload("A", "u1"), out _);
+
+            Assert.That(_slots.ClearSavedPose(id), Is.False);
+        }
+
+        [Test]
+        public void TrySavePose_DroppedSeat_StillStoresThePose()
+        {
+            // The roster saves the pose right after the approval handler marked the seat disconnected.
+            Admit(1, Payload("A", "u1"), out PlayerId id);
+            _slots.MarkDisconnected(1, 10d, out _);
+
+            Assert.That(_slots.TrySavePose(id, new Vector3(2f, 0f, 1f), 180f), Is.True);
+            _slots.TryGet(id, out PlayerSlot slot);
+            Assert.That(slot.SavedFacingYaw, Is.EqualTo(180f));
+        }
+
+        [Test]
+        public void DroppedSeat_OldClientIdIsNoLongerKnown()
+        {
+            // NGO may reuse a client id: the dropped seat's old id can join as a spectator or take another seat.
+            Admit(1, Payload("A", "u1"), out _);
+            _slots.MarkDisconnected(1, 10d, out _);
+
+            Assert.That(_slots.TryAddSpectator(1, Payload("S", "u3")), Is.True);
         }
 
         [Test]

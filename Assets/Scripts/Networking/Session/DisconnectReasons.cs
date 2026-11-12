@@ -3,7 +3,8 @@ namespace AlienFarms.Networking.Session
     /// <summary>
     /// The only disconnect / rejection reasons the game sends, as stable keys the UI maps to text. NGO fills
     /// DisconnectReason with raw transport text when the server gave none, so clients show only these keys
-    /// (<see cref="Normalize"/>).
+    /// (<see cref="Normalize"/>): a drop without a game reason is <see cref="ConnectionLost"/> (the client may rejoin;
+    /// if the host really went away, that rejoin fails with "host left").
     /// </summary>
     public static class DisconnectReasons
     {
@@ -15,6 +16,12 @@ namespace AlienFarms.Networking.Session
         public const string HostDisconnected = "host_disconnected";
         /// <summary>The declared UGS player id is not a member of the host's online session.</summary>
         public const string NotSessionMember = "not_session_member";
+        /// <summary>The host refused to give a reserved seat back to the reconnecting client.</summary>
+        public const string ReconnectDenied = "reconnect_denied";
+        /// <summary>
+        /// Not sent by the server: what a drop without a game reason (transport timeout, raw transport text) normalizes to.
+        /// </summary>
+        public const string ConnectionLost = "connection_lost";
 
         public static bool IsKnown(string reason)
         {
@@ -23,13 +30,15 @@ namespace AlienFarms.Networking.Session
                 || reason == RoomFull
                 || reason == AlreadyConnected
                 || reason == HostDisconnected
-                || reason == NotSessionMember;
+                || reason == NotSessionMember
+                || reason == ReconnectDenied
+                || reason == ConnectionLost;
         }
 
-        /// <summary><paramref name="reason"/> when it is a known key; otherwise <see cref="HostDisconnected"/>.</summary>
+        /// <summary><paramref name="reason"/> when it is a known key; otherwise <see cref="ConnectionLost"/>.</summary>
         public static string Normalize(string reason)
         {
-            return IsKnown(reason) ? reason : HostDisconnected;
+            return IsKnown(reason) ? reason : ConnectionLost;
         }
     }
 }

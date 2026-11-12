@@ -258,6 +258,78 @@ namespace AlienFarms.Networking.Tests
             Assert.That(decision.Reason, Is.EqualTo(ApprovalRules.ReasonRoomFull));
         }
 
+        [Test]
+        public void Reconnection_ByUgsIdWithinGrace_RestoresTheSeatWithANewClientId()
+        {
+            // 2.7 without a resume token: the reserved seat is reclaimed by UgsPlayerId (session membership checked before).
+            Admit(1, "A", "u1");
+            Admit(2, "B", "u2");
+            _slots.TrySetCharacter(PlayerId.Player2, 1);
+            _slots.MarkDisconnected(2, Now, out _);
+            ConnectionPayload back = Payload("B", "u2");
+
+            ApprovalDecision decision = ApprovalRules.Evaluate(true, back, Players, _slots.Seats, _slots.Spectators, Now + 5d);
+
+            Assert.That(decision.Outcome, Is.EqualTo(ApprovalOutcome.Reconnect));
+            Assert.That(_slots.TryApply(decision, 7, back), Is.True);
+            Assert.That(_slots.TryGetByClient(7, out PlayerSlot slot), Is.True);
+            Assert.That(slot.Id, Is.EqualTo(PlayerId.Player2));
+            Assert.That(slot.CharacterIndex, Is.EqualTo(1));
+            Assert.That(_slots.CountAwaiting, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void Reconnection_TwiceInARow_StillWorks()
+        {
+            Admit(1, "A", "u1");
+            Admit(2, "B", "u2");
+            ConnectionPayload back = Payload("B", "u2");
+
+            _slots.MarkDisconnected(2, Now, out _);
+            ApprovalDecision first = ApprovalRules.Evaluate(true, back, Players, _slots.Seats, _slots.Spectators, Now + 1d);
+            Assert.That(_slots.TryApply(first, 7, back), Is.True);
+
+            _slots.MarkDisconnected(7, Now + 2d, out _);
+            ApprovalDecision second = ApprovalRules.Evaluate(true, back, Players, _slots.Seats, _slots.Spectators, Now + 3d);
+
+            Assert.That(second.Outcome, Is.EqualTo(ApprovalOutcome.Reconnect));
+            Assert.That(second.Seat, Is.EqualTo(PlayerId.Player2));
+            Assert.That(_slots.TryApply(second, 8, back), Is.True);
+        }
+
+        [Test]
+        public void Reconnection_WhileTheOldConnectionIsStillSeated_IsAlreadyConnected()
+        {
+            // The client retries before the server detected the drop (risk R3): already_connected, not a second seat.
+            Admit(1, "A", "u1");
+            Admit(2, "B", "u2");
+
+            ApprovalDecision decision = ApprovalRules.Evaluate(true, Payload("B", "u2"), Players, _slots.Seats, _slots.Spectators, Now + 1d);
+
+            Assert.That(decision.Approved, Is.False);
+            Assert.That(decision.Reason, Is.EqualTo(ApprovalRules.ReasonAlreadyConnected));
+            Assert.That(_slots.ConnectedCount, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void Reconnection_AfterTheSeatWasReleased_IsSeatedAsNew()
+        {
+            // A voluntary exit (or a member that left the session) releases the reserved seat at once.
+            Admit(1, "A", "u1");
+            Admit(2, "B", "u2");
+            _slots.TrySetCharacter(PlayerId.Player2, 1);
+            _slots.MarkDisconnected(2, Now, out _);
+            Assume.That(_slots.ReleaseSeat(PlayerId.Player2), Is.True);
+
+            ApprovalDecision decision = ApprovalRules.Evaluate(true, Payload("B", "u2"), Players, _slots.Seats, _slots.Spectators, Now + 1d);
+
+            Assert.That(decision.Outcome, Is.EqualTo(ApprovalOutcome.AssignSeat));
+            Assert.That(decision.Seat, Is.EqualTo(PlayerId.Player2));
+            Assert.That(_slots.TryApply(decision, 9, Payload("B", "u2")), Is.True);
+            _slots.TryGet(PlayerId.Player2, out PlayerSlot slot);
+            Assert.That(slot.HasCharacter, Is.False);
+        }
+
         // ---------------------------------------------------------------- Spectator
 
         [Test]
@@ -347,8 +419,16 @@ namespace AlienFarms.Networking.Tests
             Assert.That(DisconnectReasons.Normalize(ApprovalRules.ReasonRoomFull), Is.EqualTo(DisconnectReasons.RoomFull));
             Assert.That(DisconnectReasons.Normalize(DisconnectReasons.ProtocolMismatch), Is.EqualTo(DisconnectReasons.ProtocolMismatch));
             Assert.That(DisconnectReasons.Normalize(DisconnectReasons.AlreadyConnected), Is.EqualTo(DisconnectReasons.AlreadyConnected));
-            Assert.That(DisconnectReasons.Normalize("[Disconnect Event][ClosedByRemote]"), Is.EqualTo(DisconnectReasons.HostDisconnected));
-            Assert.That(DisconnectReasons.Normalize(null), Is.EqualTo(DisconnectReasons.HostDisconnected));
+            Assert.That(DisconnectReasons.Normalize(DisconnectReasons.HostDisconnected), Is.EqualTo(DisconnectReasons.HostDisconnected));
+            Assert.That(DisconnectReasons.Normalize(DisconnectReasons.ReconnectDenied), Is.EqualTo(DisconnectReasons.ReconnectDenied));
+        }
+
+        [TestCase("[Disconnect Event][ClosedByRemote]")]
+        [TestCase("")]
+        [TestCase(null)]
+        public void DisconnectReasons_DropWithoutGameReason_IsConnectionLost(string raw)
+        {
+            Assert.That(DisconnectReasons.Normalize(raw), Is.EqualTo(DisconnectReasons.ConnectionLost));
         }
 
         // ---------------------------------------------------------------- Session membership
@@ -404,6 +484,9 @@ namespace AlienFarms.Networking.Tests
         [TestCase(ApprovalRules.ReasonRoomFull)]
         [TestCase(ApprovalRules.ReasonAlreadyConnected)]
         [TestCase(ApprovalRules.ReasonNotSessionMember)]
+        [TestCase(DisconnectReasons.ReconnectDenied)]
+        [TestCase(DisconnectReasons.ConnectionLost)]
+        [TestCase(DisconnectReasons.HostDisconnected)]
         public void EveryRejectionReason_MapsToAnOnlineErrorKey(string reason)
         {
             Assert.That(DisconnectReasons.IsKnown(reason), Is.True);

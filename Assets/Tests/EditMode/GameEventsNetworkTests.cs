@@ -12,6 +12,7 @@ namespace AlienFarms.Tests
         private int _lastInt;
         private bool _lastBool;
         private float _lastFloat;
+        private PlayerConnectionStatus _lastStatus;
 
         [SetUp]
         public void SetUp()
@@ -63,12 +64,36 @@ namespace AlienFarms.Tests
         public void RaisePlayerConnectionChanged_DeliversPayload()
         {
             GameEvents.OnPlayerConnectionChanged += HandleConnection;
-            GameEvents.RaisePlayerConnectionChanged(PlayerId.Player1, false, 20f);
+            GameEvents.RaisePlayerConnectionChanged(PlayerId.Player1, PlayerConnectionStatus.Reconnecting, 20f);
 
             Assert.That(_calls, Is.EqualTo(1));
             Assert.That(_lastPlayer, Is.EqualTo(PlayerId.Player1));
-            Assert.That(_lastBool, Is.False);
+            Assert.That(_lastStatus, Is.EqualTo(PlayerConnectionStatus.Reconnecting));
             Assert.That(_lastFloat, Is.EqualTo(20f));
+        }
+
+        [TestCase(PlayerConnectionStatus.Connected)]
+        [TestCase(PlayerConnectionStatus.Left)]
+        [TestCase(PlayerConnectionStatus.TimedOut)]
+        public void RaisePlayerConnectionChanged_DeliversEveryStatus(PlayerConnectionStatus status)
+        {
+            GameEvents.OnPlayerConnectionChanged += HandleConnection;
+            GameEvents.RaisePlayerConnectionChanged(PlayerId.Player2, status, 0f);
+
+            Assert.That(_calls, Is.EqualTo(1));
+            Assert.That(_lastPlayer, Is.EqualTo(PlayerId.Player2));
+            Assert.That(_lastStatus, Is.EqualTo(status));
+            Assert.That(_lastFloat, Is.EqualTo(0f));
+        }
+
+        [Test]
+        public void PlayerConnectionStatus_IsByteSizedWithStableValues()
+        {
+            Assert.That(System.Enum.GetUnderlyingType(typeof(PlayerConnectionStatus)), Is.EqualTo(typeof(byte)));
+            Assert.That((byte)PlayerConnectionStatus.Connected, Is.EqualTo(0));
+            Assert.That((byte)PlayerConnectionStatus.Reconnecting, Is.EqualTo(1));
+            Assert.That((byte)PlayerConnectionStatus.Left, Is.EqualTo(2));
+            Assert.That((byte)PlayerConnectionStatus.TimedOut, Is.EqualTo(3));
         }
 
         [Test]
@@ -95,7 +120,7 @@ namespace AlienFarms.Tests
             reset.Invoke(null, null);
 
             GameEvents.RaisePenInventoryChanged(PlayerId.Player1, 0, 1);
-            GameEvents.RaisePlayerConnectionChanged(PlayerId.Player1, true, 0f);
+            GameEvents.RaisePlayerConnectionChanged(PlayerId.Player1, PlayerConnectionStatus.Connected, 0f);
             GameEvents.RaiseTackleResolved(PlayerId.Player1, PlayerId.Player2, false);
 
             Assert.That(_calls, Is.EqualTo(0));
@@ -108,11 +133,11 @@ namespace AlienFarms.Tests
             _lastInt = count;
         }
 
-        private void HandleConnection(PlayerId playerId, bool connected, float graceSeconds)
+        private void HandleConnection(PlayerId playerId, PlayerConnectionStatus status, float graceSeconds)
         {
             _calls++;
             _lastPlayer = playerId;
-            _lastBool = connected;
+            _lastStatus = status;
             _lastFloat = graceSeconds;
         }
 

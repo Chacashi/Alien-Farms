@@ -16,6 +16,9 @@ namespace AlienFarms.Data
         /// <summary>Two players plus one spectator.</summary>
         public const int MaxParticipants = 3;
 
+        /// <summary>PlayerPrefs key of the name typed by the player on this device (local convenience only).</summary>
+        public const string DisplayNamePrefsKey = "AlienFarms.Online.DisplayName";
+
         private static int s_generation;
 
         [NonSerialized] private readonly OnlineParticipant[] _participants = new OnlineParticipant[MaxParticipants];
@@ -26,6 +29,12 @@ namespace AlienFarms.Data
         [NonSerialized] private string _localPlayerId;
         [NonSerialized] private string _lastErrorKey;
         [NonSerialized] private int _participantCount;
+        [NonSerialized] private string _rejoinCode;
+        [NonSerialized] private double _rejoinExpiresAt;
+        // Device preference, not session state: loaded lazily (PlayerPrefs is not available during asset loading) and
+        // kept across generations because every write goes through to PlayerPrefs.
+        [NonSerialized] private string _displayName;
+        [NonSerialized] private bool _displayNameLoaded;
 
         /// <summary>Raised after any state change (status, code, participants, error).</summary>
         public event Action Changed;
@@ -41,6 +50,9 @@ namespace AlienFarms.Data
 
         /// <summary>Service side: leave the current session.</summary>
         public event Action LeaveRequested;
+
+        /// <summary>Service side: reconnect to the session of the current rejoin offer (<see cref="RejoinCode"/>).</summary>
+        public event Action RejoinRequested;
 
         public OnlineSessionStatus Status => IsCurrent ? _status : OnlineSessionStatus.SignedOut;
 
@@ -59,6 +71,31 @@ namespace AlienFarms.Data
         public bool HasError => !string.IsNullOrEmpty(LastErrorKey);
 
         public int ParticipantCount => IsCurrent ? _participantCount : 0;
+
+        /// <summary>
+        /// True while this machine holds a reconnection offer (its connection dropped during a match). The offer may
+        /// already be past <see cref="RejoinExpiresAt"/>: <see cref="RequestRejoin"/> checks it.
+        /// </summary>
+        public bool HasRejoinOffer => IsCurrent && !string.IsNullOrEmpty(_rejoinCode);
+
+        /// <summary>Join code of the session to reconnect to (null without an offer).</summary>
+        public string RejoinCode => HasRejoinOffer ? _rejoinCode : null;
+
+        /// <summary>When the offer expires, in <see cref="Time.realtimeSinceStartupAsDouble"/> seconds (0 without an offer).</summary>
+        public double RejoinExpiresAt => HasRejoinOffer ? _rejoinExpiresAt : 0d;
+
+        /// <summary>
+        /// Name typed by the player on this device, sanitized (<see cref="DisplayNameSanitizer"/>); empty when none
+        /// (the service then falls back to the generated UGS name).
+        /// </summary>
+        public string DisplayName
+        {
+            get
+            {
+                EnsureDisplayNameLoaded();
+                return _displayName;
+            }
+        }
 
         private bool IsCurrent => _generation == s_generation;
 
@@ -136,7 +173,102 @@ namespace AlienFarms.Data
             return Dispatch(LeaveRequested);
         }
 
+        /// <summary>
+        /// Asks the service to reconnect to the session of the rejoin offer. False (with an error key) when there is no
+        /// valid offer (<see cref="OnlineSessionErrorKeys.RejoinExpired"/>; an expired one is cleared), when not allowed now
+        /// or when no service is listening.
+        /// </summary>
+        public bool RequestRejoin()
+        {
+            if (!HasRejoinOffer)
+            {
+                return Reject(OnlineSessionErrorKeys.RejoinExpired);
+            }
+
+            if (Time.realtimeSinceStartupAsDouble >= _rejoinExpiresAt)
+            {
+                ClearRejoinOffer();
+                return Reject(OnlineSessionErrorKeys.RejoinExpired);
+            }
+
+            if (!OnlineSessionStatusRules.CanStartSession(Status))
+            {
+                return Reject(Status == OnlineSessionStatus.InSession ? OnlineSessionErrorKeys.AlreadyInSession : OnlineSessionErrorKeys.Busy);
+            }
+
+            return Dispatch(RejoinRequested);
+        }
+
+        /// <summary>Stores the name typed by the player (sanitized; empty clears it) and persists it on this device.</summary>
+        public void SetDisplayName(string name)
+        {
+            EnsureDisplayNameLoaded();
+            string clean = DisplayNameSanitizer.Sanitize(name);
+            if (string.Equals(_displayName, clean, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _displayName = clean;
+            try
+            {
+                if (clean.Length == 0)
+                {
+                    PlayerPrefs.DeleteKey(DisplayNamePrefsKey);
+                }
+                else
+                {
+                    PlayerPrefs.SetString(DisplayNamePrefsKey, clean);
+                }
+
+                PlayerPrefs.Save();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[{nameof(OnlineSessionChannel)}] Could not save the display name: {exception.Message}", this);
+            }
+
+            Changed?.Invoke();
+        }
+
         // ---- State (service side) ----
+
+        /// <summary>
+        /// Offers a reconnection to the session with <paramref name="code"/> until <paramref name="expiresAt"/>
+        /// (<see cref="Time.realtimeSinceStartupAsDouble"/> seconds). An empty code clears the offer.
+        /// </summary>
+        public void SetRejoinOffer(string code, double expiresAt)
+        {
+            EnsureCurrent();
+            if (string.IsNullOrEmpty(code))
+            {
+                ClearRejoinOffer();
+                return;
+            }
+
+            if (string.Equals(_rejoinCode, code, StringComparison.Ordinal) && _rejoinExpiresAt == expiresAt)
+            {
+                return;
+            }
+
+            _rejoinCode = code;
+            _rejoinExpiresAt = expiresAt;
+            Changed?.Invoke();
+        }
+
+        /// <summary>Drops the rejoin offer (used, expired, or the player left on purpose).</summary>
+        public void ClearRejoinOffer()
+        {
+            EnsureCurrent();
+            if (_rejoinCode == null)
+            {
+                return;
+            }
+
+            _rejoinCode = null;
+            _rejoinExpiresAt = 0d;
+            Changed?.Invoke();
+        }
 
         /// <summary>Moves to <paramref name="status"/> when the transition is allowed; raises <see cref="Changed"/>.</summary>
         public bool TrySetStatus(OnlineSessionStatus status)
@@ -151,6 +283,8 @@ namespace AlienFarms.Data
             if (status == OnlineSessionStatus.SignedOut)
             {
                 _localPlayerId = null;
+                _rejoinCode = null;
+                _rejoinExpiresAt = 0d;
                 ClearSessionData();
             }
             else if (status == OnlineSessionStatus.Ready)
@@ -280,7 +414,28 @@ namespace AlienFarms.Data
             _status = OnlineSessionStatus.SignedOut;
             _localPlayerId = null;
             _lastErrorKey = null;
+            _rejoinCode = null;
+            _rejoinExpiresAt = 0d;
             ClearSessionData();
+        }
+
+        private void EnsureDisplayNameLoaded()
+        {
+            if (_displayNameLoaded)
+            {
+                return;
+            }
+
+            _displayNameLoaded = true;
+            try
+            {
+                _displayName = DisplayNameSanitizer.Sanitize(PlayerPrefs.GetString(DisplayNamePrefsKey, string.Empty));
+            }
+            catch (Exception exception)
+            {
+                _displayName = string.Empty;
+                Debug.LogWarning($"[{nameof(OnlineSessionChannel)}] Could not read the display name: {exception.Message}", this);
+            }
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

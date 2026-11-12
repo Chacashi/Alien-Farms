@@ -54,9 +54,25 @@ namespace AlienFarms.Networking.Tests
         [TestCase(DisconnectReasons.HostDisconnected, OnlineSessionErrorKeys.HostLeft)]
         [TestCase(DisconnectReasons.InvalidPayload, OnlineSessionErrorKeys.ConnectionFailed)]
         [TestCase(DisconnectReasons.NotSessionMember, OnlineSessionErrorKeys.NotSessionMember)]
+        [TestCase(DisconnectReasons.ReconnectDenied, OnlineSessionErrorKeys.ReconnectDenied)]
+        [TestCase(DisconnectReasons.ConnectionLost, OnlineSessionErrorKeys.ConnectionLost)]
         public void FromDisconnectReason_KnownReason_MapsToKey(string reason, string expected)
         {
             Assert.That(OnlineSessionErrorMapper.FromDisconnectReason(reason), Is.EqualTo(expected));
+        }
+
+        [TestCase(null)]
+        [TestCase("")]
+        [TestCase("Disconnected due to transport failure")]
+        public void FromDisconnectReason_NormalizedDropWithoutReason_IsConnectionLost(string raw)
+        {
+            Assert.That(OnlineSessionErrorMapper.FromDisconnectReason(DisconnectReasons.Normalize(raw)), Is.EqualTo(OnlineSessionErrorKeys.ConnectionLost));
+        }
+
+        [Test]
+        public void FromDisconnectReason_ExplicitHostShutdown_IsStillHostLeft()
+        {
+            Assert.That(OnlineSessionErrorMapper.FromDisconnectReason(DisconnectReasons.Normalize(DisconnectReasons.HostDisconnected)), Is.EqualTo(OnlineSessionErrorKeys.HostLeft));
         }
 
         [Test]

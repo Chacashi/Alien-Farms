@@ -114,10 +114,10 @@ namespace AlienFarms.Core
         public static event Action<PlayerId, int, int> OnPenInventoryChanged;
 
         /// <summary>
-        /// Online: the given player's connection changed. Payload: player, connected, and the reconnection grace left (s)
-        /// when it disconnected (0 when connected).
+        /// Online: the given player's seat presence changed. Payload: player, new status, and the reconnection grace left (s)
+        /// while <see cref="PlayerConnectionStatus.Reconnecting"/> (0 otherwise).
         /// </summary>
-        public static event Action<PlayerId, bool, float> OnPlayerConnectionChanged;
+        public static event Action<PlayerId, PlayerConnectionStatus, float> OnPlayerConnectionChanged;
 
         /// <summary>A tackle claim was resolved. Payload: attacker, victim and whether the tackle was accepted.</summary>
         public static event Action<PlayerId, PlayerId, bool> OnTackleResolved;
@@ -208,8 +208,8 @@ namespace AlienFarms.Core
             PenInventorySnapshot.Reset();
         }
 
-        public static void RaisePlayerConnectionChanged(PlayerId playerId, bool connected, float graceSeconds) =>
-            OnPlayerConnectionChanged?.Invoke(playerId, connected, graceSeconds);
+        public static void RaisePlayerConnectionChanged(PlayerId playerId, PlayerConnectionStatus status, float graceSeconds) =>
+            OnPlayerConnectionChanged?.Invoke(playerId, status, graceSeconds);
 
         public static void RaiseTackleResolved(PlayerId attacker, PlayerId victim, bool accepted) =>
             OnTackleResolved?.Invoke(attacker, victim, accepted);

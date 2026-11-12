@@ -20,6 +20,8 @@ namespace AlienFarms.Match
     [DisallowMultipleComponent]
     public sealed class MatchManager : MonoBehaviour, IMatchContext
     {
+        private const int RequiredPlayers = 2;
+
         [Header("Config")]
         [SerializeField, Tooltip("Round timing.")]
         private MatchSettings _settings;
@@ -99,10 +101,41 @@ namespace AlienFarms.Match
             _roster = roster;
         }
 
-        /// <summary>While suspended the state machine is not ticked (timer and countdown frozen); events still update the score while playing.</summary>
+        /// <summary>
+        /// While suspended the state machine is not ticked (timer and countdown frozen); events still update the score
+        /// while playing. Idempotent. Suspending in a <see cref="MatchSuspendRules.SuspendsIn"/> phase freezes the players'
+        /// controls; resuming applies <see cref="MatchSuspendRules.OnResume"/> (controls back in Playing, countdown
+        /// restarted in Countdown; with a player missing the state aborts on its next tick).
+        /// </summary>
         public void SetSuspended(bool suspended)
         {
+            if (_suspended == suspended)
+            {
+                return;
+            }
+
             _suspended = suspended;
+            MatchPhase phase = CurrentPhase;
+            if (suspended)
+            {
+                if (MatchSuspendRules.SuspendsIn(phase))
+                {
+                    SetPlayerControlsEnabled(false);
+                }
+
+                return;
+            }
+
+            int joined = _roster != null ? _roster.JoinedCount : 0;
+            switch (MatchSuspendRules.OnResume(phase, joined >= RequiredPlayers))
+            {
+                case MatchResumeAction.EnableControls:
+                    SetPlayerControlsEnabled(true);
+                    break;
+                case MatchResumeAction.RestartCountdown:
+                    RestartRound();
+                    break;
+            }
         }
 
         private void OnEnable()
