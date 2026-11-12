@@ -180,8 +180,33 @@ namespace AlienFarms.Core
         public static void RaisePlayerStunned(PlayerId victim, PlayerId source, float duration) =>
             OnPlayerStunned?.Invoke(victim, source, duration);
 
-        public static void RaisePenInventoryChanged(PlayerId playerId, int animalTypeIndex, int count) =>
+        public static void RaisePenInventoryChanged(PlayerId playerId, int animalTypeIndex, int count)
+        {
+            PenInventorySnapshot.Set(playerId, animalTypeIndex, count);
             OnPenInventoryChanged?.Invoke(playerId, animalTypeIndex, count);
+        }
+
+        /// <summary>
+        /// Raises 0 for every cached non-zero pen count, then clears the snapshot: listeners and late views both read
+        /// empty pens. Used when a new match or online session starts.
+        /// </summary>
+        public static void ClearPenInventory()
+        {
+            for (int p = (int)PlayerId.Player1; p <= (int)PlayerId.Player2; p++)
+            {
+                var playerId = (PlayerId)p;
+                int capacity = PenInventorySnapshot.TypeCapacity(playerId);
+                for (int t = 0; t < capacity; t++)
+                {
+                    if (PenInventorySnapshot.Get(playerId, t) != 0)
+                    {
+                        RaisePenInventoryChanged(playerId, t, 0);
+                    }
+                }
+            }
+
+            PenInventorySnapshot.Reset();
+        }
 
         public static void RaisePlayerConnectionChanged(PlayerId playerId, bool connected, float graceSeconds) =>
             OnPlayerConnectionChanged?.Invoke(playerId, connected, graceSeconds);
@@ -222,6 +247,7 @@ namespace AlienFarms.Core
             OnPenInventoryChanged = null;
             OnPlayerConnectionChanged = null;
             OnTackleResolved = null;
+            PenInventorySnapshot.Reset();
         }
     }
 }

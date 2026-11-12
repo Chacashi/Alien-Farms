@@ -66,6 +66,10 @@ namespace AlienFarms.Match
 
         private void Awake()
         {
+            // A new match scene starts with empty pens: the snapshot may hold a previous session's counts (statics
+            // survive scene loads and online shutdown/re-host without leaving Play Mode).
+            GameEvents.ClearPenInventory();
+
             if (_settings == null || _spawner == null)
             {
                 Debug.LogError($"[{nameof(MatchManager)}] Missing settings or spawner on '{name}'; match disabled.", this);

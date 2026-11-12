@@ -39,6 +39,27 @@ namespace AlienFarms.Tests
         }
 
         [Test]
+        public void ClearPenInventory_RaisesZeroForCachedCountsAndClearsSnapshot()
+        {
+            GameEvents.ClearPenInventory();
+            GameEvents.RaisePenInventoryChanged(PlayerId.Player1, 0, 2);
+            GameEvents.RaisePenInventoryChanged(PlayerId.Player2, 1, 3);
+            GameEvents.RaisePenInventoryChanged(PlayerId.Player2, 2, 0);
+
+            GameEvents.OnPenInventoryChanged += HandlePen;
+            GameEvents.ClearPenInventory();
+
+            // Only the two non-zero entries are re-raised, both as 0.
+            Assert.That(_calls, Is.EqualTo(2));
+            Assert.That(_lastInt, Is.EqualTo(0));
+            Assert.That(PenInventorySnapshot.Get(PlayerId.Player1, 0), Is.EqualTo(0));
+            Assert.That(PenInventorySnapshot.Get(PlayerId.Player2, 1), Is.EqualTo(0));
+
+            GameEvents.ClearPenInventory();
+            Assert.That(_calls, Is.EqualTo(2));
+        }
+
+        [Test]
         public void RaisePlayerConnectionChanged_DeliversPayload()
         {
             GameEvents.OnPlayerConnectionChanged += HandleConnection;

@@ -52,6 +52,9 @@ namespace AlienFarms.Networking.Match
             _player1Pen.OnListChanged += HandlePlayer1PenChanged;
             _player2Pen.OnListChanged += HandlePlayer2PenChanged;
             _clientListening = true;
+
+            // New session: drop counts cached from a previous one (missing entries mean 0 and are never sent).
+            GameEvents.ClearPenInventory();
             RaiseAll(PlayerId.Player1, _player1Pen);
             RaiseAll(PlayerId.Player2, _player2Pen);
         }

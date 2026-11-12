@@ -11,6 +11,10 @@ namespace AlienFarms.Data
         [SerializeField, Tooltip("Pooled prefab spawned for this type (root must have an Animal component).")]
         private Animal _prefab;
 
+        [Header("HUD")]
+        [SerializeField, Tooltip("Icon shown in the pen inventory HUD for this type (optional).")]
+        private Sprite _icon;
+
         [Header("Score")]
         [SerializeField, Min(1), Tooltip("Points this animal is worth while it sits inside a player's zone.")]
         private int _points = 1;
@@ -106,6 +110,7 @@ namespace AlienFarms.Data
         private Vector2 _voicePitchRange = new Vector2(0.92f, 1.08f);
 
         public Animal Prefab => _prefab;
+        public Sprite Icon => _icon;
         public int Points => _points;
         public float Mass => _mass;
         public float WanderSpeed => _wanderSpeed;

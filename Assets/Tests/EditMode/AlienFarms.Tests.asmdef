@@ -8,6 +8,7 @@
         "UnityEditor.TestRunner",
         "AlienFarms.Editor",
         "Unity.TextMeshPro",
+        "UnityEngine.UI",
         "Unity.Localization",
         "Unity.Localization.Editor",
         "Unity.ResourceManager"
