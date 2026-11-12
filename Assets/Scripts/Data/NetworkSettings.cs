@@ -69,6 +69,12 @@ namespace AlienFarms.Data
         [SerializeField, Tooltip("Logs every ownership change of carried objects (animals, bombs) on every instance.")]
         private bool _logOwnership = true;
 
+        [SerializeField, Tooltip("Pool counters (animals and bombs: active / in pool / created) and receive-queue stats visible by default in the online debug view (the debug overlay can override it at runtime).")]
+        private bool _showPoolStats = true;
+
+        [SerializeField, Tooltip("Logs every network spawn / despawn of a pooled animal or bomb (first use or reused, pool counters). Off by default: noisy.")]
+        private bool _logPoolLifecycle;
+
         public int ProtocolVersion => _protocolVersion;
         public string EnvironmentName => _environmentName;
         public int MaxPlayers => _maxPlayers;
@@ -87,6 +93,8 @@ namespace AlienFarms.Data
         public bool LagCompDefault => _lagCompDefault;
         public bool ShowOwnershipLabels => _showOwnershipLabels;
         public bool LogOwnership => _logOwnership;
+        public bool ShowPoolStats => _showPoolStats;
+        public bool LogPoolLifecycle => _logPoolLifecycle;
 
         private void OnValidate()
         {

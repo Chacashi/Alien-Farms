@@ -12,20 +12,23 @@ namespace AlienFarms.Networking.Pooling
     /// NGO instance handler for one animal type, on top of the spawner's existing pool. Clients: a spawn takes a pooled
     /// Replica (<see cref="AnimalTypePool.GetForReplica"/>) instead of instantiating, and a despawn returns it
     /// (<see cref="Animal.Despawn"/> as Replica = back to the pool, no events). On the server instances come from the
-    /// simulation itself (see <see cref="NetworkSpawnRegistry"/>); NGO only calls Destroy there while shutting down,
-    /// when the instance is left to the scene unload.
+    /// simulation itself (see <see cref="NetworkSpawnRegistry"/>); NGO only calls Destroy there while shutting down:
+    /// <see cref="NetworkAnimal"/> has already switched an animal still in play to Replica in OnNetworkDespawn, so it
+    /// goes back to its pool too, while an Authority instance is left alone.
     /// </summary>
     public sealed class NetworkAnimalPoolHandler : INetworkPrefabInstanceHandler
     {
         private readonly AnimalSpawner _spawner;
         private readonly AnimalData _data;
         private readonly NetworkRuntimeAnchor _anchor;
+        private readonly NetworkPoolLog _log;
 
-        public NetworkAnimalPoolHandler(AnimalSpawner spawner, AnimalData data, NetworkRuntimeAnchor anchor)
+        internal NetworkAnimalPoolHandler(AnimalSpawner spawner, AnimalData data, NetworkRuntimeAnchor anchor, NetworkPoolLog log)
         {
             _spawner = spawner;
             _data = data;
             _anchor = anchor;
+            _log = log;
         }
 
         public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
@@ -45,6 +48,7 @@ namespace AlienFarms.Networking.Pooling
             }
 
             networkAnimal.Bind(_anchor);
+            _log?.Spawned(networkAnimal, networkAnimal.SpawnCount + 1);
             return networkObject;
         }
 
@@ -61,6 +65,10 @@ namespace AlienFarms.Networking.Pooling
                 PooledParenting.BeginRelease(networkObject, out bool sync);
                 animal.Despawn();
                 PooledParenting.EndRelease(networkObject, sync);
+                if (_log != null && networkObject.TryGetComponent(out NetworkAnimal networkAnimal))
+                {
+                    _log.Despawned(networkAnimal);
+                }
             }
         }
     }

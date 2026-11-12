@@ -64,6 +64,9 @@ namespace AlienFarms.Items
         /// <summary>Bombs the pool ever created.</summary>
         public int PoolCountAll => _pool != null ? _pool.CountAll : 0;
 
+        /// <summary>Bombs created up front at load time (the pool's expected size when nothing instantiates later).</summary>
+        public int PrewarmCount => _settings != null ? _settings.MaxActive : 0;
+
         private void Awake()
         {
             if (_settings == null || _data == null || _data.Prefab == null || _animalZone == null)

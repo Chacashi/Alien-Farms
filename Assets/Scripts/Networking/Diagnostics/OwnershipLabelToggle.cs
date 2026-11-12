@@ -11,53 +11,32 @@ namespace AlienFarms.Networking.Diagnostics
     /// </summary>
     public static class OwnershipLabelToggle
     {
-        private static bool s_hasOverride;
-        private static bool s_visible;
+        private static readonly DebugViewSwitch s_switch = new DebugViewSwitch();
 
         /// <summary>Raised when the override changes; listeners re-read <see cref="IsVisible"/>.</summary>
-        public static event Action Changed;
+        public static event Action Changed
+        {
+            add => s_switch.Changed += value;
+            remove => s_switch.Changed -= value;
+        }
 
-        public static bool HasOverride => s_hasOverride;
+        public static bool HasOverride => s_switch.HasOverride;
 
         /// <summary>Effective visibility: the override if any, otherwise <paramref name="defaultVisible"/> (from the settings).</summary>
-        public static bool IsVisible(bool defaultVisible) => s_hasOverride ? s_visible : defaultVisible;
+        public static bool IsVisible(bool defaultVisible) => s_switch.IsVisible(defaultVisible);
 
-        public static void SetVisible(bool visible)
-        {
-            if (s_hasOverride && s_visible == visible)
-            {
-                return;
-            }
-
-            s_hasOverride = true;
-            s_visible = visible;
-            Changed?.Invoke();
-        }
+        public static void SetVisible(bool visible) => s_switch.SetVisible(visible);
 
         /// <summary>Flips the effective visibility (<paramref name="defaultVisible"/> = the settings' default).</summary>
-        public static void Toggle(bool defaultVisible)
-        {
-            SetVisible(!IsVisible(defaultVisible));
-        }
+        public static void Toggle(bool defaultVisible) => s_switch.Toggle(defaultVisible);
 
         /// <summary>Back to the settings' default.</summary>
-        public static void ClearOverride()
-        {
-            if (!s_hasOverride)
-            {
-                return;
-            }
-
-            s_hasOverride = false;
-            Changed?.Invoke();
-        }
+        public static void ClearOverride() => s_switch.ClearOverride();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
         {
-            s_hasOverride = false;
-            s_visible = false;
-            Changed = null;
+            s_switch.Reset();
         }
     }
 }

@@ -68,6 +68,9 @@ namespace AlienFarms.Networking.Player
         /// <summary>Between the end of OnNetworkSpawn and OnNetworkDespawn (IsSpawned is still true during despawn).</summary>
         public bool IsInPlay => _inPlay && IsSpawned;
 
+        /// <summary>Network spawns of this pooled instance so far, the current one included (pool lifecycle log).</summary>
+        public int SpawnCount { get; private set; }
+
         /// <summary>Owner as the views show it (server, a seat, or a client not resolved yet). No allocation.</summary>
         public CarriableOwner ResolveOwner()
         {
@@ -113,6 +116,7 @@ namespace AlienFarms.Networking.Player
         protected override void OnNetworkPostSpawn()
         {
             base.OnNetworkPostSpawn();
+            SpawnCount++;
             _inPlay = true;
             _ownerSeat = SeatOfClient(OwnerClientId);
             NotifyViewChanged();

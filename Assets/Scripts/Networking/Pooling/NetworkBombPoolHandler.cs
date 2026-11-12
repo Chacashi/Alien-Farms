@@ -10,17 +10,20 @@ namespace AlienFarms.Networking.Pooling
     /// <summary>
     /// NGO instance handler for the bomb prefab, on top of the <see cref="BombSpawner"/> pool. Clients: a spawn takes a
     /// pooled Replica (<see cref="BombSpawner.GetForReplica"/>), a despawn returns it (<see cref="Bomb.Despawn"/> as
-    /// Replica). On the server NGO only calls Destroy while shutting down; the instance is left to the scene unload.
+    /// Replica). On the server NGO only calls Destroy while shutting down: <see cref="NetworkBomb"/> has already switched a
+    /// bomb still in play to Replica in OnNetworkDespawn, so it goes back to the pool too; an Authority one is left alone.
     /// </summary>
     public sealed class NetworkBombPoolHandler : INetworkPrefabInstanceHandler
     {
         private readonly BombSpawner _spawner;
         private readonly NetworkRuntimeAnchor _anchor;
+        private readonly NetworkPoolLog _log;
 
-        public NetworkBombPoolHandler(BombSpawner spawner, NetworkRuntimeAnchor anchor)
+        internal NetworkBombPoolHandler(BombSpawner spawner, NetworkRuntimeAnchor anchor, NetworkPoolLog log)
         {
             _spawner = spawner;
             _anchor = anchor;
+            _log = log;
         }
 
         public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
@@ -40,6 +43,7 @@ namespace AlienFarms.Networking.Pooling
             }
 
             networkBomb.Bind(_anchor);
+            _log?.Spawned(networkBomb, networkBomb.SpawnCount + 1);
             return networkObject;
         }
 
@@ -56,6 +60,10 @@ namespace AlienFarms.Networking.Pooling
                 PooledParenting.BeginRelease(networkObject, out bool sync);
                 bomb.Despawn();
                 PooledParenting.EndRelease(networkObject, sync);
+                if (_log != null && networkObject.TryGetComponent(out NetworkBomb networkBomb))
+                {
+                    _log.Despawned(networkBomb);
+                }
             }
         }
     }
