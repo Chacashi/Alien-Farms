@@ -17,6 +17,8 @@ MonoBehaviour:
   _maxPlayers: 3
   _allowSpectator: 1
   _reconnectGraceSeconds: 20
+  _autoRejoin: 1
+  _autoRejoinRetrySeconds: 2
   _inputRedundancy: 3
   _inputBufferTarget: 2
   _interpolationDelay: 0.1

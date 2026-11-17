@@ -431,6 +431,54 @@ namespace AlienFarms.Tests
             Assert.That(_channel.LastErrorKey, Is.EqualTo(OnlineSessionErrorKeys.AlreadyInSession));
         }
 
+        // ---- Decline rejoin (2.9) ----
+
+        [Test]
+        public void RequestDeclineRejoin_WithOffer_DispatchesToTheService()
+        {
+            MoveToReady();
+            _channel.SetRejoinOffer("BCD789", Time.realtimeSinceStartupAsDouble + 20d);
+            int declines = 0;
+            void OnDecline() => declines++;
+            _channel.DeclineRejoinRequested += OnDecline;
+
+            bool accepted = _channel.RequestDeclineRejoin();
+            _channel.DeclineRejoinRequested -= OnDecline;
+
+            Assert.That(accepted, Is.True);
+            Assert.That(declines, Is.EqualTo(1));
+            Assert.That(_channel.HasRejoinOffer, Is.True, "The service is the writer: it clears the offer.");
+        }
+
+        [Test]
+        public void RequestDeclineRejoin_WithoutService_ClearsTheOfferHere()
+        {
+            MoveToReady();
+            _channel.SetRejoinOffer("BCD789", Time.realtimeSinceStartupAsDouble + 20d);
+
+            bool accepted = _channel.RequestDeclineRejoin();
+
+            Assert.That(accepted, Is.True);
+            Assert.That(_channel.HasRejoinOffer, Is.False);
+        }
+
+        [Test]
+        public void RequestDeclineRejoin_WithoutOffer_IsIgnored()
+        {
+            MoveToReady();
+            int declines = 0;
+            void OnDecline() => declines++;
+            _channel.DeclineRejoinRequested += OnDecline;
+            _changed = 0;
+
+            bool accepted = _channel.RequestDeclineRejoin();
+            _channel.DeclineRejoinRequested -= OnDecline;
+
+            Assert.That(accepted, Is.False);
+            Assert.That(declines, Is.EqualTo(0));
+            Assert.That(_changed, Is.EqualTo(0));
+        }
+
         // ---- Display name (2.7) ----
 
         [Test]

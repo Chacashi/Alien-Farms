@@ -253,6 +253,21 @@ namespace AlienFarms.Networking.Session
                     return reconnected;
                 }
 
+                // No network / service right now: the join by code would fail too, with a key that drops the offer
+                // (join_failed / session_not_found). Return a key that keeps it, so the next (auto) attempt can retry.
+                if (!RejoinOfferRules.FallsBackToCodeJoin(reconnected.ErrorKey))
+                {
+                    return reconnected;
+                }
+
+                // Only a hint on Windows: virtual adapters (VPN, Hyper-V, VirtualBox) can still report LAN with the wifi
+                // down, so a reachable answer does not prove there is internet; NotReachable is trusted.
+                if (Application.internetReachability == NetworkReachability.NotReachable)
+                {
+                    Debug.Log($"[{nameof(RelaySessionConnection)}] Reconnection to session {sessionId} failed ({reconnected.ErrorKey ?? "no network"}) with no network reachable; not joining by code yet.");
+                    return RelaySessionStart.Failed(OnlineSessionErrorKeys.NoConnection);
+                }
+
                 // NGO may still be shutting down after the failed attempt; the join needs it stopped.
                 if (!await WaitForManagerStoppedAsync(manager, cancellationToken))
                 {
@@ -419,31 +434,33 @@ namespace AlienFarms.Networking.Session
         }
 
         /// <summary>
-        /// Ends the current session of a client whose host left (see <see cref="EndAfterHostLeftAsync(RelaySessionStart, float)"/>).
+        /// Ends the current session of a client dropped from it: its host left or its connection was lost (see
+        /// <see cref="EndAfterDropAsync(RelaySessionStart, float)"/>). The lobby membership is kept (no LeaveAsync).
         /// Never throws.
         /// </summary>
-        public Task EndAfterHostLeftAsync()
+        public Task EndAfterDropAsync()
         {
             RelaySessionStart current = _current;
             _current = null;
-            return EndAfterHostLeftAsync(current, _hostLeftWaitSeconds);
+            return EndAfterDropAsync(current, _hostLeftWaitSeconds);
         }
 
         /// <summary>
-        /// Client side of a session the host ended: the lobby is deleted (or about to be), so <c>ISession.LeaveAsync</c>
-        /// would hit a 404 and leave the session registered in the SDK (see <see cref="SessionSdkWorkarounds"/>).
+        /// Client side of a session it was dropped from. Host left: the lobby is deleted (or about to be), so
+        /// <c>ISession.LeaveAsync</c> would hit a 404 and leave the session registered in the SDK (see
+        /// <see cref="SessionSdkWorkarounds"/>). Connection lost: leaving would give up the reserved seat it may rejoin.
         /// Waits up to <paramref name="waitSeconds"/> for the SDK's own Deleted / RemovedFromSession to unregister it,
         /// otherwise releases it locally; then stops that start's NGO run if still running. Touches no component
         /// state, so it also works after the root was destroyed. Never throws.
         /// </summary>
-        internal static Task EndAfterHostLeftAsync(RelaySessionStart start, float waitSeconds)
+        internal static Task EndAfterDropAsync(RelaySessionStart start, float waitSeconds)
         {
             if (start == null || !start.IsSuccess)
             {
                 return Task.CompletedTask;
             }
 
-            return TrackEndAsync(start.Session, EndAfterHostLeftCoreAsync(start, waitSeconds));
+            return TrackEndAsync(start.Session, EndAfterDropCoreAsync(start, waitSeconds));
         }
 
         /// <summary>
@@ -523,7 +540,7 @@ namespace AlienFarms.Networking.Session
             }
         }
 
-        private static async Task EndAfterHostLeftCoreAsync(RelaySessionStart start, float waitSeconds)
+        private static async Task EndAfterDropCoreAsync(RelaySessionStart start, float waitSeconds)
         {
             ISession session = start.Session;
             try
@@ -536,7 +553,7 @@ namespace AlienFarms.Networking.Session
             }
             catch (Exception exception)
             {
-                Debug.LogWarning($"[{nameof(RelaySessionConnection)}] Ending the session after the host left failed: {exception.Message}");
+                Debug.LogWarning($"[{nameof(RelaySessionConnection)}] Ending the session after a drop (host left / connection lost) failed: {exception.Message}");
             }
 
             await StopHandlerAsync(start);

@@ -46,7 +46,7 @@ Material:
     m_Colors:
     - _CloudColor: {r: 1, g: 1, b: 1, a: 1}
     - _CloudShadowColor: {r: 0.72, g: 0.78999996, b: 0.93, a: 1}
-    - _CloudWind: {r: 0.012, g: 0.004, b: 0, a: 0}
+    - _CloudWind: {r: 0.024, g: 0.008, b: 0, a: 0}
     - _GroundColor: {r: 0.95, g: 0.86, b: 0.7, a: 1}
     - _HorizonColor: {r: 1, g: 0.87, b: 0.68, a: 1}
     - _PlanetColorA: {r: 0.65999997, g: 0.5, b: 0.95, a: 1}

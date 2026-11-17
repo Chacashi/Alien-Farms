@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: AnimalData_Cow
   m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Data.AnimalData
   _prefab: {fileID: 662305758453040419, guid: b09017501bf44f644b6c38f548cc8a9f, type: 3}
+  _icon: {fileID: 21300000, guid: 4d7f986c8519f254abd0e5e8dc971060, type: 3}
   _points: 3
   _mass: 6
   _wanderSpeed: 0.6

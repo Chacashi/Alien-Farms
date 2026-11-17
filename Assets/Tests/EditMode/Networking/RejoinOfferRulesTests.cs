@@ -61,6 +61,7 @@ namespace AlienFarms.Networking.Tests
         [TestCase(OnlineSessionErrorKeys.ConnectionFailed, true)]
         [TestCase(OnlineSessionErrorKeys.NoConnection, true)]
         [TestCase(OnlineSessionErrorKeys.RateLimited, true)]
+        [TestCase(OnlineSessionErrorKeys.ServicesUnavailable, true)]
         [TestCase(OnlineSessionErrorKeys.SessionNotFound, false)]
         [TestCase(OnlineSessionErrorKeys.HostLeft, false)]
         [TestCase(OnlineSessionErrorKeys.ReconnectDenied, false)]
@@ -70,6 +71,61 @@ namespace AlienFarms.Networking.Tests
         public void KeepsOfferAfterFailure_OnlyForRetryableErrors(string key, bool expected)
         {
             Assert.That(RejoinOfferRules.KeepsOfferAfterFailure(key), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void ShouldAutoRejoin_OfferReadyReachableAndDue_Retries()
+        {
+            Assert.That(RejoinOfferRules.ShouldAutoRejoin(true, OnlineSessionStatus.Ready, true, 10d, 10d), Is.True);
+            Assert.That(RejoinOfferRules.ShouldAutoRejoin(true, OnlineSessionStatus.Ready, true, 12d, 10d), Is.True);
+        }
+
+        [Test]
+        public void ShouldAutoRejoin_BeforeTheRetryDelay_Waits()
+        {
+            Assert.That(RejoinOfferRules.ShouldAutoRejoin(true, OnlineSessionStatus.Ready, true, 9.99d, 10d), Is.False);
+        }
+
+        [Test]
+        public void ShouldAutoRejoin_WithoutOfferOrNetwork_DoesNot()
+        {
+            Assert.That(RejoinOfferRules.ShouldAutoRejoin(false, OnlineSessionStatus.Ready, true, 10d, 0d), Is.False);
+            Assert.That(RejoinOfferRules.ShouldAutoRejoin(true, OnlineSessionStatus.Ready, false, 10d, 0d), Is.False);
+        }
+
+        [TestCase(OnlineSessionStatus.SignedOut)]
+        [TestCase(OnlineSessionStatus.SigningIn)]
+        [TestCase(OnlineSessionStatus.Creating)]
+        [TestCase(OnlineSessionStatus.Joining)]
+        [TestCase(OnlineSessionStatus.InSession)]
+        [TestCase(OnlineSessionStatus.Leaving)]
+        public void ShouldAutoRejoin_OnlyFromReady_NeverWhileAnAttemptIsInFlight(OnlineSessionStatus status)
+        {
+            Assert.That(RejoinOfferRules.ShouldAutoRejoin(true, status, true, 10d, 0d), Is.False);
+        }
+
+        [TestCase(OnlineSessionErrorKeys.NoConnection, false)]
+        [TestCase(OnlineSessionErrorKeys.ServicesUnavailable, false)]
+        [TestCase(OnlineSessionErrorKeys.RateLimited, false)]
+        [TestCase(OnlineSessionErrorKeys.JoinFailed, true)]
+        [TestCase(OnlineSessionErrorKeys.SessionNotFound, true)]
+        [TestCase(OnlineSessionErrorKeys.ConnectionFailed, true)]
+        [TestCase(OnlineSessionErrorKeys.RelayFailed, true)]
+        [TestCase(OnlineSessionErrorKeys.Unknown, true)]
+        [TestCase(null, true)]
+        public void FallsBackToCodeJoin_ExceptWithoutNetworkOrService(string key, bool expected)
+        {
+            Assert.That(RejoinOfferRules.FallsBackToCodeJoin(key), Is.EqualTo(expected));
+        }
+
+        [TestCase(OnlineSessionErrorKeys.NoConnection)]
+        [TestCase(OnlineSessionErrorKeys.ServicesUnavailable)]
+        [TestCase(OnlineSessionErrorKeys.RateLimited)]
+        public void NoNetworkReconnectFailure_KeepsTheOffer(string key)
+        {
+            // RejoinAsync returns the reconnection's own key when it does not fall back: it must keep the offer.
+            Assert.That(RejoinOfferRules.FallsBackToCodeJoin(key), Is.False);
+            Assert.That(RejoinOfferRules.KeepsOfferAfterFailure(key), Is.True);
         }
     }
 }

@@ -47,6 +47,13 @@ namespace AlienFarms.Networking.Tests
         }
 
         [Test]
+        public void Defaults_AutoRejoinEveryTwoSeconds()
+        {
+            Assert.That(_settings.AutoRejoin, Is.True);
+            Assert.That(_settings.AutoRejoinRetrySeconds, Is.EqualTo(2f));
+        }
+
+        [Test]
         public void Defaults_ShowOwnershipLabelsAndLogOwnership()
         {
             Assert.That(_settings.ShowOwnershipLabels, Is.True);

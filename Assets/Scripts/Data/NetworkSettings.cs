@@ -30,6 +30,13 @@ namespace AlienFarms.Data
         [SerializeField, Range(0f, 2f), Tooltip("A host leaving on purpose first tells its clients and keeps their connections open this long (s) so the notice is delivered, then disconnects them (they record a host-left win instead of a lost connection). 0 = disconnect at once.")]
         private float _hostLeaveNoticeSeconds = 0.5f;
 
+        [Header("Reconnection")]
+        [SerializeField, Tooltip("A client dropped by a lost connection retries the rejoin by itself from the online hub while its offer lasts (no click needed). Off = only the 'Reconnect' button.")]
+        private bool _autoRejoin = true;
+
+        [SerializeField, Range(1f, 5f), Tooltip("Seconds between automatic rejoin attempts (also the wait before the first one, so the menu settles after the drop).")]
+        private float _autoRejoinRetrySeconds = 2f;
+
         [Header("Input")]
         [SerializeField, Range(1, 8), Tooltip("Commands sent per input packet (the latest plus previous ones, against loss).")]
         private int _inputRedundancy = 3;
@@ -108,6 +115,8 @@ namespace AlienFarms.Data
         public bool AllowSpectator => _allowSpectator;
         public float ReconnectGraceSeconds => _reconnectGraceSeconds;
         public float HostLeaveNoticeSeconds => _hostLeaveNoticeSeconds;
+        public bool AutoRejoin => _autoRejoin;
+        public float AutoRejoinRetrySeconds => _autoRejoinRetrySeconds;
         public int InputRedundancy => _inputRedundancy;
         public int InputBufferTarget => _inputBufferTarget;
         public float InterpolationDelay => _interpolationDelay;

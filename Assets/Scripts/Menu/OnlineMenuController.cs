@@ -169,7 +169,7 @@ namespace AlienFarms.Menu
             MarkDirty();
         }
 
-        /// <summary>Closes the panel. Leaves a session in progress (unless the match is loading).</summary>
+        /// <summary>Closes the panel. Leaves a session in progress (unless the match is loading) and declines a rejoin offer.</summary>
         public void Exit()
         {
             if (!_isActive)
@@ -180,6 +180,12 @@ namespace AlienFarms.Menu
             if (_session != null && LobbyPhase != OnlineLobbyPhase.Starting && OnlineSessionStatusRules.CanLeave(Status))
             {
                 _session.RequestLeave();
+            }
+
+            // Leaving the hub gives up the seat held after a drop: the automatic rejoin must not bring the player back.
+            if (_session != null)
+            {
+                _session.RequestDeclineRejoin();
             }
 
             _isActive = false;

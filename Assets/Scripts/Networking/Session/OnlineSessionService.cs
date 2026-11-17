@@ -28,6 +28,9 @@ namespace AlienFarms.Networking.Session
         // Delay before retrying a failed spectator property save (s, real time).
         private const double SpectatorRetrySeconds = 2d;
 
+        // Cap of the automatic rejoin delay while the services rate-limit this client (s).
+        private const float MaxAutoRejoinBackoffSeconds = 8f;
+
         [Header("Config")]
         [SerializeField, Tooltip("Environment name, protocol version and session size.")]
         private NetworkSettings _settings;
@@ -84,6 +87,18 @@ namespace AlienFarms.Networking.Session
         // drop before it stops, so a root torn down in between (OnlineMatchBootstrap) still knows the host left.
         private string _droppedErrorKey;
 
+        // Automatic rejoin while an offer lasts (NetworkSettings.AutoRejoin): real time of the next attempt, whether the
+        // current offer already got its first delay, whether the rejoin being dispatched is automatic (log suffix) and
+        // whether a refused automatic request was already logged for this offer.
+        private double _nextAutoRejoinAt;
+        private bool _autoRejoinScheduled;
+        private bool _isAutoRejoin;
+        private bool _autoRejoinRefusalLogged;
+
+        // Delay before the next automatic attempt (s): the settings' retry, doubled after each rate-limited attempt up to
+        // MaxAutoRejoinBackoffSeconds; back to the settings' value after any other outcome or a new offer.
+        private float _autoRejoinDelay;
+
         // How a session that ended without a Leave request is let go.
         private enum SessionExit
         {
@@ -122,10 +137,12 @@ namespace AlienFarms.Networking.Session
             _channel.JoinRequested += HandleJoinRequested;
             _channel.LeaveRequested += HandleLeaveRequested;
             _channel.RejoinRequested += HandleRejoinRequested;
+            _channel.DeclineRejoinRequested += HandleDeclineRejoinRequested;
             _manager.OnClientStopped += HandleClientStopped;
             _manager.OnClientDisconnectCallback += HandleClientDisconnected;
             _manager.OnClientConnectedCallback += HandleClientConnected;
             SubscribeAuthentication();
+            ResetAutoRejoin();
 
             // A root recreated after returning to the menu: the services are still signed in.
             if (_bootstrapper.IsSignedIn && _channel.Status == OnlineSessionStatus.SignedOut)
@@ -151,6 +168,7 @@ namespace AlienFarms.Networking.Session
                 _channel.JoinRequested -= HandleJoinRequested;
                 _channel.LeaveRequested -= HandleLeaveRequested;
                 _channel.RejoinRequested -= HandleRejoinRequested;
+                _channel.DeclineRejoinRequested -= HandleDeclineRejoinRequested;
             }
 
             if (_manager != null)
@@ -185,7 +203,7 @@ namespace AlienFarms.Networking.Session
             {
                 // A lost connection keeps the lobby membership (no LeaveAsync), so the player can come back from the menu.
                 TryArmRejoinOffer(droppedKey);
-                _ = droppedKey != null ? _connection.EndAfterHostLeftAsync() : _connection.LeaveAsync();
+                _ = droppedKey != null ? _connection.EndAfterDropAsync() : _connection.LeaveAsync();
             }
 
             if (_channel != null)
@@ -387,7 +405,7 @@ namespace AlienFarms.Networking.Session
                 return;
             }
 
-            Debug.Log($"[{nameof(OnlineSessionService)}] Rejoining session {sessionId ?? "(unknown id)"} / {code}.", this);
+            Debug.Log($"[{nameof(OnlineSessionService)}] Rejoining session {sessionId ?? "(unknown id)"} / {code}{(_isAutoRejoin ? " (auto)" : string.Empty)}.", this);
             RelaySessionStart start;
             try
             {
@@ -399,6 +417,16 @@ namespace AlienFarms.Networking.Session
                 start = RelaySessionStart.Failed(OnlineSessionErrorKeys.ConnectionFailed);
             }
 
+            // The next automatic attempt counts from the end of this one (an attempt can outlast the retry delay); a rate
+            // limit doubles the delay (capped) instead of hammering the services.
+            if (this != null && _settings != null)
+            {
+                _autoRejoinDelay = start.ErrorKey == OnlineSessionErrorKeys.RateLimited
+                    ? Mathf.Min(Mathf.Max(_autoRejoinDelay, _settings.AutoRejoinRetrySeconds) * 2f, MaxAutoRejoinBackoffSeconds)
+                    : _settings.AutoRejoinRetrySeconds;
+                _nextAutoRejoinAt = Time.realtimeSinceStartupAsDouble + _autoRejoinDelay;
+            }
+
             DropOfferForLeftSession(start);
 
             // A cancellation (null key) or a transient failure keeps the offer for another try while it lasts.
@@ -408,6 +436,17 @@ namespace AlienFarms.Networking.Session
             }
 
             await CompleteStartAsync(operation, cancellation, start, false);
+        }
+
+        // The player left the online hub: no automatic rejoin may bring it back to the match.
+        private void HandleDeclineRejoinRequested()
+        {
+            if (_channel.HasRejoinOffer)
+            {
+                Debug.Log($"[{nameof(OnlineSessionService)}] Rejoin offer declined (left the online hub).", this);
+            }
+
+            ClearRejoinOffer();
         }
 
         /// <summary>Drops this machine's rejoin offer (the player left on purpose or it expired).</summary>
@@ -446,6 +485,7 @@ namespace AlienFarms.Networking.Session
 
         private void ClearRejoinOffer(NetworkRuntimeAnchor anchor)
         {
+            ResetAutoRejoin();
             if (anchor != null)
             {
                 anchor.ClearRejoinSession();
@@ -483,6 +523,8 @@ namespace AlienFarms.Networking.Session
                 anchor.SetRejoinSession(sessionId);
             }
 
+            // A new offer always gets the initial delay (the channel may have dropped the previous one on its own).
+            ResetAutoRejoin();
             _channel.SetRejoinOffer(code, expiresAt);
             Debug.Log($"[{nameof(OnlineSessionService)}] Connection lost; rejoin offered for session {sessionId} / {code} ({expiresAt - now:0.#}s of {_settings.ReconnectGraceSeconds:0.#}s grace).", this);
         }
@@ -490,10 +532,17 @@ namespace AlienFarms.Networking.Session
         // Only cheap checks while an offer exists or the host's spectator property may be stale.
         private void Update()
         {
-            if (_channel != null && _channel.HasRejoinOffer
-                && RejoinOfferRules.IsExpired(_channel.RejoinExpiresAt, Time.realtimeSinceStartupAsDouble))
+            if (_channel != null && _channel.HasRejoinOffer)
             {
-                ClearRejoinOffer();
+                double now = Time.realtimeSinceStartupAsDouble;
+                if (RejoinOfferRules.IsExpired(_channel.RejoinExpiresAt, now))
+                {
+                    ClearRejoinOffer();
+                }
+                else
+                {
+                    TickAutoRejoin(now);
+                }
             }
 
             if (_spectatorPropertyDirty && !_isSavingSpectatorProperty
@@ -502,6 +551,62 @@ namespace AlienFarms.Networking.Session
                 _spectatorPropertyDirty = false;
                 SyncSpectatorProperty();
             }
+        }
+
+        // Retries the rejoin through the channel (the hub shows Busy / Joining with Cancel, as for the button). Only from
+        // Ready, so never while an attempt (manual or automatic) is in flight.
+        private void TickAutoRejoin(double now)
+        {
+            if (_settings == null || !_settings.AutoRejoin)
+            {
+                return;
+            }
+
+            // First sight of this offer: let the menu settle after the drop before the first attempt.
+            if (!_autoRejoinScheduled)
+            {
+                _autoRejoinScheduled = true;
+                _autoRejoinDelay = _settings.AutoRejoinRetrySeconds;
+                _nextAutoRejoinAt = now + _autoRejoinDelay;
+                return;
+            }
+
+            if (now < _nextAutoRejoinAt)
+            {
+                return;
+            }
+
+            bool networkReachable = Application.internetReachability != NetworkReachability.NotReachable;
+            if (!RejoinOfferRules.ShouldAutoRejoin(true, _channel.Status, networkReachable, now, _nextAutoRejoinAt))
+            {
+                return;
+            }
+
+            _nextAutoRejoinAt = now + _autoRejoinDelay;
+            _isAutoRejoin = true;
+            bool requested;
+            try
+            {
+                requested = _channel.RequestRejoin();
+            }
+            finally
+            {
+                _isAutoRejoin = false;
+            }
+
+            if (!requested && !_autoRejoinRefusalLogged)
+            {
+                _autoRejoinRefusalLogged = true;
+                Debug.LogWarning($"[{nameof(OnlineSessionService)}] Automatic rejoin refused by the channel ({_channel.LastErrorKey}); retrying every {_settings.AutoRejoinRetrySeconds:0.#}s while the offer lasts.", this);
+            }
+        }
+
+        private void ResetAutoRejoin()
+        {
+            _nextAutoRejoinAt = 0d;
+            _autoRejoinDelay = _settings != null ? _settings.AutoRejoinRetrySeconds : 0f;
+            _autoRejoinScheduled = false;
+            _autoRejoinRefusalLogged = false;
         }
 
         // Typed name, else the generated UGS name, else the serialized one tagged with this MPPM instance.
@@ -909,7 +1014,7 @@ namespace AlienFarms.Networking.Session
                     await _connection.LeaveAsync();
                     break;
                 case SessionExit.AwaitHostEnd:
-                    await _connection.EndAfterHostLeftAsync();
+                    await _connection.EndAfterDropAsync();
                     break;
                 default:
                     _connection.ForgetSession();

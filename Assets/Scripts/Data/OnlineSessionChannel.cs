@@ -55,6 +55,9 @@ namespace AlienFarms.Data
         /// <summary>Service side: reconnect to the session of the current rejoin offer (<see cref="RejoinCode"/>).</summary>
         public event Action RejoinRequested;
 
+        /// <summary>Service side: the player gave up the rejoin offer (left the online hub), so it is dropped.</summary>
+        public event Action DeclineRejoinRequested;
+
         public OnlineSessionStatus Status => IsCurrent ? _status : OnlineSessionStatus.SignedOut;
 
         /// <summary>Join code of the current session (null when in none).</summary>
@@ -204,6 +207,28 @@ namespace AlienFarms.Data
             }
 
             return Dispatch(RejoinRequested);
+        }
+
+        /// <summary>
+        /// The player gives up the rejoin offer (e.g. leaves the online hub for the title), so the automatic rejoin does
+        /// not bring it back to the match. Without a listening service the offer is simply dropped here. False when there
+        /// was no offer.
+        /// </summary>
+        public bool RequestDeclineRejoin()
+        {
+            if (!HasRejoinOffer)
+            {
+                return false;
+            }
+
+            if (DeclineRejoinRequested == null)
+            {
+                ClearRejoinOffer();
+                return true;
+            }
+
+            DeclineRejoinRequested.Invoke();
+            return true;
         }
 
         /// <summary>Stores the name typed by the player (sanitized; empty clears it) and persists it on this device.</summary>

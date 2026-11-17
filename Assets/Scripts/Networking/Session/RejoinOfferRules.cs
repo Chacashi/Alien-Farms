@@ -42,9 +42,10 @@ namespace AlienFarms.Networking.Session
         }
 
         /// <summary>
-        /// A failed rejoin keeps the offer when retrying may still work (transient network, the server not having noticed
-        /// the drop yet: <see cref="OnlineSessionErrorKeys.AlreadyConnected"/>). A missing session, a full room, a refused
-        /// seat or a cancellation (null) drop it.
+        /// A failed rejoin keeps the offer when retrying may still work (transient network or service, the server not having
+        /// noticed the drop yet: <see cref="OnlineSessionErrorKeys.AlreadyConnected"/>). Every key that does not fall back
+        /// to the join by code (<see cref="FallsBackToCodeJoin"/>) is one of them. A missing session, a full room, a
+        /// refused seat or a cancellation (null) drop it.
         /// </summary>
         public static bool KeepsOfferAfterFailure(string errorKey)
         {
@@ -55,6 +56,7 @@ namespace AlienFarms.Networking.Session
                 case OnlineSessionErrorKeys.ConnectionFailed:
                 case OnlineSessionErrorKeys.ConnectionLost:
                 case OnlineSessionErrorKeys.NoConnection:
+                case OnlineSessionErrorKeys.ServicesUnavailable:
                 case OnlineSessionErrorKeys.RateLimited:
                 case OnlineSessionErrorKeys.RelayFailed:
                 case OnlineSessionErrorKeys.Busy:
@@ -62,6 +64,37 @@ namespace AlienFarms.Networking.Session
                     return true;
                 default:
                     return false;
+            }
+        }
+
+        /// <summary>
+        /// The client retries the rejoin by itself (2.9): it holds an offer, is idle in the hub
+        /// (<see cref="OnlineSessionStatus.Ready"/>: never while a start is already in flight), the device reports a
+        /// network and the retry delay passed. Times are <c>Time.realtimeSinceStartupAsDouble</c> seconds.
+        /// </summary>
+        public static bool ShouldAutoRejoin(bool hasOffer, OnlineSessionStatus status, bool networkReachable, double now, double nextAttemptAt)
+        {
+            return hasOffer
+                && status == OnlineSessionStatus.Ready
+                && networkReachable
+                && now >= nextAttemptAt;
+        }
+
+        /// <summary>
+        /// A failed reconnection to the session falls back to joining again by code, except when the failure says there
+        /// is no network or service right now: the join would fail too, with a key that drops the offer
+        /// (<see cref="OnlineSessionErrorKeys.JoinFailed"/> / <see cref="OnlineSessionErrorKeys.SessionNotFound"/>).
+        /// </summary>
+        public static bool FallsBackToCodeJoin(string reconnectErrorKey)
+        {
+            switch (reconnectErrorKey)
+            {
+                case OnlineSessionErrorKeys.NoConnection:
+                case OnlineSessionErrorKeys.ServicesUnavailable:
+                case OnlineSessionErrorKeys.RateLimited:
+                    return false;
+                default:
+                    return true;
             }
         }
     }

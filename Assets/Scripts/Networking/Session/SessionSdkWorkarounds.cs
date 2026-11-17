@@ -104,7 +104,7 @@ namespace AlienFarms.Networking.Session
 
             try
             {
-                Debug.LogWarning($"[{nameof(SessionSdkWorkarounds)}] Releasing orphaned session '{session.Type}' left registered by the SDK (2.4.1 LeaveAsync workaround).");
+                Debug.LogWarning($"[{nameof(SessionSdkWorkarounds)}] Releasing session '{session.Type}' still registered in the SDK after a leave / drop (host left or connection lost) (SDK 2.4.1 workaround).");
                 handler.Invoke(session, null);
             }
             catch (Exception exception)
