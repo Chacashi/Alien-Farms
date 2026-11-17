@@ -12,7 +12,8 @@ namespace AlienFarms.Networking.Match
     /// Online match exit. Back to title: records a loss first when leaving during live Playing (persisted before the
     /// shutdown, see <see cref="OnlineMatchStatsRecorder.RecordLeaveLoss"/>), clears the session, on a pure client sends the voluntary-leave notice and drops
     /// any rejoin offer, tears the NetworkRoot down (shutdown + destroy; the
-    /// MainMenu brings a fresh one) and loads the main menu, which opens on the online hub. Rematch: marks the local player ready; the server's
+    /// MainMenu brings a fresh one) and loads the main menu once the teardown ended (a host with clients first lets its
+    /// leaving notice through, see <see cref="NetworkRootLifetime.ShutdownSessionAsync"/>), which opens on the online hub. Rematch: marks the local player ready; the server's
     /// <see cref="NetworkMatchExit"/> restarts the match when both players are.
     /// </summary>
     public sealed class OnlineMatchExitHandler : IMatchExitHandler
@@ -79,10 +80,18 @@ namespace AlienFarms.Networking.Match
                     }
                 }
 
-                root.Teardown();
+                // A host with clients keeps the root alive for its graceful shutdown (the clients get the leaving notice
+                // first); the menu loads once NGO stopped. Otherwise both happen right now.
+                root.Teardown(LoadMainMenu);
+                return true;
             }
 
             return SceneFlow.LoadMainMenu();
+        }
+
+        private static void LoadMainMenu()
+        {
+            SceneFlow.LoadMainMenu();
         }
     }
 }

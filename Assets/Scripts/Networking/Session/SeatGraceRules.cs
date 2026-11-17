@@ -23,6 +23,26 @@ namespace AlienFarms.Networking.Session
             return graceEnabled ? SeatDropOutcome.Reserved : SeatDropOutcome.Released;
         }
 
+        /// <summary>
+        /// Same as <see cref="OnDisconnect(bool, bool)"/>, except that while the server is stopping (graceful host leave
+        /// or NGO shutdown) every drop is just <see cref="SeatDropOutcome.Released"/>: nothing will reconnect to this run,
+        /// so no seat is reserved, no grace opens and no Left is reported.
+        /// </summary>
+        public static SeatDropOutcome OnDisconnect(bool noticedLeaving, bool graceEnabled, bool serverStopping)
+        {
+            return serverStopping ? SeatDropOutcome.Released : OnDisconnect(noticedLeaving, graceEnabled);
+        }
+
+        /// <summary>
+        /// Whether a dropped spectator's lobby membership is removed (so it can join again by code as a fresh member):
+        /// only for a silent drop with a known UGS id no other place uses, and never while the server is stopping (the
+        /// whole session is about to be deleted; removing members then races the delete).
+        /// </summary>
+        public static bool ShouldRemoveSpectatorMember(bool noticedLeaving, bool serverStopping, bool hasUgsId, bool ugsIdInUse)
+        {
+            return !noticedLeaving && !serverStopping && hasUgsId && !ugsIdInUse;
+        }
+
         /// <summary>Seconds left before the reservation of <paramref name="seat"/> expires; 0 when it awaits nothing or expired.</summary>
         public static float GraceLeft(in PlayerSlot seat, double now, float graceSeconds)
         {

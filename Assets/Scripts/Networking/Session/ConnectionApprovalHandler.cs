@@ -55,6 +55,15 @@ namespace AlienFarms.Networking.Session
         // Bumped when the server stops or this component is disabled: pending verifications of that run are dropped.
         private int _generation;
 
+        // Set by the root when the host starts leaving (before NGO's own shutdown flag); lasts one run (ServerStopLatch).
+        private readonly ServerStopLatch _stop = new ServerStopLatch();
+
+        /// <summary>
+        /// Server: the run is ending (the root started the host's leave, see <see cref="BeginServerStop"/>, or NGO is
+        /// shutting down). Drops then only free their place: no reservation, no grace, no Left, no lobby member removal.
+        /// </summary>
+        public bool IsServerStopping => _stop.IsRequested || (_manager != null && _manager.ShutdownInProgress);
+
         /// <summary>Seats of the current session (server only; empty on clients).</summary>
         public ServerSlotDirectory Slots => _slots;
 
@@ -115,7 +124,7 @@ namespace AlienFarms.Networking.Session
         /// </summary>
         public void ReleaseLeftMember(string ugsPlayerId)
         {
-            if (_manager == null || !_manager.IsServer || string.IsNullOrEmpty(ugsPlayerId))
+            if (_manager == null || !_manager.IsServer || string.IsNullOrEmpty(ugsPlayerId) || IsServerStopping)
             {
                 return;
             }
@@ -127,6 +136,29 @@ namespace AlienFarms.Networking.Session
                 Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Seat {id} released (Left): its player left the session.", this);
                 SeatReleased?.Invoke(id, PlayerConnectionStatus.Left);
             }
+        }
+
+        /// <summary>
+        /// Server: the host is leaving (<see cref="NetworkRootLifetime.ShutdownSessionAsync"/>). From now until the next
+        /// server start the coming disconnections are part of the shutdown, not drops. Idempotent.
+        /// </summary>
+        public void BeginServerStop()
+        {
+            if (_manager == null || !_stop.Request(_manager.IsServer))
+            {
+                return;
+            }
+
+            Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Server stopping: disconnections free their places without grace.", this);
+        }
+
+        /// <summary>
+        /// A new session is about to start on this (possibly reused) root: a previous run's stop no longer applies. Called
+        /// before StartHost / StartClient, because NGO approves the host's own connection before OnServerStarted.
+        /// </summary>
+        public void ResetServerStop()
+        {
+            _stop.Reset();
         }
 
         /// <summary>Seconds of grace left for the dropped player of <paramref name="id"/>; 0 when its seat awaits nothing.</summary>
@@ -143,7 +175,7 @@ namespace AlienFarms.Networking.Session
         // Only does work while a seat awaits its player (two seats scanned, no allocation).
         private void Update()
         {
-            if (_settings == null || _slots.CountAwaiting == 0)
+            if (_settings == null || _slots.CountAwaiting == 0 || IsServerStopping)
             {
                 return;
             }
@@ -172,6 +204,7 @@ namespace AlienFarms.Networking.Session
             _manager.ConnectionApprovalCallback = _approvalCallback;
             _manager.OnClientDisconnectCallback += HandleClientDisconnected;
             _manager.OnServerStopped += HandleServerStopped;
+            _manager.OnServerStarted += HandleServerStarted;
         }
 
         private void OnDisable()
@@ -188,6 +221,7 @@ namespace AlienFarms.Networking.Session
 
             _manager.OnClientDisconnectCallback -= HandleClientDisconnected;
             _manager.OnServerStopped -= HandleServerStopped;
+            _manager.OnServerStarted -= HandleServerStarted;
             _generation++;
         }
 
@@ -197,6 +231,16 @@ namespace AlienFarms.Networking.Session
             response.Pending = false;
 
             ulong clientId = request.ClientNetworkId;
+
+            // The host is leaving: nobody new is seated in a run that is about to end (never the host itself).
+            if (ServerStopLatch.ShouldRejectJoin(clientId, IsServerStopping))
+            {
+                response.Approved = false;
+                response.Reason = DisconnectReasons.HostDisconnected;
+                Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Client {clientId} rejected: the host is leaving.", this);
+                return;
+            }
+
             bool parsed = ConnectionPayload.TryParse(request.Payload, out ConnectionPayload payload);
             if (parsed)
             {
@@ -288,7 +332,7 @@ namespace AlienFarms.Networking.Session
                 && generation == _generation
                 && _manager != null
                 && _manager.IsListening
-                && !_manager.ShutdownInProgress
+                && !IsServerStopping
                 && _manager.PendingClients.ContainsKey(clientId);
         }
 
@@ -340,14 +384,15 @@ namespace AlienFarms.Networking.Session
                 PlayerId id = seat.Id;
 
                 // The server is stopping (every client drops at once): nothing will be reconnected to this run.
-                if (_manager.ShutdownInProgress)
+                bool stopping = IsServerStopping;
+                if (stopping)
                 {
                     _slots.Release(clientId, out _);
-                    Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Client {clientId} dropped during shutdown; seat {id} freed.", this);
+                    Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Client {clientId} disconnected by the shutdown; seat {id} freed.", this);
                     return;
                 }
 
-                switch (SeatGraceRules.OnDisconnect(noticed, _graceEnabled))
+                switch (SeatGraceRules.OnDisconnect(noticed, _graceEnabled, stopping))
                 {
                     case SeatDropOutcome.Left:
                         _slots.Release(clientId, out _);
@@ -367,25 +412,35 @@ namespace AlienFarms.Networking.Session
             }
             else if (_slots.TryGetSpectator(clientId, out SpectatorSeat spectator) && _slots.ReleaseSpectator(clientId))
             {
-                Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Spectator {clientId} left.", this);
+                bool stopping = IsServerStopping;
+                Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Spectator {clientId} {(stopping ? "disconnected by the shutdown" : "left")}.", this);
 
                 // No seat is held for a spectator: drop its lobby membership too (as an expired player seat), so joining
                 // again by code is a fresh join instead of 'already in a session'. A voluntary leave already left the
                 // lobby itself; a server shutdown deletes the whole session. A late drop of an old client id whose member
                 // already holds a place again (reconnected) keeps the membership.
-                if (!noticed && !_manager.ShutdownInProgress && spectator.UgsPlayerId.Length > 0 && _sessionConnection != null
-                    && !_slots.IsUgsIdInUse(spectator.UgsPlayerId))
+                if (_sessionConnection != null && SeatGraceRules.ShouldRemoveSpectatorMember(noticed, stopping,
+                        spectator.UgsPlayerId.Length > 0, _slots.IsUgsIdInUse(spectator.UgsPlayerId)))
                 {
                     _ = _sessionConnection.TryRemovePlayerAsync(spectator.UgsPlayerId.ToString());
                 }
             }
         }
 
+        // A new run: the previous one's stop no longer applies.
+        private void HandleServerStarted()
+        {
+            _stop.Reset();
+        }
+
+        // The table is cleared first: a disconnection NGO still reports after this (the host's own client) finds no seat
+        // to reserve, so the stop can end with the run (the root survives a Leave in the lobby and hosts again).
         private void HandleServerStopped(bool wasHost)
         {
             _generation++;
             _slots.Clear();
             _leaving.Clear();
+            _stop.OnServerStopped();
         }
 
         private void OnValidate()

@@ -25,6 +25,9 @@ namespace AlienFarms.Networking.Session
     [DisallowMultipleComponent]
     public sealed class OnlineSessionService : MonoBehaviour
     {
+        // Delay before retrying a failed spectator property save (s, real time).
+        private const double SpectatorRetrySeconds = 2d;
+
         [Header("Config")]
         [SerializeField, Tooltip("Environment name, protocol version and session size.")]
         private NetworkSettings _settings;
@@ -52,6 +55,20 @@ namespace AlienFarms.Networking.Session
         private RelaySessionConnection _connection;
 
         private readonly OnlineParticipant[] _participantBuffer = new OnlineParticipant[OnlineSessionChannel.MaxParticipants];
+
+        // RefreshParticipants scratch (host first, then join order) for ParticipantRoleRules.
+        private readonly IReadOnlyPlayer[] _orderedPlayers = new IReadOnlyPlayer[OnlineSessionChannel.MaxParticipants];
+        private readonly string[] _orderedIds = new string[OnlineSessionChannel.MaxParticipants];
+        private readonly bool[] _orderedIsHost = new bool[OnlineSessionChannel.MaxParticipants];
+        private readonly bool[] _orderedIsSpectator = new bool[OnlineSessionChannel.MaxParticipants];
+
+        // Host: the spectator session property must be checked against the seat table (set from NGO callbacks, handled in
+        // Update after the approval handler updated the table); one save at a time.
+        private bool _spectatorPropertyDirty;
+        private bool _isSavingSpectatorProperty;
+
+        // Real time before which a failed spectator save is not retried (0 = no pending retry).
+        private double _spectatorRetryAt;
 
         private UgsBootstrapper _bootstrapper;
         private ISession _subscribedSession;
@@ -103,6 +120,7 @@ namespace AlienFarms.Networking.Session
             _channel.RejoinRequested += HandleRejoinRequested;
             _manager.OnClientStopped += HandleClientStopped;
             _manager.OnClientDisconnectCallback += HandleClientDisconnected;
+            _manager.OnClientConnectedCallback += HandleClientConnected;
             SubscribeAuthentication();
 
             // A root recreated after returning to the menu: the services are still signed in.
@@ -135,7 +153,11 @@ namespace AlienFarms.Networking.Session
             {
                 _manager.OnClientStopped -= HandleClientStopped;
                 _manager.OnClientDisconnectCallback -= HandleClientDisconnected;
+                _manager.OnClientConnectedCallback -= HandleClientConnected;
             }
+
+            _spectatorPropertyDirty = false;
+            _spectatorRetryAt = 0d;
 
             UnsubscribeAuthentication();
             UnsubscribeSession();
@@ -276,10 +298,17 @@ namespace AlienFarms.Networking.Session
                 return;
             }
 
-            // Host: disconnects every client with a known reason before the session is deleted.
-            _root.ShutdownSession();
+            // Host: notifies and disconnects every client with a known reason before the session is deleted.
             try
             {
+                await _root.ShutdownSessionAsync();
+
+                // R8: the root was destroyed meanwhile; its OnDisable already left the session.
+                if (this == null)
+                {
+                    return;
+                }
+
                 await _connection.LeaveAsync();
             }
             catch (Exception exception)
@@ -320,6 +349,18 @@ namespace AlienFarms.Networking.Session
             string displayName = ResolveDisplayName();
             _connection.SetDisplayName(displayName);
             _manager.NetworkConfig.ConnectionData = BuildPayload(displayName).ToBytes();
+
+            // The root survives a Leave in the lobby: a previous host run's "leaving" state must not refuse this one
+            // (NGO approves the host's own connection inside StartHost, before OnServerStarted).
+            ConnectionApprovalHandler approval = _root.Approval;
+            if (approval != null)
+            {
+                approval.ResetServerStop();
+            }
+
+            // A retry left over from the previous session never applies to this one.
+            _spectatorPropertyDirty = false;
+            _spectatorRetryAt = 0d;
 
             // Before NGO starts: the host may approve and sync the gameplay scene (match in progress) before the start
             // returns, and its GameModeRouter reads the mode in Awake. A failure or cancellation sets Local again.
@@ -370,7 +411,13 @@ namespace AlienFarms.Networking.Session
         /// <summary>Host, best-effort: removes a member from the current session (see <see cref="RelaySessionConnection.TryRemovePlayerAsync"/>).</summary>
         public Task TryRemovePlayerAsync(string ugsPlayerId)
         {
-            return _connection != null ? _connection.TryRemovePlayerAsync(ugsPlayerId) : Task.CompletedTask;
+            // Never while the host leaves: the session is about to be deleted and a removal would race that delete.
+            if (_connection == null || IsShuttingDown)
+            {
+                return Task.CompletedTask;
+            }
+
+            return _connection.TryRemovePlayerAsync(ugsPlayerId);
         }
 
         // The start gave up the membership of another session (stale one left before joining by code): when that is the
@@ -432,13 +479,20 @@ namespace AlienFarms.Networking.Session
             Debug.Log($"[{nameof(OnlineSessionService)}] Connection lost; rejoin offered for session {sessionId} / {code} ({expiresAt - now:0.#}s of {_settings.ReconnectGraceSeconds:0.#}s grace).", this);
         }
 
-        // Only a cheap check while an offer exists.
+        // Only cheap checks while an offer exists or the host's spectator property may be stale.
         private void Update()
         {
             if (_channel != null && _channel.HasRejoinOffer
                 && RejoinOfferRules.IsExpired(_channel.RejoinExpiresAt, Time.realtimeSinceStartupAsDouble))
             {
                 ClearRejoinOffer();
+            }
+
+            if (_spectatorPropertyDirty && !_isSavingSpectatorProperty
+                && Time.realtimeSinceStartupAsDouble >= _spectatorRetryAt)
+            {
+                _spectatorPropertyDirty = false;
+                SyncSpectatorProperty();
             }
         }
 
@@ -572,10 +626,35 @@ namespace AlienFarms.Networking.Session
             EndSessionRemotely(key, SessionExit.AwaitHostEnd);
         }
 
+        // Server: a connection was admitted (seat or spectator place).
+        private void HandleClientConnected(ulong clientId)
+        {
+            if (_manager.IsServer && !IsShuttingDown)
+            {
+                _spectatorPropertyDirty = true;
+            }
+        }
+
+        // The host is stopping (graceful or not): the session is about to be deleted, so it is never written again.
+        private bool IsShuttingDown =>
+            (_manager != null && _manager.ShutdownInProgress)
+            || (_root != null && (_root.IsShutdownPending || (_root.Approval != null && _root.Approval.IsServerStopping)));
+
         // NGO reports the local client's drop by the server before shutting down; a self-initiated shutdown does not.
+        // Server: a connection dropped (its seat or spectator place may be free now).
         private void HandleClientDisconnected(ulong clientId)
         {
-            if (_manager.IsServer || clientId != _manager.LocalClientId || _manager.ShutdownInProgress
+            if (_manager.IsServer)
+            {
+                if (!IsShuttingDown)
+                {
+                    _spectatorPropertyDirty = true;
+                }
+
+                return;
+            }
+
+            if (clientId != _manager.LocalClientId || _manager.ShutdownInProgress
                 || _channel.Status != OnlineSessionStatus.InSession || _channel.IsHost)
             {
                 return;
@@ -586,8 +665,9 @@ namespace AlienFarms.Networking.Session
 
         private string MapDisconnectReason()
         {
-            // A drop without a game reason normalizes to connection_lost; an explicit host shutdown sends host_disconnected.
-            return OnlineSessionErrorMapper.FromDisconnectReason(DisconnectReasons.Normalize(_manager.DisconnectReason))
+            // A drop without a game reason normalizes to connection_lost; an explicit host shutdown sends host_disconnected
+            // (or announced it before the drop: its reason message may be lost with the connection).
+            return OnlineSessionErrorMapper.FromDisconnectReason(_root.ResolveDisconnectReason())
                 ?? OnlineSessionErrorKeys.ConnectionLost;
         }
 
@@ -626,12 +706,116 @@ namespace AlienFarms.Networking.Session
             if (_channel.IsHost && approval != null)
             {
                 approval.ReleaseLeftMember(playerId);
+                _spectatorPropertyDirty = true;
             }
         }
 
         private void HandlePlayerPropertiesChanged()
         {
             RefreshParticipants();
+        }
+
+        private void HandleSessionPropertiesChanged()
+        {
+            RefreshParticipants();
+        }
+
+        // Host: names the spectator its approval admitted (or nobody) in the session, so every member's participant list
+        // keeps it a spectator whatever its join position (ParticipantRoleRules). Only writes when the value changes.
+        private void SyncSpectatorProperty()
+        {
+            ISession session = _subscribedSession;
+            ConnectionApprovalHandler approval = _root != null ? _root.Approval : null;
+            if (session == null || !session.IsHost || approval == null || approval.Slots == null
+                || _channel.Status != OnlineSessionStatus.InSession || IsShuttingDown)
+            {
+                return;
+            }
+
+            string desired = FindSpectatorUgsId(approval.Slots);
+            if (string.Equals(desired, ReadNamedSpectator(session), StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _ = SaveSpectatorPropertyAsync(session, desired);
+        }
+
+        private async Task SaveSpectatorPropertyAsync(ISession session, string spectatorId)
+        {
+            _isSavingSpectatorProperty = true;
+            bool saved = false;
+            try
+            {
+                IHostSession host = session.AsHost();
+
+                // Never a null property (deleting the key): SDK 2.4.1 then throws in UpdateDerivedProperties on the next
+                // lobby change. An empty value means nobody (ParticipantRoleRules.NoSpectator).
+                host.SetProperty(ParticipantRoleRules.SpectatorProperty,
+                    new SessionProperty(spectatorId ?? ParticipantRoleRules.NoSpectator, VisibilityPropertyOptions.Member));
+                await host.SavePropertiesAsync();
+                saved = true;
+            }
+            catch (Exception exception)
+            {
+                // Best effort: the list falls back to join order meanwhile; retried after a short delay. A save cut by
+                // the host's own shutdown (session being deleted) is expected and stays quiet.
+                if (this != null && !IsShuttingDown)
+                {
+                    Debug.LogWarning($"[{nameof(OnlineSessionService)}] Saving the spectator property failed (retry in {SpectatorRetrySeconds:0}s): {exception.Message}");
+                }
+            }
+
+            if (this == null)
+            {
+                return;
+            }
+
+            _isSavingSpectatorProperty = false;
+            if (session != _subscribedSession)
+            {
+                return;
+            }
+
+            if (saved)
+            {
+                _spectatorRetryAt = 0d;
+                RefreshParticipants();
+            }
+            else
+            {
+                _spectatorRetryAt = Time.realtimeSinceStartupAsDouble + SpectatorRetrySeconds;
+            }
+
+            // Saved: the table may have changed during the save. Failed: try again once the delay passed.
+            _spectatorPropertyDirty = true;
+        }
+
+        private static string FindSpectatorUgsId(ServerSlotDirectory slots)
+        {
+            ReadOnlySpan<SpectatorSeat> spectators = slots.Spectators;
+            for (int i = 0; i < spectators.Length; i++)
+            {
+                if (spectators[i].InUse && spectators[i].UgsPlayerId.Length > 0)
+                {
+                    return spectators[i].UgsPlayerId.ToString();
+                }
+            }
+
+            return null;
+        }
+
+        private static string ReadNamedSpectator(ISession session)
+        {
+            IReadOnlyDictionary<string, SessionProperty> properties = session.Properties;
+            if (properties != null
+                && properties.TryGetValue(ParticipantRoleRules.SpectatorProperty, out SessionProperty property)
+                && property != null)
+            {
+                return ParticipantRoleRules.ReadSpectatorId(property.Value);
+            }
+
+            return null;
         }
 
         // Signed out or the session token expired: the session cannot be kept; the menu has to sign in again.
@@ -651,8 +835,28 @@ namespace AlienFarms.Networking.Session
 
             if (_connection.HasSession)
             {
-                _root.ShutdownSession();
-                _ = _connection.LeaveAsync();
+                _ = ShutdownThenLeaveAsync();
+            }
+        }
+
+        // Fire and forget: the session is left once NGO stopped (a host's clients get its leaving notice first).
+        private async Task ShutdownThenLeaveAsync()
+        {
+            try
+            {
+                await _root.ShutdownSessionAsync();
+
+                // R8: the root was destroyed meanwhile; its OnDisable already left the session.
+                if (this == null)
+                {
+                    return;
+                }
+
+                await _connection.LeaveAsync();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
             }
         }
 
@@ -672,7 +876,20 @@ namespace AlienFarms.Networking.Session
             }
 
             _channel.TrySetStatus(OnlineSessionStatus.Leaving);
-            _root.ShutdownSession();
+            try
+            {
+                await _root.ShutdownSessionAsync();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+
+            // R8: the root was destroyed meanwhile; its OnDisable already ended the session.
+            if (this == null)
+            {
+                return;
+            }
 
             switch (exit)
             {
@@ -709,10 +926,10 @@ namespace AlienFarms.Networking.Session
             string localId = _bootstrapper.PlayerId;
             int count = 0;
 
-            // Host first (seat P1), then the rest in join order; past both seats is a spectator.
+            // Host first (seat P1), then the rest in join order.
             for (int pass = 0; pass < 2; pass++)
             {
-                for (int i = 0; i < players.Count && count < _participantBuffer.Length; i++)
+                for (int i = 0; i < players.Count && count < _orderedPlayers.Length; i++)
                 {
                     IReadOnlyPlayer player = players[i];
                     bool isHost = string.Equals(player.Id, session.Host, StringComparison.Ordinal);
@@ -721,14 +938,32 @@ namespace AlienFarms.Networking.Session
                         continue;
                     }
 
-                    _participantBuffer[count] = new OnlineParticipant(
-                        player.Id,
-                        ReadDisplayName(player),
-                        isHost,
-                        string.Equals(player.Id, localId, StringComparison.Ordinal),
-                        count >= ServerSlotDirectory.Capacity);
+                    _orderedPlayers[count] = player;
+                    _orderedIds[count] = player.Id;
+                    _orderedIsHost[count] = isHost;
                     count++;
                 }
+            }
+
+            // The spectator the host named stays one; without a name, past both seats is a spectator.
+            ParticipantRoleRules.Classify(
+                new ReadOnlySpan<string>(_orderedIds, 0, count),
+                new ReadOnlySpan<bool>(_orderedIsHost, 0, count),
+                ReadNamedSpectator(session),
+                ServerSlotDirectory.Capacity,
+                new Span<bool>(_orderedIsSpectator, 0, count));
+
+            for (int i = 0; i < count; i++)
+            {
+                IReadOnlyPlayer player = _orderedPlayers[i];
+                _participantBuffer[i] = new OnlineParticipant(
+                    player.Id,
+                    ReadDisplayName(player),
+                    _orderedIsHost[i],
+                    string.Equals(player.Id, localId, StringComparison.Ordinal),
+                    _orderedIsSpectator[i]);
+                _orderedPlayers[i] = null;
+                _orderedIds[i] = null;
             }
 
             _channel.SetParticipants(_participantBuffer, count);
@@ -837,6 +1072,7 @@ namespace AlienFarms.Networking.Session
             session.Changed += HandleSessionChanged;
             session.SessionHostChanged += HandleHostChanged;
             session.PlayerPropertiesChanged += HandlePlayerPropertiesChanged;
+            session.SessionPropertiesChanged += HandleSessionPropertiesChanged;
             session.PlayerJoined += HandlePlayerChanged;
             session.PlayerHasLeft += HandlePlayerLeft;
             session.RemovedFromSession += HandleSessionRemoved;
@@ -855,6 +1091,7 @@ namespace AlienFarms.Networking.Session
             session.Changed -= HandleSessionChanged;
             session.SessionHostChanged -= HandleHostChanged;
             session.PlayerPropertiesChanged -= HandlePlayerPropertiesChanged;
+            session.SessionPropertiesChanged -= HandleSessionPropertiesChanged;
             session.PlayerJoined -= HandlePlayerChanged;
             session.PlayerHasLeft -= HandlePlayerLeft;
             session.RemovedFromSession -= HandleSessionRemoved;

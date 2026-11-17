@@ -19,6 +19,8 @@ namespace AlienFarms.Networking.Match
     /// resumes and the suspension ends (the match then aborts by itself if a player is missing). A timed-out member is
     /// removed from the online session.</item>
     /// <item>Spectators join and leave without suspending anything.</item>
+    /// <item>The host leaving on purpose (<see cref="NetworkRootLifetime.HostLeaveStarted"/>): the match is suspended and its
+    /// clock frozen for good, so nothing ends or scores while the clients get the leaving notice.</item>
     /// </list>
     /// After every change the seat presence board is rebuilt from the seat table and written to
     /// <see cref="NetworkSeatPresence"/>, the single emitter of <see cref="GameEvents.OnPlayerConnectionChanged"/>.
@@ -57,6 +59,8 @@ namespace AlienFarms.Networking.Match
 
         private ConnectionApprovalHandler _approval;
         private NetworkManager _manager;
+        private NetworkRootLifetime _root;
+        private bool _hostLeaving;
         private SeatPresenceBoard _written;
         private bool _active;
 
@@ -86,6 +90,12 @@ namespace AlienFarms.Networking.Match
             _manager.OnClientDisconnectCallback += HandleClientDisconnected;
             _approval.SetGraceEnabled(true);
 
+            _root = _anchor.Root;
+            if (_root != null)
+            {
+                _root.HostLeaveStarted += HandleHostLeaveStarted;
+            }
+
             WriteBoard();
         }
 
@@ -97,6 +107,12 @@ namespace AlienFarms.Networking.Match
             }
 
             _active = false;
+            if (_root != null)
+            {
+                _root.HostLeaveStarted -= HandleHostLeaveStarted;
+                _root = null;
+            }
+
             if (_approval != null)
             {
                 _approval.SeatReserved -= HandleSeatReserved;
@@ -119,7 +135,7 @@ namespace AlienFarms.Networking.Match
         private void HandleSeatReserved(PlayerId id)
         {
             // Defensive: the approval handler frees seats without reserving them while the server stops.
-            if (_manager.ShutdownInProgress)
+            if (IsServerStopping)
             {
                 return;
             }
@@ -145,6 +161,12 @@ namespace AlienFarms.Networking.Match
 
         private void HandleSeatReleased(PlayerId id, PlayerConnectionStatus status)
         {
+            // Defensive, as above: nothing is reported, resumed or removed from the session while the host leaves.
+            if (IsServerStopping)
+            {
+                return;
+            }
+
             int index = (int)id - 1;
             string ugsId = null;
             if (index >= 0 && index < SeatCount)
@@ -192,7 +214,7 @@ namespace AlienFarms.Networking.Match
         // Runs after the approval handler (subscribed earlier on the NetworkRoot): the seat table is already updated.
         private void HandleClientDisconnected(ulong clientId)
         {
-            if (_manager.ShutdownInProgress)
+            if (IsServerStopping)
             {
                 return;
             }
@@ -200,9 +222,31 @@ namespace AlienFarms.Networking.Match
             WriteBoard();
         }
 
+        // The host started leaving (root notice) or NGO is shutting down: the run is over for the grace.
+        private bool IsServerStopping => _hostLeaving || _manager.ShutdownInProgress || (_approval != null && _approval.IsServerStopping);
+
+        // The host is leaving: freeze the match until the root stops NGO (never resumed: the scene unloads after).
+        private void HandleHostLeaveStarted()
+        {
+            _hostLeaving = true;
+            MatchPhase phase = _match.CurrentPhase;
+            if (MatchSuspendRules.SuspendsIn(phase))
+            {
+                _match.SetSuspended(true);
+                _matchState.ServerFreezeClock();
+            }
+
+            Debug.Log($"[{nameof(ReconnectGraceCoordinator)}] Host leaving in {phase}: match frozen.", this);
+        }
+
         // Ends the suspension once no seat awaits its player. Both calls are idempotent.
         private void TryResume()
         {
+            if (_hostLeaving)
+            {
+                return;
+            }
+
             ServerSlotDirectory slots = _anchor.Slots;
             if (slots != null && ReconnectGraceRules.AnyAwaiting(slots.Seats))
             {

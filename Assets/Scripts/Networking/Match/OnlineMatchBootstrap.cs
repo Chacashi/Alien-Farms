@@ -151,9 +151,16 @@ namespace AlienFarms.Networking.Match
             NetworkRootLifetime root = _anchor != null ? _anchor.Root : null;
             if (root != null)
             {
-                root.Teardown();
+                // NGO already stopped here, so the teardown (and the load) is immediate.
+                root.Teardown(LoadMainMenu);
+                return;
             }
 
+            SceneFlow.LoadMainMenu();
+        }
+
+        private static void LoadMainMenu()
+        {
             SceneFlow.LoadMainMenu();
         }
 
@@ -167,8 +174,10 @@ namespace AlienFarms.Networking.Match
                 return;
             }
 
-            // NGO puts raw transport text here when the server gave no reason: only known keys reach the UI.
-            _anchor.SetDisconnectReason(DisconnectReasons.Normalize(manager.DisconnectReason));
+            // NGO puts raw transport text here when the server gave no reason: only known keys reach the UI. A drop after
+            // the host's leaving notice is host_disconnected even if NGO's reason message was lost.
+            NetworkRootLifetime root = _anchor.Root;
+            _anchor.SetDisconnectReason(root != null ? root.ResolveDisconnectReason() : DisconnectReasons.Normalize(manager.DisconnectReason));
             _sessionEnded = true;
         }
 

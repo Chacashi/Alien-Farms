@@ -27,6 +27,9 @@ namespace AlienFarms.Data
         [SerializeField, Min(0f), Tooltip("Seconds a disconnected player keeps its slot and pose while it reconnects.")]
         private float _reconnectGraceSeconds = 20f;
 
+        [SerializeField, Range(0f, 2f), Tooltip("A host leaving on purpose first tells its clients and keeps their connections open this long (s) so the notice is delivered, then disconnects them (they record a host-left win instead of a lost connection). 0 = disconnect at once.")]
+        private float _hostLeaveNoticeSeconds = 0.5f;
+
         [Header("Input")]
         [SerializeField, Range(1, 8), Tooltip("Commands sent per input packet (the latest plus previous ones, against loss).")]
         private int _inputRedundancy = 3;
@@ -104,6 +107,7 @@ namespace AlienFarms.Data
         public int MaxPlayers => _maxPlayers;
         public bool AllowSpectator => _allowSpectator;
         public float ReconnectGraceSeconds => _reconnectGraceSeconds;
+        public float HostLeaveNoticeSeconds => _hostLeaveNoticeSeconds;
         public int InputRedundancy => _inputRedundancy;
         public int InputBufferTarget => _inputBufferTarget;
         public float InterpolationDelay => _interpolationDelay;

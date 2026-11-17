@@ -274,7 +274,11 @@ namespace AlienFarms.Networking.Diagnostics
                 return;
             }
 
-            root.Teardown();
+            root.Teardown(LoadMainMenu);
+        }
+
+        private static void LoadMainMenu()
+        {
             SceneFlow.LoadMainMenu();
         }
 

@@ -128,6 +128,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: AlienFarms.Networking::AlienFarms.Networking.Session.NetworkRootLifetime
   _anchor: {fileID: 11400000, guid: 73498404eacadb24f9a4e5c637046ab3, type: 2}
+  _settings: {fileID: 11400000, guid: bbd39eff9786ae94ba8c4ad1657bab45, type: 2}
   _manager: {fileID: 2352713602397585419}
   _approval: {fileID: 5986572655187050418}
   _sceneLoader: {fileID: 3443010218423245288}

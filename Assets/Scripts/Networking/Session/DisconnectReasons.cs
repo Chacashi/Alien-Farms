@@ -40,5 +40,16 @@ namespace AlienFarms.Networking.Session
         {
             return IsKnown(reason) ? reason : ConnectionLost;
         }
+
+        /// <summary>
+        /// Reason of a pure client's drop: <paramref name="reason"/> normalized, except that a drop without a game reason
+        /// after the host announced it was leaving (<see cref="LeaveNoticeMessenger.HostAnnouncedLeaving"/>) is
+        /// <see cref="HostDisconnected"/>: the host's own reason message can be lost with the closing connection.
+        /// </summary>
+        public static string Resolve(string reason, bool hostAnnouncedLeaving)
+        {
+            string normalized = Normalize(reason);
+            return hostAnnouncedLeaving && normalized == ConnectionLost ? HostDisconnected : normalized;
+        }
     }
 }

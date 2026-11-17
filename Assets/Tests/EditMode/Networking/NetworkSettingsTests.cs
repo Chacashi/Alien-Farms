@@ -27,6 +27,7 @@ namespace AlienFarms.Networking.Tests
             Assert.That(_settings.EnvironmentName, Is.EqualTo("dev"));
             Assert.That(_settings.MaxPlayers, Is.EqualTo(2));
             Assert.That(_settings.ReconnectGraceSeconds, Is.EqualTo(20f));
+            Assert.That(_settings.HostLeaveNoticeSeconds, Is.EqualTo(0.5f));
             Assert.That(_settings.InputRedundancy, Is.EqualTo(3));
             Assert.That(_settings.InputBufferTarget, Is.EqualTo(2));
             Assert.That(_settings.InterpolationDelay, Is.EqualTo(0.1f));

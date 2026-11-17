@@ -18,7 +18,8 @@ namespace AlienFarms.Networking.Persistence
     /// <item>Round end (<see cref="GameEvents.OnMatchEnded"/>, forfeits included): win / draw / loss, animals in the own pen.</item>
     /// <item>Leaving on purpose during Playing (<see cref="RecordLeaveLoss"/>, called by the online exit before the
     /// shutdown): a loss.</item>
-    /// <item>The host leaving during Playing (pure client, NGO drop reason <c>host_disconnected</c>): a win, and the
+    /// <item>The host leaving during Playing (pure client: its leaving notice, <see cref="LeaveNoticeMessenger.HostLeavingAnnounced"/>,
+    /// or else the NGO drop reason <c>host_disconnected</c>): a win, once, and the
     /// ledger raises the host-left win notice the online menu shows (<see cref="PlayerStatsLedger.RaiseHostLeftWinNotice"/>).
     /// A drop without that reason (connection lost, host crash) records nothing: this machine cannot know the result.</item>
     /// </list>
@@ -39,6 +40,7 @@ namespace AlienFarms.Networking.Persistence
         private readonly MatchStatsTally _tally = new MatchStatsTally();
         private PlayerId _localId = PlayerId.None;
         private NetworkManager _watchedManager;
+        private LeaveNoticeMessenger _watchedNotice;
 
         private void OnEnable()
         {
@@ -49,6 +51,13 @@ namespace AlienFarms.Networking.Persistence
             {
                 _watchedManager = _anchor.Manager;
                 _watchedManager.OnClientDisconnectCallback += HandleClientDisconnected;
+
+                NetworkRootLifetime root = _anchor.Root;
+                _watchedNotice = root != null ? root.LeaveNotice : null;
+                if (_watchedNotice != null)
+                {
+                    _watchedNotice.HostLeavingAnnounced += HandleHostLeavingAnnounced;
+                }
             }
         }
 
@@ -61,6 +70,12 @@ namespace AlienFarms.Networking.Persistence
             {
                 _watchedManager.OnClientDisconnectCallback -= HandleClientDisconnected;
                 _watchedManager = null;
+            }
+
+            if (_watchedNotice != null)
+            {
+                _watchedNotice.HostLeavingAnnounced -= HandleHostLeavingAnnounced;
+                _watchedNotice = null;
             }
         }
 
@@ -107,17 +122,32 @@ namespace AlienFarms.Networking.Persistence
             Enqueue(delta, result.IsForfeit ? "round (forfeit)" : "round");
         }
 
-        // Pure client: NGO reports this client's drop with the server's reason before it stops.
+        // Pure client: NGO reports this client's drop with the server's reason before it stops. The host's leaving notice
+        // also counts (its reason message may be lost with the closing connection, see DisconnectReasons.Resolve).
         private void HandleClientDisconnected(ulong clientId)
         {
             NetworkManager manager = _watchedManager;
-            if (manager == null || clientId != manager.LocalClientId
-                || DisconnectReasons.Normalize(manager.DisconnectReason) != DisconnectReasons.HostDisconnected)
+            if (manager == null || clientId != manager.LocalClientId)
+            {
+                return;
+            }
+
+            NetworkRootLifetime root = _anchor != null ? _anchor.Root : null;
+            string reason = root != null ? root.ResolveDisconnectReason() : DisconnectReasons.Normalize(manager.DisconnectReason);
+            if (reason != DisconnectReasons.HostDisconnected)
             {
                 return;
             }
 
             TryRecordEarly(true, "host left");
+        }
+
+        // Pure client: the host announced it is leaving. The round closes as a win right now, before a round end
+        // replicated during the notice time or this player's own exit could count it otherwise. The later
+        // host_disconnected drop finds the round completed (MatchStatsTally), so nothing is counted or noticed twice.
+        private void HandleHostLeavingAnnounced()
+        {
+            TryRecordEarly(true, "host left (notice)");
         }
 
         private void TryRecordEarly(bool localWon, string cause)
