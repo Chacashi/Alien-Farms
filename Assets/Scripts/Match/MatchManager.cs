@@ -45,6 +45,8 @@ namespace AlienFarms.Match
         private IPlayerRoster _roster;
         private bool _suspended;
         private bool _started;
+        private bool _forfeitOnPlayerMissing;
+        private PlayerId _forfeitWinner;
 
         public MatchPhase CurrentPhase => _machine != null ? _machine.CurrentPhase : MatchPhase.None;
 
@@ -71,6 +73,12 @@ namespace AlienFarms.Match
         MatchTimer IMatchContext.Timer => _timer;
 
         MatchScore IMatchContext.Score => _score;
+
+        /// <summary>True when a player missing during Playing ends the round as a forfeit (online; see <see cref="SetForfeitOnPlayerMissing"/>).</summary>
+        public bool ForfeitOnPlayerMissing => _forfeitOnPlayerMissing;
+
+        /// <summary>Winner of the current round by forfeit; <see cref="PlayerId.None"/> unless it ended that way (cleared by the next reset).</summary>
+        public PlayerId ForfeitWinner => _forfeitWinner;
 
         private void Awake()
         {
@@ -105,6 +113,31 @@ namespace AlienFarms.Match
             }
 
             _roster = roster;
+        }
+
+        /// <summary>
+        /// Enables the forfeit rule (online): a player missing during Playing ends the round in Results won by the one who
+        /// stayed, instead of aborting it. Set by the GameModeRouter in its Awake.
+        /// </summary>
+        public void SetForfeitOnPlayerMissing(bool enabled)
+        {
+            _forfeitOnPlayerMissing = enabled;
+        }
+
+        bool IMatchContext.IsPlayerPresent(PlayerId id) => _roster != null && _roster.TryGetRig(id, out _);
+
+        /// <summary>Ends the round in Results as a forfeit won by <paramref name="winner"/>. Only from Playing.</summary>
+        public void EndByForfeit(PlayerId winner)
+        {
+            if (_machine == null || CurrentPhase != MatchPhase.Playing
+                || (winner != PlayerId.Player1 && winner != PlayerId.Player2))
+            {
+                return;
+            }
+
+            // Read by ResultsState.Enter (and the online replica) during the transition below.
+            _forfeitWinner = winner;
+            ChangeState(MatchPhase.Results);
         }
 
         /// <summary>
@@ -234,6 +267,9 @@ namespace AlienFarms.Match
 
         public void ResetRound(bool respawnPlayers)
         {
+            // A new round (or an abort) is never a forfeit until EndByForfeit says so.
+            _forfeitWinner = PlayerId.None;
+
             if (respawnPlayers)
             {
                 _roster.RespawnAll();

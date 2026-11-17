@@ -11,9 +11,9 @@ namespace AlienFarms.Networking.Match
     /// Replicated match state, on the in-scene MatchNetwork object (inert in local mode: never spawned).
     /// <list type="bullet">
     /// <item>Server: follows the MatchManager through its GameEvents and writes phase, countdown / round end times
-    /// (server time), the published score board and the obstacle layout.</item>
+    /// (server time), the published score board, the forfeit winner (the result's end reason) and the obstacle layout.</item>
     /// <item>Pure clients: derive and raise the same GameEvents the server's match raises (phase, countdown ticks and
-    /// GO, the 1 Hz round time, scores, and the match result from Phase == Results + score board), and apply the
+    /// GO, the 1 Hz round time, scores, and the match result from Phase == Results + score board + forfeit winner), and apply the
     /// obstacle layout. The timer costs no messages: seconds are derived from <c>RoundEndTime</c>.</item>
     /// <item>Suspension (reconnection grace): the server freezes the round clock (<see cref="ServerFreezeClock"/>) and
     /// clients show the frozen seconds; <see cref="ServerResumeClock"/> rewrites <c>RoundEndTime</c> in the same tick.</item>
@@ -53,6 +53,11 @@ namespace AlienFarms.Networking.Match
         private readonly NetworkVariable<float> _frozenRemaining = new NetworkVariable<float>(
             ClockRunning, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
+        // Winner of a round that ended by forfeit (the rival left during Playing); None for a round decided by the score.
+        // Written with the phase, so clients build the same result (MatchEndReason) the server's match raised.
+        private readonly NetworkVariable<PlayerId> _forfeitWinner = new NetworkVariable<PlayerId>(
+            PlayerId.None, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
         private readonly NetworkVariable<ObstacleLayoutState> _obstacleLayout = new NetworkVariable<ObstacleLayoutState>(
             default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
@@ -74,6 +79,9 @@ namespace AlienFarms.Networking.Match
         public double RoundEndTime => _roundEndTime.Value;
 
         public ScoreBoard Scores => _scoreBoard.Value;
+
+        /// <summary>Winner by forfeit of the round in Results; <see cref="PlayerId.None"/> when the score decided it.</summary>
+        public PlayerId ForfeitWinner => _forfeitWinner.Value;
 
         /// <summary>True while the round clock is frozen (<see cref="ServerFreezeClock"/>).</summary>
         public bool IsClockFrozen => _frozenRemaining.Value >= 0f;
@@ -211,6 +219,7 @@ namespace AlienFarms.Networking.Match
             _scoreBoard.Value = published
                 ? new ScoreBoard(_match.GetScore(PlayerId.Player1), _match.GetScore(PlayerId.Player2))
                 : default;
+            _forfeitWinner.Value = phase == MatchPhase.Results ? _match.ForfeitWinner : PlayerId.None;
             _phase.Value = phase;
             ServerPushLayout();
         }
@@ -237,6 +246,8 @@ namespace AlienFarms.Networking.Match
                 }
             }
 
+            // The match sets its forfeit winner before entering Results, so it is already known here.
+            _forfeitWinner.Value = current == MatchPhase.Results && _match != null ? _match.ForfeitWinner : PlayerId.None;
             _phase.Value = current;
             _layoutCheckPending = true;
         }
@@ -357,7 +368,7 @@ namespace AlienFarms.Networking.Match
             if (_resultPending)
             {
                 _resultPending = false;
-                GameEvents.RaiseMatchEnded(scores.ToResult());
+                GameEvents.RaiseMatchEnded(MatchResultRules.Resolve(scores.ToResult(), _forfeitWinner.Value));
             }
 
             if (_layoutDirty)

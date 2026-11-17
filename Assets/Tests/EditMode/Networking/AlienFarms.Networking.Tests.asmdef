@@ -9,6 +9,7 @@
         "Unity.Services.Core",
         "Unity.Services.Authentication",
         "Unity.Services.Multiplayer",
+        "Unity.Services.CloudSave",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

@@ -138,6 +138,108 @@ namespace AlienFarms.Tests
             Assert.That(a, Is.Not.EqualTo(new PlayerStatsSummary(1, 2, 3, 4, 5, 7)));
         }
 
+        [Test]
+        public void NewChannel_HasNoRival()
+        {
+            Assert.That(_channel.RivalStatus, Is.EqualTo(PlayerProgressStatus.Unavailable));
+            Assert.That(_channel.HasRivalStats, Is.False);
+            Assert.That(_channel.RivalStats, Is.EqualTo(default(PlayerStatsSummary)));
+        }
+
+        [Test]
+        public void SetRival_StoresRivalStatsWithoutTouchingOwn()
+        {
+            var own = new PlayerStatsSummary(3, 1, 1, 1, 9, 0);
+            var rival = new PlayerStatsSummary(8, 5, 0, 3, 40, 2);
+            _channel.SetLoaded(own);
+            _changed = 0;
+
+            _channel.SetRivalLoading();
+            _channel.SetRival(rival);
+
+            Assert.That(_channel.RivalStatus, Is.EqualTo(PlayerProgressStatus.Loaded));
+            Assert.That(_channel.HasRivalStats, Is.True);
+            Assert.That(_channel.RivalStats, Is.EqualTo(rival));
+            Assert.That(_channel.Stats, Is.EqualTo(own));
+            Assert.That(_channel.Status, Is.EqualTo(PlayerProgressStatus.Loaded));
+            Assert.That(_changed, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void SetRival_SameStatsTwice_RaisesChangedOnce()
+        {
+            var rival = new PlayerStatsSummary(1, 0, 0, 1, 0, 0);
+
+            _channel.SetRival(rival);
+            _channel.SetRival(rival);
+
+            Assert.That(_changed, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void SetRivalLoading_DropsThePreviousRival()
+        {
+            _channel.SetRival(new PlayerStatsSummary(2, 2, 0, 0, 4, 0));
+
+            _channel.SetRivalLoading();
+
+            Assert.That(_channel.RivalStatus, Is.EqualTo(PlayerProgressStatus.Loading));
+            Assert.That(_channel.HasRivalStats, Is.False);
+            Assert.That(_channel.RivalStats, Is.EqualTo(default(PlayerStatsSummary)));
+        }
+
+        [Test]
+        public void SetRivalFailed_HidesRivalStats()
+        {
+            _channel.SetRivalLoading();
+
+            _channel.SetRivalFailed();
+
+            Assert.That(_channel.RivalStatus, Is.EqualTo(PlayerProgressStatus.Failed));
+            Assert.That(_channel.HasRivalStats, Is.False);
+        }
+
+        [Test]
+        public void ClearRival_KeepsOwnStatsAndSaveStatus()
+        {
+            var own = new PlayerStatsSummary(4, 2, 0, 2, 10, 0);
+            _channel.SetLoaded(own);
+            _channel.SetSaveStatus(PlayerProgressSaveStatus.Saved);
+            _channel.SetRival(new PlayerStatsSummary(1, 1, 0, 0, 1, 0));
+
+            _channel.ClearRival();
+
+            Assert.That(_channel.RivalStatus, Is.EqualTo(PlayerProgressStatus.Unavailable));
+            Assert.That(_channel.HasRivalStats, Is.False);
+            Assert.That(_channel.Stats, Is.EqualTo(own));
+            Assert.That(_channel.SaveStatus, Is.EqualTo(PlayerProgressSaveStatus.Saved));
+        }
+
+        [Test]
+        public void SetUnavailable_AlsoClearsRival()
+        {
+            _channel.SetRival(new PlayerStatsSummary(1, 1, 0, 0, 1, 0));
+
+            _channel.SetUnavailable();
+
+            Assert.That(_channel.RivalStatus, Is.EqualTo(PlayerProgressStatus.Unavailable));
+            Assert.That(_channel.RivalStats, Is.EqualTo(default(PlayerStatsSummary)));
+        }
+
+        [Test]
+        public void OwnChanges_KeepRival()
+        {
+            var rival = new PlayerStatsSummary(6, 3, 1, 2, 12, 0);
+            _channel.SetRival(rival);
+
+            _channel.SetLoading();
+            _channel.SetFailed(PlayerProgressErrorKeys.Offline);
+            _channel.SetSaveStatus(PlayerProgressSaveStatus.Failed);
+
+            Assert.That(_channel.RivalStats, Is.EqualTo(rival));
+            Assert.That(_channel.HasRivalStats, Is.True);
+        }
+
         private void CountChange()
         {
             _changed++;

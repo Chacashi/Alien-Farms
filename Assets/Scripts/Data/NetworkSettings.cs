@@ -10,9 +10,10 @@ namespace AlienFarms.Data
     public sealed class NetworkSettings : ScriptableObject
     {
         [Header("Session")]
-        // History: 1 = payload with CharacterIndex (1.5); 2 = character picked in the room, removed from the payload (2.3).
+        // History: 1 = payload with CharacterIndex (1.5); 2 = character picked in the room, removed from the payload (2.3);
+        // 3 = MatchResult.EndReason / forfeit winner replicated by NetworkMatchState (2.8).
         [SerializeField, Min(1), Tooltip("Connection protocol version; clients with a different one are rejected. Bump it whenever the connection payload or any replicated layout changes.")]
-        private int _protocolVersion = 2;
+        private int _protocolVersion = 3;
 
         [SerializeField, Tooltip("Unity Gaming Services environment name.")]
         private string _environmentName = "dev";
@@ -82,6 +83,22 @@ namespace AlienFarms.Data
         [SerializeField, Tooltip("Debug: adds a 'client N' line (the avatar owner's NGO client id) under each name tag, to see the new id after a reconnection.")]
         private bool _nameTagShowsClientId;
 
+        [Header("Cloud Save")]
+        [SerializeField, Tooltip("Read the rival's public stats in the online room (Plan B #2: off, and the RivalStats view disabled).")]
+        private bool _readRivalStats = true;
+
+        [SerializeField, Min(1), Tooltip("Attempts per stats save before reporting the failure (later rounds or loads retry again).")]
+        private int _statsSaveAttempts = 3;
+
+        [SerializeField, Min(0.5f), Tooltip("Delay before the first stats save retry (s); multiplied by 3 on every further attempt. A rate limit's Retry-After wins when longer.")]
+        private float _statsRetryDelaySeconds = 4f;
+
+        [SerializeField, Tooltip("Logs every stats load, save, conflict and retry.")]
+        private bool _logPersistence = true;
+
+        [SerializeField, Tooltip("Editor / development builds only: every stats load and save fails as offline, without touching the network.")]
+        private bool _simulateStatsFailure;
+
         public int ProtocolVersion => _protocolVersion;
         public string EnvironmentName => _environmentName;
         public int MaxPlayers => _maxPlayers;
@@ -104,6 +121,23 @@ namespace AlienFarms.Data
         public bool LogPoolLifecycle => _logPoolLifecycle;
         public bool ShowNameTags => _showNameTags;
         public bool NameTagShowsClientId => _nameTagShowsClientId;
+        public bool ReadRivalStats => _readRivalStats;
+        public int StatsSaveAttempts => _statsSaveAttempts;
+        public float StatsRetryDelaySeconds => _statsRetryDelaySeconds;
+        public bool LogPersistence => _logPersistence;
+
+        /// <summary>Simulated offline stats store; always false outside the Editor and development builds.</summary>
+        public bool SimulateStatsFailure
+        {
+            get
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                return _simulateStatsFailure;
+#else
+                return false;
+#endif
+            }
+        }
 
         private void OnValidate()
         {

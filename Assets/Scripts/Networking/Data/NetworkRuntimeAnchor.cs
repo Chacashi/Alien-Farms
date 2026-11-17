@@ -1,5 +1,6 @@
 using System;
 using AlienFarms.Core;
+using AlienFarms.Networking.Persistence;
 using AlienFarms.Networking.Player;
 using AlienFarms.Networking.Session;
 using Unity.Netcode;
@@ -23,6 +24,9 @@ namespace AlienFarms.Networking.Data
         [NonSerialized] private string _disconnectReason;
         [NonSerialized] private string _rejoinSessionId;
         [NonSerialized] private Camera _spectatorCamera;
+        // Own generation: the stats outlive roots and scene loads (only a new play session drops them).
+        [NonSerialized] private int _playerStatsGeneration = -1;
+        [NonSerialized] private PlayerStatsLedger _playerStats;
 
         // Spawned avatars by seat on this machine (index = (int)PlayerId - 1), on server and clients alike.
         [NonSerialized] private readonly NetworkPlayer[] _players = new NetworkPlayer[2];
@@ -87,6 +91,25 @@ namespace AlienFarms.Networking.Data
             if (ReferenceEquals(_spectatorCamera, camera))
             {
                 _spectatorCamera = null;
+            }
+        }
+
+        /// <summary>
+        /// Cloud stats of the signed-in player on this machine (task 2.8): written by the match stats recorder (rounds) and
+        /// synced by the cloud save service. Created on first use per play session, with the pending stats kept in
+        /// PlayerPrefs. Never null.
+        /// </summary>
+        public PlayerStatsLedger PlayerStats
+        {
+            get
+            {
+                if (_playerStats == null || _playerStatsGeneration != s_generation)
+                {
+                    _playerStats = new PlayerStatsLedger(new PlayerPrefsPendingStatsStore());
+                    _playerStatsGeneration = s_generation;
+                }
+
+                return _playerStats;
             }
         }
 

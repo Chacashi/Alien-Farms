@@ -101,6 +101,25 @@ namespace AlienFarms.UI
         public const string StatsEmptyHint = "stats.empty_hint";
         public const string StatsSaved = "stats.saved";
 
+        // UI table: cloud stats save badge, rival stats, forfeit (task 2.8).
+        public const string StatsSaving = "stats.saving";
+        public const string StatsSaveFailed = "stats.save_failed";
+        /// <summary>{0} = matches, {1} = wins, {2} = draws, {3} = losses.</summary>
+        public const string StatsRival = "stats.rival";
+        /// <summary>Menu notice after the host left during Playing (the client recorded a win).</summary>
+        public const string StatsHostLeftWin = "stats.host_left_win";
+        /// <summary>Results subtitle on a forfeit; {0} = the player who left.</summary>
+        public const string ResultsForfeit = "results.forfeit";
+
+        // UI table: cloud stats errors. Values come from PlayerProgressErrorKeys (single source of truth).
+        public const string StatsErrorOffline = PlayerProgressErrorKeys.Offline;
+        public const string StatsErrorRateLimited = PlayerProgressErrorKeys.RateLimited;
+        public const string StatsErrorUnavailable = PlayerProgressErrorKeys.Unavailable;
+        public const string StatsErrorSignedOut = PlayerProgressErrorKeys.SignedOut;
+        public const string StatsErrorNewerSchema = PlayerProgressErrorKeys.NewerSchema;
+        public const string StatsErrorCorrupt = PlayerProgressErrorKeys.Corrupt;
+        public const string StatsErrorUnknown = PlayerProgressErrorKeys.Unknown;
+
         // UI table: online errors. Values come from OnlineSessionErrorKeys (single source of truth).
         public const string OnlineErrorSignInFailed = OnlineSessionErrorKeys.SignInFailed;
         public const string OnlineErrorServicesUnavailable = OnlineSessionErrorKeys.ServicesUnavailable;

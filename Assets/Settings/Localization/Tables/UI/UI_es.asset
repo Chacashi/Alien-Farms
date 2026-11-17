@@ -422,6 +422,54 @@ MonoBehaviour:
     m_Localized: "Se acab\xF3 el tiempo para reconectar."
     m_Metadata:
       m_Items: []
+  - m_Id: 4674187223093248
+    m_Localized: "Guardando\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064768
+    m_Localized: "No se pudo guardar (se reintentar\xE1)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064769
+    m_Localized: "Rival: {0} partidas \xB7 {1} V \xB7 {2} E \xB7 {3} D"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064770
+    m_Localized: "El anfitri\xF3n abandon\xF3: victoria registrada"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064771
+    m_Localized: "{0} abandon\xF3"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064772
+    m_Localized: "Sin conexi\xF3n: tus estad\xEDsticas se guardar\xE1n despu\xE9s."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064773
+    m_Localized: "Demasiadas solicitudes. Se reintentar\xE1 en un momento."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064774
+    m_Localized: "El guardado en la nube no est\xE1 disponible."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064775
+    m_Localized: "Inicia sesi\xF3n para guardar tus estad\xEDsticas."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064776
+    m_Localized: "Tus estad\xEDsticas son de una versi\xF3n m\xE1s nueva del juego."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064777
+    m_Localized: "Tus estad\xEDsticas en la nube no son v\xE1lidas."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064778
+    m_Localized: "No se pudieron cargar tus estad\xEDsticas."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

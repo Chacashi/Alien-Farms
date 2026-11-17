@@ -4,6 +4,7 @@ using AlienFarms.Data;
 using AlienFarms.Items;
 using AlienFarms.Match;
 using AlienFarms.Networking.Data;
+using AlienFarms.Networking.Persistence;
 using AlienFarms.Networking.Session;
 using AlienFarms.Zones;
 using Unity.Netcode;
@@ -51,6 +52,9 @@ namespace AlienFarms.Networking.Match
         [SerializeField, Tooltip("Obstacle layout (Replica on clients).")]
         private ObstacleField _obstacles;
 
+        [SerializeField, Tooltip("Optional: records a loss when this player leaves during Playing (OnlineModeRoot/MatchStats).")]
+        private OnlineMatchStatsRecorder _stats;
+
         private SimulationRole _appliedRole = SimulationRole.Authority;
         private NetworkManager _watchedManager;
         private bool _sessionEnded;
@@ -62,7 +66,7 @@ namespace AlienFarms.Networking.Match
         {
             if (_exit != null)
             {
-                _exit.SetHandler(new OnlineMatchExitHandler(_anchor, _session));
+                _exit.SetHandler(new OnlineMatchExitHandler(_anchor, _session, _stats));
             }
 
             if (_anchor == null || !_anchor.HasRoot)
@@ -210,6 +214,11 @@ namespace AlienFarms.Networking.Match
             if (_obstacles == null)
             {
                 Debug.LogWarning($"[{nameof(OnlineMatchBootstrap)}] Missing ObstacleField on '{name}'.", this);
+            }
+
+            if (_stats == null)
+            {
+                Debug.LogWarning($"[{nameof(OnlineMatchBootstrap)}] Missing OnlineMatchStatsRecorder on '{name}'; leaving during Playing records no loss.", this);
             }
         }
     }

@@ -2,7 +2,10 @@ using AlienFarms.Core;
 
 namespace AlienFarms.Match
 {
-    /// <summary>Round in progress: timer runs (1 Hz event) and score changes are published.</summary>
+    /// <summary>
+    /// Round in progress: timer runs (1 Hz event) and score changes are published. A missing player either aborts the
+    /// round (local) or ends it as a forfeit won by the player who stayed (<see cref="IMatchContext.ForfeitOnPlayerMissing"/>).
+    /// </summary>
     public sealed class PlayingState : MatchState
     {
         public PlayingState(IMatchContext context) : base(context)
@@ -21,7 +24,7 @@ namespace AlienFarms.Match
 
         public override void Tick(float deltaTime)
         {
-            if (AbortIfPlayerMissing())
+            if (TryForfeitIfPlayerMissing() || AbortIfPlayerMissing())
             {
                 return;
             }
@@ -40,6 +43,28 @@ namespace AlienFarms.Match
             {
                 Context.ChangeState(MatchPhase.Results);
             }
+        }
+
+        /// <summary>
+        /// True (and the round ends in Results) when forfeits are enabled and exactly one player is still present.
+        /// With nobody left the round aborts as usual.
+        /// </summary>
+        private bool TryForfeitIfPlayerMissing()
+        {
+            if (!Context.ForfeitOnPlayerMissing || Context.JoinedPlayerCount >= RequiredPlayers)
+            {
+                return false;
+            }
+
+            bool player1 = Context.IsPlayerPresent(PlayerId.Player1);
+            bool player2 = Context.IsPlayerPresent(PlayerId.Player2);
+            if (!MatchResultRules.TryGetSoleRemaining(player1, player2, out PlayerId winner))
+            {
+                return false;
+            }
+
+            Context.EndByForfeit(winner);
+            return true;
         }
     }
 }

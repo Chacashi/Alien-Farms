@@ -5,9 +5,10 @@ using UnityEngine;
 namespace AlienFarms.Data
 {
     /// <summary>
-    /// Runtime channel with the local player's persistent progress (lifetime stats). The title screen only reads it;
-    /// the cloud save service (task 2.8) is the only writer. Until then it stays <see cref="PlayerProgressStatus.Unavailable"/>.
-    /// Nothing is serialized: state from a previous play session is discarded through a generation counter.
+    /// Runtime channel with the local player's persistent progress (lifetime stats) and, in the online room, the rival's
+    /// public stats. Views only read it; the cloud save service (task 2.8) is the only writer. Until then it stays
+    /// <see cref="PlayerProgressStatus.Unavailable"/>. Nothing is serialized: state from a previous play session is
+    /// discarded through a generation counter.
     /// </summary>
     [CreateAssetMenu(fileName = "PlayerProgressChannel", menuName = "Alien Farms/Networking/Player Progress Channel (Runtime)")]
     public sealed class PlayerProgressChannel : ScriptableObject
@@ -19,9 +20,15 @@ namespace AlienFarms.Data
         [NonSerialized] private PlayerStatsSummary _stats;
         [NonSerialized] private PlayerProgressSaveStatus _saveStatus;
         [NonSerialized] private string _lastErrorKey;
+        [NonSerialized] private PlayerProgressStatus _rivalStatus;
+        [NonSerialized] private PlayerStatsSummary _rivalStats;
+        [NonSerialized] private bool _hostLeftWinNotice;
 
-        /// <summary>Raised after any state change (status, stats, save status, error).</summary>
+        /// <summary>Raised after any state change (status, stats, save status, error, rival, host-left notice).</summary>
         public event Action Changed;
+
+        /// <summary>Service side: the online menu showed the host-left win notice (see <see cref="RequestConsumeHostLeftWinNotice"/>).</summary>
+        public event Action HostLeftWinNoticeConsumeRequested;
 
         public PlayerProgressStatus Status => IsCurrent ? _status : PlayerProgressStatus.Unavailable;
 
@@ -38,6 +45,21 @@ namespace AlienFarms.Data
 
         public bool HasError => !string.IsNullOrEmpty(LastErrorKey);
 
+        /// <summary>Load state of the rival's public stats (Unavailable when there is no rival to read).</summary>
+        public PlayerProgressStatus RivalStatus => IsCurrent ? _rivalStatus : PlayerProgressStatus.Unavailable;
+
+        /// <summary>The rival's public stats; default (all zero) unless <see cref="HasRivalStats"/>.</summary>
+        public PlayerStatsSummary RivalStats => IsCurrent ? _rivalStats : default;
+
+        /// <summary>True when <see cref="RivalStats"/> holds loaded values.</summary>
+        public bool HasRivalStats => RivalStatus == PlayerProgressStatus.Loaded;
+
+        /// <summary>
+        /// True while a win recorded because the host left during Playing waits to be announced by the online menu
+        /// (which shows it instead of the plain "host left" error, then asks to consume it).
+        /// </summary>
+        public bool HasHostLeftWinNotice => IsCurrent && _hostLeftWinNotice;
+
         private bool IsCurrent => _generation == s_generation;
 
         private void OnEnable()
@@ -46,45 +68,118 @@ namespace AlienFarms.Data
             hideFlags |= HideFlags.DontUnloadUnusedAsset;
         }
 
-        /// <summary>Back to the initial state (for example after signing out).</summary>
+        /// <summary>Back to the initial state (for example after signing out); also forgets the rival.</summary>
         public void SetUnavailable()
         {
-            Apply(PlayerProgressStatus.Unavailable, default, PlayerProgressSaveStatus.Idle, null);
+            EnsureCurrent();
+            Apply(PlayerProgressStatus.Unavailable, default, PlayerProgressSaveStatus.Idle, null,
+                PlayerProgressStatus.Unavailable, default);
         }
 
         /// <summary>Loading started; keeps the previous stats and clears the error.</summary>
         public void SetLoading()
         {
             EnsureCurrent();
-            Apply(PlayerProgressStatus.Loading, _stats, _saveStatus, null);
+            Apply(PlayerProgressStatus.Loading, _stats, _saveStatus, null, _rivalStatus, _rivalStats);
         }
 
         public void SetLoaded(in PlayerStatsSummary stats)
         {
+            SetLoaded(stats, null);
+        }
+
+        /// <summary>
+        /// Loaded, but with a standing error (for example newer or corrupt cloud data: shown, never written).
+        /// </summary>
+        public void SetLoaded(in PlayerStatsSummary stats, string errorKey)
+        {
             EnsureCurrent();
-            Apply(PlayerProgressStatus.Loaded, stats, _saveStatus, null);
+            Apply(PlayerProgressStatus.Loaded, stats, _saveStatus, string.IsNullOrEmpty(errorKey) ? null : errorKey,
+                _rivalStatus, _rivalStats);
+        }
+
+        /// <summary>Service side: publishes whether the host-left win notice is pending.</summary>
+        public void SetHostLeftWinNotice(bool pending)
+        {
+            EnsureCurrent();
+            if (_hostLeftWinNotice == pending)
+            {
+                return;
+            }
+
+            _hostLeftWinNotice = pending;
+            Changed?.Invoke();
+        }
+
+        /// <summary>
+        /// Menu side: the notice was shown; asks the service (the only writer) to consume it. False when none is pending
+        /// or no service is listening.
+        /// </summary>
+        public bool RequestConsumeHostLeftWinNotice()
+        {
+            if (!HasHostLeftWinNotice || HostLeftWinNoticeConsumeRequested == null)
+            {
+                return false;
+            }
+
+            HostLeftWinNoticeConsumeRequested.Invoke();
+            return true;
         }
 
         /// <summary>Loading failed; keeps the previous stats and records <paramref name="errorKey"/>.</summary>
         public void SetFailed(string errorKey)
         {
             EnsureCurrent();
-            Apply(PlayerProgressStatus.Failed, _stats, _saveStatus, errorKey);
+            Apply(PlayerProgressStatus.Failed, _stats, _saveStatus, errorKey, _rivalStatus, _rivalStats);
         }
 
         public void SetSaveStatus(PlayerProgressSaveStatus saveStatus)
         {
             EnsureCurrent();
-            Apply(_status, _stats, saveStatus, _lastErrorKey);
+            Apply(_status, _stats, saveStatus, _lastErrorKey, _rivalStatus, _rivalStats);
         }
 
-        private void Apply(PlayerProgressStatus status, in PlayerStatsSummary stats, PlayerProgressSaveStatus saveStatus, string errorKey)
+        /// <summary>Reading a (possibly new) rival's stats started; the previous rival's values are dropped.</summary>
+        public void SetRivalLoading()
         {
             EnsureCurrent();
+            Apply(_status, _stats, _saveStatus, _lastErrorKey, PlayerProgressStatus.Loading, default);
+        }
+
+        public void SetRival(in PlayerStatsSummary stats)
+        {
+            EnsureCurrent();
+            Apply(_status, _stats, _saveStatus, _lastErrorKey, PlayerProgressStatus.Loaded, stats);
+        }
+
+        /// <summary>Reading the rival's stats failed (views hide them).</summary>
+        public void SetRivalFailed()
+        {
+            EnsureCurrent();
+            Apply(_status, _stats, _saveStatus, _lastErrorKey, PlayerProgressStatus.Failed, default);
+        }
+
+        /// <summary>No rival anymore (left the room, rival gone, or rival stats disabled).</summary>
+        public void ClearRival()
+        {
+            EnsureCurrent();
+            Apply(_status, _stats, _saveStatus, _lastErrorKey, PlayerProgressStatus.Unavailable, default);
+        }
+
+        private void Apply(
+            PlayerProgressStatus status,
+            in PlayerStatsSummary stats,
+            PlayerProgressSaveStatus saveStatus,
+            string errorKey,
+            PlayerProgressStatus rivalStatus,
+            in PlayerStatsSummary rivalStats)
+        {
             bool changed = status != _status
                 || !stats.Equals(_stats)
                 || saveStatus != _saveStatus
-                || !string.Equals(errorKey, _lastErrorKey, StringComparison.Ordinal);
+                || !string.Equals(errorKey, _lastErrorKey, StringComparison.Ordinal)
+                || rivalStatus != _rivalStatus
+                || !rivalStats.Equals(_rivalStats);
             if (!changed)
             {
                 return;
@@ -94,6 +189,8 @@ namespace AlienFarms.Data
             _stats = stats;
             _saveStatus = saveStatus;
             _lastErrorKey = errorKey;
+            _rivalStatus = rivalStatus;
+            _rivalStats = rivalStats;
             Changed?.Invoke();
         }
 
@@ -109,6 +206,9 @@ namespace AlienFarms.Data
             _stats = default;
             _saveStatus = PlayerProgressSaveStatus.Idle;
             _lastErrorKey = null;
+            _rivalStatus = PlayerProgressStatus.Unavailable;
+            _rivalStats = default;
+            _hostLeftWinNotice = false;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

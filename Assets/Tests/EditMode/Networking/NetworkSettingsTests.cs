@@ -36,6 +36,16 @@ namespace AlienFarms.Networking.Tests
         }
 
         [Test]
+        public void Defaults_CloudSaveMatchesTheDesign()
+        {
+            Assert.That(_settings.ReadRivalStats, Is.True);
+            Assert.That(_settings.StatsSaveAttempts, Is.EqualTo(3));
+            Assert.That(_settings.StatsRetryDelaySeconds, Is.EqualTo(4f));
+            Assert.That(_settings.LogPersistence, Is.True);
+            Assert.That(_settings.SimulateStatsFailure, Is.False);
+        }
+
+        [Test]
         public void Defaults_ShowOwnershipLabelsAndLogOwnership()
         {
             Assert.That(_settings.ShowOwnershipLabels, Is.True);

@@ -2,13 +2,15 @@ using AlienFarms.Core;
 using AlienFarms.Data;
 using AlienFarms.Match;
 using AlienFarms.Networking.Data;
+using AlienFarms.Networking.Persistence;
 using AlienFarms.Networking.Player;
 using AlienFarms.Networking.Session;
 
 namespace AlienFarms.Networking.Match
 {
     /// <summary>
-    /// Online match exit. Back to title: clears the session, on a pure client sends the voluntary-leave notice and drops
+    /// Online match exit. Back to title: records a loss first when leaving during live Playing (persisted before the
+    /// shutdown, see <see cref="OnlineMatchStatsRecorder.RecordLeaveLoss"/>), clears the session, on a pure client sends the voluntary-leave notice and drops
     /// any rejoin offer, tears the NetworkRoot down (shutdown + destroy; the
     /// MainMenu brings a fresh one) and loads the main menu, which opens on the online hub. Rematch: marks the local player ready; the server's
     /// <see cref="NetworkMatchExit"/> restarts the match when both players are.
@@ -17,11 +19,14 @@ namespace AlienFarms.Networking.Match
     {
         private readonly NetworkRuntimeAnchor _anchor;
         private readonly MatchSession _session;
+        private readonly OnlineMatchStatsRecorder _stats;
 
-        public OnlineMatchExitHandler(NetworkRuntimeAnchor anchor, MatchSession session)
+        /// <param name="stats">Optional: records the loss of leaving during Playing (null = nothing recorded).</param>
+        public OnlineMatchExitHandler(NetworkRuntimeAnchor anchor, MatchSession session, OnlineMatchStatsRecorder stats = null)
         {
             _anchor = anchor;
             _session = session;
+            _stats = stats;
         }
 
         /// <summary>
@@ -39,6 +44,12 @@ namespace AlienFarms.Networking.Match
 
         public bool ReturnToTitle()
         {
+            // Before anything is torn down: the ledger flushes the loss to PlayerPrefs on enqueue.
+            if (_stats != null)
+            {
+                _stats.RecordLeaveLoss();
+            }
+
             if (_session != null)
             {
                 _session.Clear();

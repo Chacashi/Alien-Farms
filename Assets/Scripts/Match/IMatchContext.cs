@@ -15,6 +15,24 @@ namespace AlienFarms.Match
 
         MatchScore Score { get; }
 
+        /// <summary>
+        /// True when a player missing during Playing ends the round as a forfeit won by the one who stayed (online);
+        /// false aborts the round back to WaitingForPlayers (local).
+        /// </summary>
+        bool ForfeitOnPlayerMissing { get; }
+
+        /// <summary>Winner of the current round by forfeit; <see cref="PlayerId.None"/> unless it ended that way.</summary>
+        PlayerId ForfeitWinner { get; }
+
+        /// <summary>True when <paramref name="id"/> is joined and registered.</summary>
+        bool IsPlayerPresent(PlayerId id);
+
+        /// <summary>
+        /// Ends the round in Results as a forfeit won by <paramref name="winner"/> (the score does not decide it).
+        /// Only valid from Playing; ignored otherwise.
+        /// </summary>
+        void EndByForfeit(PlayerId winner);
+
         void ChangeState(MatchPhase next);
 
         /// <summary>

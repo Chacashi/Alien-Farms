@@ -28,6 +28,42 @@ namespace AlienFarms.Tests
 
         public int JoinedPlayerCount { get; set; }
 
+        public bool ForfeitOnPlayerMissing { get; set; }
+
+        public PlayerId ForfeitWinner { get; private set; }
+
+        /// <summary>With one player joined, the one that is not present (default Player 2).</summary>
+        public PlayerId MissingPlayer { get; set; } = PlayerId.Player2;
+
+        /// <summary>Both present with 2 joined, nobody with 0, everyone but <see cref="MissingPlayer"/> with 1.</summary>
+        public bool IsPlayerPresent(PlayerId id)
+        {
+            if (id != PlayerId.Player1 && id != PlayerId.Player2)
+            {
+                return false;
+            }
+
+            if (JoinedPlayerCount >= 2)
+            {
+                return true;
+            }
+
+            return JoinedPlayerCount == 1 && id != MissingPlayer;
+        }
+
+        /// <summary>Same steps as MatchManager.EndByForfeit.</summary>
+        public void EndByForfeit(PlayerId winner)
+        {
+            if (Phase != MatchPhase.Playing || (winner != PlayerId.Player1 && winner != PlayerId.Player2))
+            {
+                return;
+            }
+
+            CallLog.Add("EndByForfeit(" + winner + ")");
+            ForfeitWinner = winner;
+            ChangeState(MatchPhase.Results);
+        }
+
         public MatchPhase Phase => Machine.CurrentPhase;
         public bool ControlsEnabled { get; private set; } = true;
         public int ResetRoundCount { get; private set; }
@@ -44,6 +80,7 @@ namespace AlienFarms.Tests
         public void ResetRound(bool respawnPlayers)
         {
             CallLog.Add(respawnPlayers ? "ResetRound(true)" : "ResetRound(false)");
+            ForfeitWinner = PlayerId.None;
             ResetRoundCount++;
             if (respawnPlayers)
             {

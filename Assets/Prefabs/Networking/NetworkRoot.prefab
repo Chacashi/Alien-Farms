@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 4585822164530064170}
   - component: {fileID: 8737395324864652958}
   - component: {fileID: 1418458366712097371}
+  - component: {fileID: 2557990919286885314}
   m_Layer: 0
   m_Name: NetworkRoot
   m_TagString: Untagged
@@ -196,6 +197,7 @@ MonoBehaviour:
   _connectTimeoutSeconds: 20
   _alreadyInSessionRetrySeconds: 1
   _hostLeftWaitSeconds: 3
+  _reconnectConnectWaitSeconds: 15
 --- !u!114 &8737395324864652958
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -230,3 +232,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: AlienFarms.Networking::AlienFarms.Networking.Session.LeaveNoticeMessenger
   _manager: {fileID: 2352713602397585419}
   _approval: {fileID: 5986572655187050418}
+--- !u!114 &2557990919286885314
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 783177356002245637}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1b10beaf8325df478de30f248f87fef, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Networking::AlienFarms.Networking.Persistence.CloudSaveStatsService
+  _settings: {fileID: 11400000, guid: bbd39eff9786ae94ba8c4ad1657bab45, type: 2}
+  _session: {fileID: 11400000, guid: e886cd36434b8b84582b8c99c48ae0c1, type: 2}
+  _progress: {fileID: 11400000, guid: 2c649e6a523ae744b971e3e9fd188922, type: 2}
+  _anchor: {fileID: 11400000, guid: 73498404eacadb24f9a4e5c637046ab3, type: 2}

@@ -537,6 +537,100 @@ namespace AlienFarms.Tests
             Assert.That(_context.CallLog, Is.Empty);
         }
 
+        [Test]
+        public void Playing_PlayerMissingWithForfeit_EndsInResultsWonByTheOneWhoStayed()
+        {
+            _context.ForfeitOnPlayerMissing = true;
+            EnterPlaying();
+            // Player 2 leads, but Player 1 is the one left.
+            _context.Capture(PlayerId.Player2, new object(), 5);
+            _results.Clear();
+
+            _context.MissingPlayer = PlayerId.Player2;
+            _context.JoinedPlayerCount = 1;
+            _context.Tick(0.016f);
+
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.Results));
+            Assert.That(_results.Count, Is.EqualTo(1));
+            Assert.That(_results[0].IsForfeit, Is.True);
+            Assert.That(_results[0].EndReason, Is.EqualTo(MatchEndReason.Forfeit));
+            Assert.That(_results[0].Winner, Is.EqualTo(PlayerId.Player1));
+            Assert.That(_results[0].Forfeiter, Is.EqualTo(PlayerId.Player2));
+            Assert.That(_results[0].Player2Score, Is.EqualTo(5));
+        }
+
+        [Test]
+        public void ForfeitResults_StayWithOnePlayer_AndRefuseRematch()
+        {
+            _context.ForfeitOnPlayerMissing = true;
+            EnterPlaying();
+            _context.MissingPlayer = PlayerId.Player1;
+            _context.JoinedPlayerCount = 1;
+            _context.Tick(0.016f);
+
+            _context.Advance(ResultsInputDelay + 1f);
+            _context.Confirm(PlayerId.Player2);
+
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.Results));
+            Assert.That(_context.Machine.IsRematchReady, Is.False);
+            Assert.That(_context.Machine.IsResultsInputReady, Is.True);
+        }
+
+        [Test]
+        public void ForfeitWinner_IsClearedByTheNextRound()
+        {
+            _context.ForfeitOnPlayerMissing = true;
+            EnterPlaying();
+            _context.JoinedPlayerCount = 1;
+            _context.Tick(0.016f);
+            Assert.That(_context.ForfeitWinner, Is.EqualTo(PlayerId.Player1));
+
+            _context.JoinedPlayerCount = 2;
+            _context.Advance(ResultsInputDelay + 0.1f);
+            _context.Confirm(PlayerId.Player1);
+            _context.Advance(CountdownSeconds + 0.05f);
+            _results.Clear();
+            _context.Advance(MatchDuration + 0.5f, 0.5f);
+
+            Assert.That(_context.ForfeitWinner, Is.EqualTo(PlayerId.None));
+            Assert.That(_results.Count, Is.EqualTo(1));
+            Assert.That(_results[0].EndReason, Is.EqualTo(MatchEndReason.TimeUp));
+        }
+
+        [Test]
+        public void Countdown_PlayerMissingWithForfeit_StillAborts()
+        {
+            _context.ForfeitOnPlayerMissing = true;
+            EnterCountdown();
+
+            AssertReturnsToWaitingWhenPlayerLeaves();
+            Assert.That(_results, Is.Empty);
+        }
+
+        [Test]
+        public void Playing_BothMissingWithForfeit_Aborts()
+        {
+            _context.ForfeitOnPlayerMissing = true;
+            EnterPlaying();
+            _results.Clear();
+
+            _context.JoinedPlayerCount = 0;
+            _context.Tick(0.016f);
+
+            Assert.That(_context.Phase, Is.EqualTo(MatchPhase.WaitingForPlayers));
+            Assert.That(_results, Is.Empty);
+        }
+
+        [Test]
+        public void Playing_PlayerMissingWithoutForfeit_AbortsAsBefore()
+        {
+            EnterPlaying();
+            _results.Clear();
+
+            AssertReturnsToWaitingWhenPlayerLeaves();
+            Assert.That(_results, Is.Empty);
+        }
+
         private void EnterCountdown()
         {
             _context.JoinedPlayerCount = 2;

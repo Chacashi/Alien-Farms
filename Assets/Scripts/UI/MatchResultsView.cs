@@ -9,7 +9,8 @@ using UnityEngine.UI;
 namespace AlienFarms.UI
 {
     /// <summary>
-    /// Shows the round result (winner by character name, both names and the score) while the match is in Results.
+    /// Shows the round result (winner by character name, both names, the score and, on a forfeit, who left) while the
+    /// match is in Results.
     /// The winner text is tinted with the winner's Theme.Secondary; names use the dark Theme.Accent (readable on the
     /// cream wood panel) and optional stripes under them carry Theme.Secondary. Lives on an always-active object and toggles
     /// <see cref="_panelRoot"/>. Buttons (rematch, title) are wired in the scene; the menu owner is set by ResultsMenuController.
@@ -23,6 +24,9 @@ namespace AlienFarms.UI
 
         [SerializeField, Tooltip("Text shown on a draw.")]
         private LocalizedString _drawEntry = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.ResultsDraw);
+
+        [SerializeField, Tooltip("Forfeit subtitle format (non-Smart); {0} = name of the player who left.")]
+        private LocalizedString _forfeitEntry = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.ResultsForfeit);
 
         [SerializeField, Tooltip("TMP format; {0} = Player 1 score, {1} = Player 2 score.")]
         private string _scoreFormat = "{0} - {1}";
@@ -40,6 +44,9 @@ namespace AlienFarms.UI
         [SerializeField] private TMP_Text _winnerText;
         [SerializeField] private TMP_Text _scoreText;
 
+        [SerializeField, Tooltip("Optional: subtitle shown only on a forfeit ('{0} left'); its GameObject is hidden otherwise.")]
+        private TMP_Text _forfeitText;
+
         [SerializeField, Tooltip("Optional: Player 1 character name (left).")]
         private TMP_Text _nameP1;
 
@@ -56,6 +63,7 @@ namespace AlienFarms.UI
         private Color _winnerDefaultColor = Color.white;
         private LocalizedStringBinding _winnerBinding;
         private LocalizedStringBinding _drawBinding;
+        private LocalizedStringBinding _forfeitBinding;
         private LocalizedStringBinding _player1Binding;
         private LocalizedStringBinding _player2Binding;
         private MatchResult _lastResult;
@@ -66,6 +74,7 @@ namespace AlienFarms.UI
             Action refresh = RefreshIfVisible;
             _winnerBinding = new LocalizedStringBinding(_winnerEntry, refresh);
             _drawBinding = new LocalizedStringBinding(_drawEntry, refresh);
+            _forfeitBinding = new LocalizedStringBinding(_forfeitEntry, refresh);
             _player1Binding = new LocalizedStringBinding(_player1Label, refresh);
             _player2Binding = new LocalizedStringBinding(_player2Label, refresh);
 
@@ -79,6 +88,7 @@ namespace AlienFarms.UI
         {
             _winnerBinding.Enable();
             _drawBinding.Enable();
+            _forfeitBinding.Enable();
             _player1Binding.Enable();
             _player2Binding.Enable();
             GameEvents.OnPlayerCharacterAssigned += HandlePlayerCharacterAssigned;
@@ -90,6 +100,7 @@ namespace AlienFarms.UI
         {
             _winnerBinding.Disable();
             _drawBinding.Disable();
+            _forfeitBinding.Disable();
             _player1Binding.Disable();
             _player2Binding.Disable();
             GameEvents.OnPlayerCharacterAssigned -= HandlePlayerCharacterAssigned;
@@ -153,6 +164,32 @@ namespace AlienFarms.UI
 
             SetName(_nameP1, _nameStripeP1, PlayerId.Player1);
             SetName(_nameP2, _nameStripeP2, PlayerId.Player2);
+            RenderForfeit();
+        }
+
+        private void RenderForfeit()
+        {
+            if (_forfeitText == null)
+            {
+                return;
+            }
+
+            bool forfeit = _lastResult.IsForfeit;
+            if (forfeit)
+            {
+                string format = _forfeitBinding.Value;
+                if (format != null)
+                {
+                    // Once per match or language change (not per frame).
+                    _forfeitText.SetText(string.Format(format, GetName(_lastResult.Forfeiter)));
+                }
+            }
+
+            GameObject target = _forfeitText.gameObject;
+            if (target.activeSelf != forfeit)
+            {
+                target.SetActive(forfeit);
+            }
         }
 
         private void HandleMatchPhaseChanged(MatchPhase previous, MatchPhase current)
@@ -204,6 +241,7 @@ namespace AlienFarms.UI
         private void OnValidate()
         {
             if (_winnerEntry == null || _winnerEntry.IsEmpty || _drawEntry == null || _drawEntry.IsEmpty
+                || _forfeitEntry == null || _forfeitEntry.IsEmpty
                 || _player1Label == null || _player1Label.IsEmpty || _player2Label == null || _player2Label.IsEmpty)
             {
                 Debug.LogWarning($"[{nameof(MatchResultsView)}] Empty localized string on '{name}'.", this);

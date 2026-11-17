@@ -422,6 +422,54 @@ MonoBehaviour:
     m_Localized: The time to reconnect has run out.
     m_Metadata:
       m_Items: []
+  - m_Id: 4674187223093248
+    m_Localized: "Saving\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064768
+    m_Localized: Could not save (will retry)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064769
+    m_Localized: "Rival: {0} matches \xB7 {1} W \xB7 {2} D \xB7 {3} L"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064770
+    m_Localized: 'The host left: win recorded'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064771
+    m_Localized: '{0} left'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064772
+    m_Localized: 'Offline: your stats will be saved later.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064773
+    m_Localized: Too many requests. Retrying in a moment.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064774
+    m_Localized: Cloud save is unavailable.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064775
+    m_Localized: Sign in to save your stats.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064776
+    m_Localized: Your stats come from a newer version of the game.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064777
+    m_Localized: Your cloud stats are invalid.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064778
+    m_Localized: Could not load your stats.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

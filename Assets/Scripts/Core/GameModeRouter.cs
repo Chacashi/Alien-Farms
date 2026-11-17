@@ -7,7 +7,7 @@ namespace AlienFarms.Core
 {
     /// <summary>
     /// Composition root of the gameplay scene: reads <see cref="MatchSession.Mode"/> and activates the local or the online
-    /// mode root, binds the match to that mode's <see cref="IPlayerRoster"/> and configures the pause.
+    /// mode root, binds the match to that mode's <see cref="IPlayerRoster"/>, enables the online forfeit rule and configures the pause.
     /// Both mode roots must be saved inactive: activating one here runs its children's Awake synchronously, before any
     /// other Awake of the scene, so role setters (spawners, obstacle field) apply before their Awake/Start.
     /// The online roster lives in the networking assembly; it is wired as a MonoBehaviour implementing IPlayerRoster, so
@@ -67,6 +67,12 @@ namespace AlienFarms.Core
 
         private void ConfigureOnline()
         {
+            // Online a rival leaving during Playing hands the round to the player who stayed (local keeps aborting).
+            if (_match != null)
+            {
+                _match.SetForfeitOnPlayerMissing(true);
+            }
+
             if (_onlineRoster is IPlayerRoster roster)
             {
                 if (_match != null)

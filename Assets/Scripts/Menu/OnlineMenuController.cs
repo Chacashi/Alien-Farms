@@ -30,6 +30,9 @@ namespace AlienFarms.Menu
         [SerializeField, Tooltip("Selectable characters; lobby character indices are roster indices.")]
         private CharacterRoster _roster;
 
+        [SerializeField, Tooltip("Optional: runtime progress channel (PlayerProgressChannel.asset). A 'host left' error becomes 'host left: win recorded' when a win was recorded for it.")]
+        private PlayerProgressChannel _progress;
+
         [Header("References")]
         [SerializeField, Tooltip("Online panel view (UI_OnlinePanel).")]
         private OnlinePanelView _view;
@@ -49,6 +52,8 @@ namespace AlienFarms.Menu
         private bool _shownCanStart;
         private bool _shownRejoin;
         private int _shownRejoinSeconds = -1;
+        // The host-left win notice was consumed for the 'host left' error on screen: keep showing it until that error goes.
+        private bool _hostLeftWinShown;
 
         /// <summary>The player backed out of the hub (Back / Cancel): the menu flow returns to the title.</summary>
         public event Action ExitRequested;
@@ -79,6 +84,11 @@ namespace AlienFarms.Menu
                 _lobby.Changed += MarkDirty;
             }
 
+            if (_progress != null)
+            {
+                _progress.Changed += MarkDirty;
+            }
+
             if (_view != null)
             {
                 _view.CardClicked += HandleCardClicked;
@@ -102,6 +112,11 @@ namespace AlienFarms.Menu
             if (_lobby != null)
             {
                 _lobby.Changed -= MarkDirty;
+            }
+
+            if (_progress != null)
+            {
+                _progress.Changed -= MarkDirty;
             }
 
             if (_view != null)
@@ -714,7 +729,21 @@ namespace AlienFarms.Menu
                 return reject;
             }
 
-            return _session != null ? _session.LastErrorKey : null;
+            string key = _session != null ? _session.LastErrorKey : null;
+            if (!string.Equals(key, OnlineSessionErrorKeys.HostLeft, StringComparison.Ordinal))
+            {
+                _hostLeftWinShown = false;
+                return key;
+            }
+
+            // The only reader of the notice: shown in place of the plain 'host left', then consumed.
+            if (!_hostLeftWinShown && _progress != null && _progress.HasHostLeftWinNotice)
+            {
+                _hostLeftWinShown = true;
+                _progress.RequestConsumeHostLeftWinNotice();
+            }
+
+            return _hostLeftWinShown ? LocalizationKeys.StatsHostLeftWin : key;
         }
 
         private string GetSpectatorName()

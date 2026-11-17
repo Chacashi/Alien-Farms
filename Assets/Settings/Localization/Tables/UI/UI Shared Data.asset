@@ -419,6 +419,54 @@ MonoBehaviour:
     m_Key: online.error.rejoin_expired
     m_Metadata:
       m_Items: []
+  - m_Id: 4674187223093248
+    m_Key: stats.saving
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064768
+    m_Key: stats.save_failed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064769
+    m_Key: stats.rival
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064770
+    m_Key: stats.host_left_win
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064771
+    m_Key: results.forfeit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064772
+    m_Key: stats.error.offline
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064773
+    m_Key: stats.error.rate_limited
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064774
+    m_Key: stats.error.unavailable
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064775
+    m_Key: stats.error.signed_out
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064776
+    m_Key: stats.error.newer_schema
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064777
+    m_Key: stats.error.corrupt
+    m_Metadata:
+      m_Items: []
+  - m_Id: 4674187244064778
+    m_Key: stats.error.unknown
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

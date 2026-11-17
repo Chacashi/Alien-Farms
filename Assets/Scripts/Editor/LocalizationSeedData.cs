@@ -124,6 +124,20 @@ namespace AlienFarms.Editor
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineErrorReconnectDenied, "No se pudo recuperar tu lugar en la sala.", "Your place in the room could not be restored."),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineErrorRejoinExpired, "Se acabó el tiempo para reconectar.", "The time to reconnect has run out."),
 
+            // Cloud stats: save badge, rival stats, forfeit and errors (task 2.8).
+            new LocalizationSeedEntry(Ui, LocalizationKeys.StatsSaving, "Guardando…", "Saving…"),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.StatsSaveFailed, "No se pudo guardar (se reintentará)", "Could not save (will retry)"),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.StatsRival, "Rival: {0} partidas · {1} V · {2} E · {3} D", "Rival: {0} matches · {1} W · {2} D · {3} L"),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.StatsHostLeftWin, "El anfitrión abandonó: victoria registrada", "The host left: win recorded"),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.ResultsForfeit, "{0} abandonó", "{0} left"),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.StatsErrorOffline, "Sin conexión: tus estadísticas se guardarán después.", "Offline: your stats will be saved later."),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.StatsErrorRateLimited, "Demasiadas solicitudes. Se reintentará en un momento.", "Too many requests. Retrying in a moment."),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.StatsErrorUnavailable, "El guardado en la nube no está disponible.", "Cloud save is unavailable."),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.StatsErrorSignedOut, "Inicia sesión para guardar tus estadísticas.", "Sign in to save your stats."),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.StatsErrorNewerSchema, "Tus estadísticas son de una versión más nueva del juego.", "Your stats come from a newer version of the game."),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.StatsErrorCorrupt, "Tus estadísticas en la nube no son válidas.", "Your cloud stats are invalid."),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.StatsErrorUnknown, "No se pudieron cargar tus estadísticas.", "Could not load your stats."),
+
             new LocalizationSeedEntry(HowTo, LocalizationKeys.HowToGoal,
                 "Lleva animales de la zona central a tu corral. Cada animal vale distintos puntos (la vaca vale más, pero pesa más). Al acabar el tiempo gana quien tenga más puntos en su corral. <color=#B04A0A>¡Ojo: el rival puede robarte, incluso desde tu corral!</color>",
                 "Bring animals from the center zone to your pen. Each animal is worth different points (the cow is worth more, but it's heavier). When time runs out, whoever has the most points in their pen wins. <color=#B04A0A>Watch out: your rival can steal from you, even from your own pen!</color>"),
