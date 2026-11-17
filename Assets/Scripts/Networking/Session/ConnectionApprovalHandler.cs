@@ -288,8 +288,10 @@ namespace AlienFarms.Networking.Session
                 {
                     if (!IsStillPending(clientId, generation))
                     {
-                        // Server stopped or client gone meanwhile: nothing to seat.
+                        // Server stopped or client gone meanwhile: nothing to seat. Cut by the host leaving, the client
+                        // shows the host left instead of a lost connection.
                         response.Approved = false;
+                        response.Reason = IsServerStopping ? DisconnectReasons.HostDisconnected : null;
                         response.Pending = false;
                         return;
                     }

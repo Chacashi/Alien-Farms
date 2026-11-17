@@ -157,27 +157,40 @@ namespace AlienFarms.Networking.Session
 
             bool isListening = _manager != null && _manager.IsListening;
             bool shutdownInProgress = _manager != null && _manager.ShutdownInProgress;
-            HostShutdownStep step = _shutdown.Step(now, isListening, shutdownInProgress, isListening && HasRemoteClients());
-            switch (step)
+            HostShutdownStep step;
+            try
             {
-                case HostShutdownStep.DisconnectClients:
-                    DisconnectRemoteClients();
-                    break;
-                case HostShutdownStep.Shutdown:
-                    if (_manager != null)
-                    {
-                        _manager.Shutdown();
-                    }
+                step = _shutdown.Step(now, isListening, shutdownInProgress, isListening && HasRemoteClients());
+                switch (step)
+                {
+                    case HostShutdownStep.DisconnectClients:
+                        DisconnectRemoteClients();
+                        return;
+                    case HostShutdownStep.Shutdown:
+                        if (_manager != null)
+                        {
+                            _manager.Shutdown();
+                        }
 
-                    break;
-                case HostShutdownStep.Complete:
-                    CompleteShutdownTask();
-                    if (_isTearingDown)
-                    {
-                        FinishTeardown();
-                    }
+                        return;
+                }
+            }
+            catch (Exception exception)
+            {
+                // A step threw: stop NGO at once and finish as if the sequence completed (never a hanging root).
+                AbortShutdown(exception);
+                step = HostShutdownStep.Complete;
+            }
 
-                    break;
+            if (step != HostShutdownStep.Complete)
+            {
+                return;
+            }
+
+            CompleteShutdownTask();
+            if (_isTearingDown)
+            {
+                FinishTeardown();
             }
         }
 
@@ -211,13 +224,7 @@ namespace AlienFarms.Networking.Session
             catch (Exception exception)
             {
                 // Never leave the root hanging: stop NGO as before and let the caller load its scene.
-                Debug.LogException(exception, this);
-                _shutdown.Reset();
-                CompleteShutdownTask();
-                if (_manager != null && _manager.IsListening && !_manager.ShutdownInProgress)
-                {
-                    _manager.Shutdown();
-                }
+                AbortShutdown(exception);
             }
 
             if (!_shutdown.IsRunning)
@@ -257,21 +264,44 @@ namespace AlienFarms.Networking.Session
                 _approval.BeginServerStop();
             }
 
-            float noticeSeconds = _settings != null ? _settings.HostLeaveNoticeSeconds : DefaultHostLeaveNoticeSeconds;
-            int notified = _manager.IsServer && _leaveNotice != null && noticeSeconds > 0f ? _leaveNotice.SendHostLeavingNotice() : 0;
-            if (!HostShutdownSequence.ShouldDefer(_manager.IsServer, notified, noticeSeconds))
+            // Whatever fails from here, NGO is still stopped: every BeginServerStop ends in OnServerStopped (no server left
+            // listening without grace and refusing joins).
+            try
             {
-                if (_manager.IsServer)
+                float noticeSeconds = _settings != null ? _settings.HostLeaveNoticeSeconds : DefaultHostLeaveNoticeSeconds;
+                int notified = _manager.IsServer && _leaveNotice != null && noticeSeconds > 0f ? _leaveNotice.SendHostLeavingNotice() : 0;
+                if (!HostShutdownSequence.ShouldDefer(_manager.IsServer, notified, noticeSeconds))
                 {
-                    DisconnectRemoteClients();
+                    if (_manager.IsServer)
+                    {
+                        DisconnectRemoteClients();
+                    }
+
+                    _manager.Shutdown();
+                    return Task.CompletedTask;
                 }
 
+                Debug.Log($"[{nameof(NetworkRootLifetime)}] Host leaving: {notified} client(s) notified; disconnecting them in {noticeSeconds:0.##}s.", this);
+                return BeginHostShutdown(Time.realtimeSinceStartupAsDouble, noticeSeconds);
+            }
+            catch (Exception exception)
+            {
+                return AbortShutdown(exception);
+            }
+        }
+
+        // A shutdown step threw: drop the graceful sequence, release its awaiters and stop NGO at once.
+        internal Task AbortShutdown(Exception exception)
+        {
+            Debug.LogException(exception, this);
+            _shutdown.Reset();
+            CompleteShutdownTask();
+            if (_manager != null && _manager.IsListening && !_manager.ShutdownInProgress)
+            {
                 _manager.Shutdown();
-                return Task.CompletedTask;
             }
 
-            Debug.Log($"[{nameof(NetworkRootLifetime)}] Host leaving: {notified} client(s) notified; disconnecting them in {noticeSeconds:0.##}s.", this);
-            return BeginHostShutdown(Time.realtimeSinceStartupAsDouble, noticeSeconds);
+            return Task.CompletedTask;
         }
 
         // Starts the graceful sequence (the notice is already sent) and tells the gameplay scene to freeze the match.

@@ -110,6 +110,39 @@ namespace AlienFarms.Networking.Tests
         }
 
         [Test]
+        public void AbortShutdown_MidSequence_ReleasesTheTaskAndStopsTheSequence()
+        {
+            Task task = _root.BeginHostShutdown(0d, Notice);
+            LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex("notice failed"));
+
+            Task aborted = _root.AbortShutdown(new System.InvalidOperationException("notice failed"));
+
+            Assert.That(aborted.IsCompleted, Is.True);
+            Assert.That(task.IsCompleted, Is.True);
+            Assert.That(_root.IsShutdownPending, Is.False);
+        }
+
+        [Test]
+        public void ThrowingHostLeaveListener_DoesNotBreakTheSequence()
+        {
+            _root.HostLeaveStarted += ThrowOnHostLeave;
+            LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex("listener failed"));
+
+            Task task = _root.BeginHostShutdown(0d, Notice);
+            _root.Teardown(CountTornDown);
+            _root.StepShutdown(0.1d);
+            _root.StepShutdown(0.2d);
+
+            Assert.That(task.IsCompleted, Is.True);
+            Assert.That(_tornDown, Is.EqualTo(1));
+        }
+
+        private static void ThrowOnHostLeave()
+        {
+            throw new System.InvalidOperationException("listener failed");
+        }
+
+        [Test]
         public void BeginHostShutdown_RaisesHostLeaveStartedOnce_AndShutdownTaskIsShared()
         {
             int raised = 0;

@@ -24,6 +24,18 @@ namespace AlienFarms.Networking.Session
         }
 
         /// <summary>
+        /// Host: whether the spectator property must be (re)written. Decided from the last value the service actually
+        /// saved, never from the session's local copy (the SDK's SetProperty updates it before the save, so after a failed
+        /// save it already shows the unsaved value). A failed save stays pending until a save succeeds. Null and empty
+        /// both mean nobody.
+        /// </summary>
+        public static bool ShouldWriteSpectator(string desiredId, string lastSavedId, bool savePending)
+        {
+            return savePending
+                || !string.Equals(ReadSpectatorId(desiredId), ReadSpectatorId(lastSavedId), StringComparison.Ordinal);
+        }
+
+        /// <summary>
         /// Fills <paramref name="isSpectator"/> for <paramref name="ugsIds"/> (host first, then join order;
         /// <paramref name="isHost"/> flags the host). The host is always a player; the member named by
         /// <paramref name="namedSpectatorId"/> is always the spectator and takes no seat; the rest are players while seats

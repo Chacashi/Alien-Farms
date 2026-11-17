@@ -70,6 +70,10 @@ namespace AlienFarms.Networking.Session
         // Real time before which a failed spectator save is not retried (0 = no pending retry).
         private double _spectatorRetryAt;
 
+        // Last spectator id the host actually saved in this session (null = nobody), and whether a save failed since.
+        private string _savedSpectatorId;
+        private bool _spectatorSavePending;
+
         private UgsBootstrapper _bootstrapper;
         private ISession _subscribedSession;
         private IAuthenticationService _authentication;
@@ -158,6 +162,8 @@ namespace AlienFarms.Networking.Session
 
             _spectatorPropertyDirty = false;
             _spectatorRetryAt = 0d;
+            _savedSpectatorId = null;
+            _spectatorSavePending = false;
 
             UnsubscribeAuthentication();
             UnsubscribeSession();
@@ -361,6 +367,8 @@ namespace AlienFarms.Networking.Session
             // A retry left over from the previous session never applies to this one.
             _spectatorPropertyDirty = false;
             _spectatorRetryAt = 0d;
+            _savedSpectatorId = null;
+            _spectatorSavePending = false;
 
             // Before NGO starts: the host may approve and sync the gameplay scene (match in progress) before the start
             // returns, and its GameModeRouter reads the mode in Awake. A failure or cancellation sets Local again.
@@ -732,8 +740,9 @@ namespace AlienFarms.Networking.Session
                 return;
             }
 
+            // Against the last saved value, not session.Properties: a failed save left the unsaved value there.
             string desired = FindSpectatorUgsId(approval.Slots);
-            if (string.Equals(desired, ReadNamedSpectator(session), StringComparison.Ordinal))
+            if (!ParticipantRoleRules.ShouldWriteSpectator(desired, _savedSpectatorId, _spectatorSavePending))
             {
                 return;
             }
@@ -779,11 +788,14 @@ namespace AlienFarms.Networking.Session
 
             if (saved)
             {
+                _savedSpectatorId = spectatorId;
+                _spectatorSavePending = false;
                 _spectatorRetryAt = 0d;
                 RefreshParticipants();
             }
             else
             {
+                _spectatorSavePending = true;
                 _spectatorRetryAt = Time.realtimeSinceStartupAsDouble + SpectatorRetrySeconds;
             }
 

@@ -79,6 +79,30 @@ namespace AlienFarms.Networking.Tests
         }
 
         [Test]
+        public void ShouldWriteSpectator_UnchangedAndSaved_DoesNotWrite()
+        {
+            Assert.That(ParticipantRoleRules.ShouldWriteSpectator("S", "S", false), Is.False);
+            Assert.That(ParticipantRoleRules.ShouldWriteSpectator(null, null, false), Is.False);
+            Assert.That(ParticipantRoleRules.ShouldWriteSpectator(null, "", false), Is.False, "null and empty both mean nobody");
+        }
+
+        [Test]
+        public void ShouldWriteSpectator_Changed_Writes()
+        {
+            Assert.That(ParticipantRoleRules.ShouldWriteSpectator("S", null, false), Is.True);
+            Assert.That(ParticipantRoleRules.ShouldWriteSpectator(null, "S", false), Is.True);
+            Assert.That(ParticipantRoleRules.ShouldWriteSpectator("T", "S", false), Is.True);
+        }
+
+        [Test]
+        public void ShouldWriteSpectator_FailedSavePending_WritesEvenIfTheValueLooksTheSame()
+        {
+            // The SDK's local copy already shows the unsaved value; only a successful save clears the pending flag.
+            Assert.That(ParticipantRoleRules.ShouldWriteSpectator("S", "S", true), Is.True);
+            Assert.That(ParticipantRoleRules.ShouldWriteSpectator(null, null, true), Is.True);
+        }
+
+        [Test]
         public void StaleNameNotInSession_RealPlayersKeepTheirSeats()
         {
             bool[] result = Classify(new[] { "H", "C" }, new[] { true, false }, "gone");
