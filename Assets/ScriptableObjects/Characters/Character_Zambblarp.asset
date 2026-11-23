@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Character_Zambblarp
   m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Data.CharacterDefinition
   _displayName: Zamb-blarp
-  _portrait: {fileID: 21300000, guid: 5dc33dd9df1b2eb4e98e051a45468d0c, type: 3}
+  _portrait: {fileID: 21300000, guid: ee98ce18411fee34a93201db5f9ceee5, type: 3}
   _theme:
     _primary: {r: 0.24313726, g: 0.5568628, b: 0.12156863, a: 1}
     _secondary: {r: 0.6509804, g: 0.8862745, b: 0.18039216, a: 1}
