@@ -5,8 +5,8 @@ using UnityEngine;
 namespace AlienFarms.UI
 {
     /// <summary>
-    /// World-space name tag (TextMeshPro 3D) over an avatar: the name and an optional smaller debug line. Pure view: a
-    /// driver (e.g. the online NetworkNameTag) feeds it. The text is rebuilt only when the name or the detail changes;
+    /// World-space name tag over an avatar with a TextMeshPro 3D label, an optional debug line, and an optional backdrop.
+    /// A driver (e.g. the online NetworkNameTag) feeds it. The text is rebuilt only when the name or the detail changes;
     /// while visible it faces the assigned camera in LateUpdate (parallel to the view plane, no allocation).
     /// Lives on the tag's own child, never on the avatar root (the billboard rotates this transform).
     /// </summary>
@@ -19,6 +19,9 @@ namespace AlienFarms.UI
         [Header("References")]
         [SerializeField, Tooltip("TextMeshPro (3D) of the tag: name on the first line, debug detail on the second.")]
         private TMP_Text _label;
+
+        [SerializeField, Tooltip("Optional backdrop (e.g. wooden plate) shown and hidden together with the label.")]
+        private Renderer _backdrop;
 
         [SerializeField, Tooltip("Transform turned towards the camera (defaults to this transform).")]
         private Transform _billboard;
@@ -90,13 +93,18 @@ namespace AlienFarms.UI
             }
         }
 
-        /// <summary>Shows or hides the text; while hidden the billboard does not run.</summary>
+        /// <summary>Shows or hides the label and optional backdrop. The billboard stops while hidden.</summary>
         public void SetVisible(bool visible)
         {
             _visible = visible;
             if (_label != null && _label.enabled != visible)
             {
                 _label.enabled = visible;
+            }
+
+            if (_backdrop != null && _backdrop.enabled != visible)
+            {
+                _backdrop.enabled = visible;
             }
 
             if (enabled != visible)
