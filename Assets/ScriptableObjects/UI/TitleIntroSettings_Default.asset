@@ -35,5 +35,5 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
   _promptPulsePeriod: 1.6
-  _promptMinAlpha: 0.3
+  _promptMinAlpha: 0.5
   _promptMaxAlpha: 1

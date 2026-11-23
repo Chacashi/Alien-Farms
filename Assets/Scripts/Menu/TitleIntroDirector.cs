@@ -9,6 +9,9 @@ namespace AlienFarms.Menu
     [DisallowMultipleComponent]
     public sealed class TitleIntroDirector : MonoBehaviour
     {
+        // A hitch (e.g. spawning the menu player on join) must not swallow the fades.
+        private const float MaxDeltaTime = 1f / 30f;
+
         [SerializeField, Tooltip("Fade, camera blend and prompt pulse settings.")]
         private TitleIntroSettings _settings;
 
@@ -78,7 +81,7 @@ namespace AlienFarms.Menu
         private void Update()
         {
             EnsureModel();
-            float dt = Time.unscaledDeltaTime;
+            float dt = Mathf.Min(Time.unscaledDeltaTime, MaxDeltaTime);
             bool ready = _model.Tick(
                 dt,
                 _cameraRig == null || _cameraRig.IsSettledOn(MenuCameraShot.Menu),
