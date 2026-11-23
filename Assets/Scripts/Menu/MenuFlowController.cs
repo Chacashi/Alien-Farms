@@ -9,12 +9,12 @@ using UnityEngine.InputSystem;
 namespace AlienFarms.Menu
 {
     /// <summary>
-    /// MainMenu composition root: Title -> CharacterSelect -> Loading. On the title the first joined player owns the
+    /// MainMenu composition root: Title or SubMenu -> CharacterSelect -> Loading. On the title the first joined player owns the
     /// buttons (the other is blocked); on character select every player moves its own cursor, confirms (locks) and
     /// cancels. When both have confirmed, their devices, scheme and character go to the <see cref="MatchSession"/> and the
     /// gameplay scene is loaded. Input state changes are always applied outside input callbacks (next frame on join,
     /// or from PlayerMenuInput's Update dispatch). Title sub-menus (<see cref="SubMenuPanel"/>) are navigated by the
-    /// title owner; Cancel or the panel's Back button returns to the title. 'Play online' hands the title owner to the
+    /// title owner; Cancel or the panel's Back button returns to the title. Online play hands the title owner to the
     /// <see cref="OnlineMenuController"/> (Online phase); there the match scene is loaded by the network, never here.
     /// </summary>
     [DisallowMultipleComponent]
@@ -50,7 +50,7 @@ namespace AlienFarms.Menu
         [SerializeField, Tooltip("Runtime online session channel. In a session the MatchSession is not cleared on load and the online panel reopens (R1).")]
         private OnlineSessionChannel _onlineSession;
 
-        [SerializeField, Tooltip("Title button focused when backing out of the online panel (BTN_PlayOnline).")]
+        [SerializeField, Tooltip("Title button focused when returning from the online panel (BTN_Play).")]
         private GameObject _playOnlineButton;
 
         // Index = (int)PlayerId - 1. Handlers are created once (Awake) so they can be unsubscribed.
@@ -181,14 +181,15 @@ namespace AlienFarms.Menu
             }
         }
 
-        /// <summary>Title 'Play' button: go to character select with everyone joined so far.</summary>
+        /// <summary>Opens character select from the title or a sub-menu with everyone joined so far.</summary>
         public void Play()
         {
-            if (_phase != MenuPhase.Title || _isLeaving)
+            if ((_phase != MenuPhase.Title && _phase != MenuPhase.SubMenu) || _isLeaving)
             {
                 return;
             }
 
+            HideActiveSubMenu();
             _phase = MenuPhase.CharacterSelect;
             for (int i = 0; i < MaxPlayers; i++)
             {
@@ -214,15 +215,16 @@ namespace AlienFarms.Menu
             Render();
         }
 
-        /// <summary>Title 'Play online' button: the title owner opens the online panel (one local player per machine).</summary>
+        /// <summary>Opens the online panel from the title or a sub-menu for the title owner.</summary>
         public void PlayOnline()
         {
             PlayerId owner = GetTitleOwner();
-            if (_phase != MenuPhase.Title || _isLeaving || _online == null || owner == PlayerId.None)
+            if ((_phase != MenuPhase.Title && _phase != MenuPhase.SubMenu) || _isLeaving || _online == null || owner == PlayerId.None)
             {
                 return;
             }
 
+            HideActiveSubMenu();
             _phase = MenuPhase.Online;
             _onlineOwner = owner;
             if (_title != null)
@@ -271,10 +273,9 @@ namespace AlienFarms.Menu
             if (_activeSubMenu != null)
             {
                 _titleReturnSelection = _activeSubMenu.ReturnSelection;
-                _activeSubMenu.Hide();
-                _activeSubMenu = null;
             }
 
+            HideActiveSubMenu();
             _phase = MenuPhase.Title;
             if (_title != null)
             {
@@ -489,7 +490,7 @@ namespace AlienFarms.Menu
             }
         }
 
-        /// <summary>The online panel backed out of its hub (Back / Cancel): back to the title, on 'Play online'.</summary>
+        /// <summary>Returns from the online hub to the title and focuses 'Play'.</summary>
         private void HandleOnlineExitRequested()
         {
             if (_phase != MenuPhase.Online || _isLeaving)
@@ -548,12 +549,7 @@ namespace AlienFarms.Menu
                 _select.Hide();
             }
 
-            if (_activeSubMenu != null)
-            {
-                _activeSubMenu.Hide();
-                _activeSubMenu = null;
-            }
-
+            HideActiveSubMenu();
             _titleReturnSelection = null;
             if (_title != null)
             {
@@ -562,6 +558,16 @@ namespace AlienFarms.Menu
             }
 
             ApplyAllPlayerStates();
+        }
+
+        private void HideActiveSubMenu()
+        {
+            if (_activeSubMenu != null)
+            {
+                _activeSubMenu.Hide();
+            }
+
+            _activeSubMenu = null;
         }
 
         /// <summary>
@@ -808,7 +814,7 @@ namespace AlienFarms.Menu
 
             if (_online == null || _onlineSession == null || _playOnlineButton == null)
             {
-                Debug.LogWarning($"[{nameof(MenuFlowController)}] Missing OnlineMenuController, OnlineSessionChannel or Play online button on '{name}'.", this);
+                Debug.LogWarning($"[{nameof(MenuFlowController)}] Missing OnlineMenuController, OnlineSessionChannel or Play button on '{name}'.", this);
             }
         }
     }

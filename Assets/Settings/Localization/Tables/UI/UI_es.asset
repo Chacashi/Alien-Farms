@@ -470,6 +470,10 @@ MonoBehaviour:
     m_Localized: "No se pudieron cargar tus estad\xEDsticas."
     m_Metadata:
       m_Items: []
+  - m_Id: 8344750428770304
+    m_Localized: Local
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
