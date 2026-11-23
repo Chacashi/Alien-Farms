@@ -12,11 +12,12 @@ La sesión principal **planifica, delega, integra y verifica**. No escribe siste
    | Agente | Cuándo |
    |---|---|
    | `unity-architect` | Diseñar un sistema nuevo antes de codear (clases, eventos, SOs, dependencias). |
-   | `unity-gameplay-programmer` | Escribir/modificar C# de runtime (player, animales, zonas, match, input). |
+   | `codex-worker` | **Por defecto para escribir/modificar C#**: delega a Codex CLI (reglas en `AGENTS.md`). Codex escribe + compila + `read_console`; **no** Play Mode, tests, escenas ni prefabs. Nunca en paralelo con otro agente que use Unity. |
+   | `unity-gameplay-programmer` | Respaldo: solo si Codex falla (límite de uso de Plus, login, errores que no resuelve) o el usuario lo pide. |
    | `unity-scene-builder` | Montar escena, prefabs, Canvas/HUD, materiales, cámaras y cablear referencias en el Inspector vía MCP. |
    | `unity-code-reviewer` | Revisar todo código nuevo contra estas reglas antes de dar la tarea por terminada. |
    | `unity-qa-tester` | Compilar, leer consola, correr tests EditMode/PlayMode, probar en Play Mode. |
-3. Flujo estándar de una feature: **architect → gameplay-programmer → scene-builder → code-reviewer → qa-tester**. Tareas triviales pueden saltarse pasos.
+3. Flujo estándar de una feature: **architect → codex-worker → scene-builder → code-reviewer → qa-tester**. Tareas triviales pueden saltarse pasos; un ajuste de pocas líneas lo puede hacer el orquestador directamente.
 4. Tareas independientes se lanzan en paralelo; las que tocan los mismos archivos/escena, en serie (dos agentes nunca editan la misma escena a la vez).
 5. Al final: verificar que compila sin errores ni warnings nuevos (`read_console`) y resumir al usuario.
 
