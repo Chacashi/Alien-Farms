@@ -36,6 +36,12 @@ namespace AlienFarms.Core
         /// <summary>A player pressed Cancel while navigating a menu.</summary>
         public static event Action<PlayerId> OnMenuCancelPressed;
 
+        /// <summary>Local character select: the player locked its hovered character.</summary>
+        public static event Action<PlayerId> OnCharacterPickConfirmed;
+
+        /// <summary>Local character select: the player released its pick using Cancel.</summary>
+        public static event Action<PlayerId> OnCharacterPickReleased;
+
         /// <summary>A player's PlayerInput lost one of its paired devices (e.g. gamepad unplugged).</summary>
         public static event Action<PlayerId> OnPlayerDeviceLost;
 
@@ -137,6 +143,10 @@ namespace AlienFarms.Core
 
         public static void RaiseMenuCancelPressed(PlayerId playerId) => OnMenuCancelPressed?.Invoke(playerId);
 
+        public static void RaiseCharacterPickConfirmed(PlayerId playerId) => OnCharacterPickConfirmed?.Invoke(playerId);
+
+        public static void RaiseCharacterPickReleased(PlayerId playerId) => OnCharacterPickReleased?.Invoke(playerId);
+
         public static void RaisePlayerDeviceLost(PlayerId playerId) => OnPlayerDeviceLost?.Invoke(playerId);
 
         public static void RaisePlayerDeviceRegained(PlayerId playerId) => OnPlayerDeviceRegained?.Invoke(playerId);
@@ -225,6 +235,8 @@ namespace AlienFarms.Core
             OnGamePaused = null;
             OnGameResumed = null;
             OnMenuCancelPressed = null;
+            OnCharacterPickConfirmed = null;
+            OnCharacterPickReleased = null;
             OnPlayerDeviceLost = null;
             OnPlayerDeviceRegained = null;
             OnPlayerCharacterAssigned = null;

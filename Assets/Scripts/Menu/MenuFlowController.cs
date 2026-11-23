@@ -485,6 +485,7 @@ namespace AlienFarms.Menu
             }
 
             Render();
+            GameEvents.RaiseCharacterPickConfirmed(id);
             if (_selection.AllConfirmed)
             {
                 BeginLoading();
@@ -520,6 +521,7 @@ namespace AlienFarms.Menu
                     if (_selection.Cancel(id))
                     {
                         Render();
+                        GameEvents.RaiseCharacterPickReleased(id);
                     }
                     else if (id == PlayerId.Player1)
                     {
@@ -536,6 +538,7 @@ namespace AlienFarms.Menu
                     if (_selection.Cancel(id))
                     {
                         CancelLoading();
+                        GameEvents.RaiseCharacterPickReleased(id);
                     }
 
                     break;
