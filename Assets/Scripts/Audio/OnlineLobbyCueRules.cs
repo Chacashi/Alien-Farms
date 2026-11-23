@@ -18,15 +18,21 @@ namespace AlienFarms.Audio
             for (int i = (int)PlayerId.Player1; i <= (int)PlayerId.Player2 && count < output.Length; i++)
             {
                 var id = (PlayerId)i;
-                if (!prev.TryGetSeat(id, out OnlineLobbySeat oldSeat)
-                    || !curr.TryGetSeat(id, out OnlineLobbySeat newSeat)
-                    || (!newSeat.IsLocal && !includeRemotePicks)
-                    || oldSeat.HasCharacter == newSeat.HasCharacter)
+                bool hadSeat = prev.TryGetSeat(id, out OnlineLobbySeat oldSeat);
+                bool hasSeat = curr.TryGetSeat(id, out OnlineLobbySeat newSeat);
+                if (!hadSeat && hasSeat && !newSeat.IsLocal)
                 {
-                    continue;
+                    output[count++] = UiSfxCue.PlayerJoined;
                 }
-
-                output[count++] = newSeat.HasCharacter ? UiSfxCue.CharacterConfirm : UiSfxCue.CharacterRelease;
+                else if (hadSeat && !hasSeat && !oldSeat.IsLocal)
+                {
+                    output[count++] = UiSfxCue.ConnectionLost;
+                }
+                else if (hadSeat && hasSeat && (newSeat.IsLocal || includeRemotePicks)
+                    && oldSeat.HasCharacter != newSeat.HasCharacter)
+                {
+                    output[count++] = newSeat.HasCharacter ? UiSfxCue.CharacterConfirm : UiSfxCue.CharacterRelease;
+                }
             }
 
             return count;

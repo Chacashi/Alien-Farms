@@ -18,7 +18,24 @@ namespace AlienFarms.Audio
                 return UiSfxCue.JoinRoom;
             }
 
+            if (curr == OnlineSessionStatus.InSession
+                && (prev == OnlineSessionStatus.Creating || (prev == OnlineSessionStatus.Joining && !joiningIsRejoin)))
+            {
+                return UiSfxCue.ConnectionSucceeded;
+            }
+
+            if (prev == OnlineSessionStatus.InSession && curr == OnlineSessionStatus.Leaving && hasError && roomWasOpen)
+            {
+                return UiSfxCue.ConnectionLost;
+            }
+
             return UiSfxCue.None;
+        }
+
+        public static bool IsArrivalNotice(OnlineSessionStatus status, string errorKey)
+        {
+            return status != OnlineSessionStatus.InSession
+                && (errorKey == OnlineSessionErrorKeys.HostLeft || errorKey == OnlineSessionErrorKeys.ConnectionLost);
         }
     }
 }

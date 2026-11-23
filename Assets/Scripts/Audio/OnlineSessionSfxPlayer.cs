@@ -31,6 +31,10 @@ namespace AlienFarms.Audio
         private IRandomSource _rng;
         private OnlineSessionStatus _lastStatus;
         private OnlineLobbySnapshot _lastLobby;
+        private bool _joiningIsRejoin;
+        private bool _roomWasOpen;
+        private UiSfxCue _pendingCue;
+        private float _pendingCueTime;
 
         private void Awake()
         {
@@ -43,18 +47,44 @@ namespace AlienFarms.Audio
             if (_session != null)
             {
                 _lastStatus = _session.Status;
+                _joiningIsRejoin = _lastStatus == OnlineSessionStatus.Joining && _session.HasRejoinOffer;
                 _session.Changed += HandleSessionChanged;
             }
 
             if (_lobby != null)
             {
                 _lastLobby = OnlineLobbySnapshot.Capture(_lobby);
+                _roomWasOpen = _lastLobby.Phase == OnlineLobbyPhase.Open;
                 _lobby.Changed += HandleLobbyChanged;
             }
         }
 
+        private void Start()
+        {
+            if (_session != null && _library != null
+                && OnlineSessionCueRules.IsArrivalNotice(_session.Status, _session.LastErrorKey))
+            {
+                _pendingCue = UiSfxCue.ConnectionLost;
+                _pendingCueTime = Time.unscaledTime + _library.ArrivalCueDelay;
+            }
+        }
+
+        private void Update()
+        {
+            if (_pendingCue == UiSfxCue.None || Time.unscaledTime < _pendingCueTime)
+            {
+                return;
+            }
+
+            UiSfxCue cue = _pendingCue;
+            _pendingCue = UiSfxCue.None;
+            Play(cue);
+        }
+
         private void OnDisable()
         {
+            _pendingCue = UiSfxCue.None;
+
             if (_session != null)
             {
                 _session.Changed -= HandleSessionChanged;
@@ -74,9 +104,18 @@ namespace AlienFarms.Audio
                 return;
             }
 
-            bool joiningIsRejoin = status == OnlineSessionStatus.Joining && _session.HasRejoinOffer;
+            if (status == OnlineSessionStatus.Joining)
+            {
+                _joiningIsRejoin = _session.HasRejoinOffer;
+            }
+
             UiSfxCue cue = OnlineSessionCueRules.OnStatusChanged(_lastStatus, status,
-                hasError: !string.IsNullOrEmpty(_session.LastErrorKey), joiningIsRejoin: joiningIsRejoin, roomWasOpen: false);
+                hasError: !string.IsNullOrEmpty(_session.LastErrorKey), _joiningIsRejoin, _roomWasOpen);
+            if (status == OnlineSessionStatus.InSession)
+            {
+                _roomWasOpen = false;
+            }
+
             _lastStatus = status;
             Play(cue);
         }
@@ -84,6 +123,15 @@ namespace AlienFarms.Audio
         private void HandleLobbyChanged()
         {
             OnlineLobbySnapshot current = OnlineLobbySnapshot.Capture(_lobby);
+            if (current.Phase == OnlineLobbyPhase.Open)
+            {
+                _roomWasOpen = true;
+            }
+            else if (current.Phase == OnlineLobbyPhase.Starting)
+            {
+                _roomWasOpen = false;
+            }
+
             int count = OnlineLobbyCueRules.Diff(_lastLobby, current, _playRemotePicks, _buffer);
             _lastLobby = current;
             for (int i = 0; i < count; i++)

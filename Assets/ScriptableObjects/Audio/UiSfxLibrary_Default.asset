@@ -33,17 +33,20 @@ MonoBehaviour:
     _volume: 0.8
     _pitchRange: {x: 1, y: 1}
   _playerJoined:
-    _clips: []
+    _clips:
+    - {fileID: 8300000, guid: 3cf764e0265ec29419f10258a725b4d0, type: 3}
     _volume: 0.8
-    _pitchRange: {x: 0.95, y: 1.05}
+    _pitchRange: {x: 1, y: 1}
   _connectionSucceeded:
-    _clips: []
+    _clips:
+    - {fileID: 8300000, guid: 55b683f32e3ed0b4a816f1fbf28955c3, type: 3}
     _volume: 0.8
-    _pitchRange: {x: 0.95, y: 1.05}
+    _pitchRange: {x: 1, y: 1}
   _connectionLost:
-    _clips: []
+    _clips:
+    - {fileID: 8300000, guid: 1112e470571ad2d4bb088b58c52a6376, type: 3}
     _volume: 0.8
-    _pitchRange: {x: 0.95, y: 1.05}
+    _pitchRange: {x: 1, y: 1}
   _matchSuspended:
     _clips: []
     _volume: 0.8
