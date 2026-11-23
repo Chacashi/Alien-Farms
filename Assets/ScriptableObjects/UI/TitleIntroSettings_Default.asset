@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3bf625ac29c9e44fb713d6e5d59b5e1, type: 3}
+  m_Name: TitleIntroSettings_Default
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Data.TitleIntroSettings
+  _attractFadeOutDuration: 0.4
+  _menuFadeInDuration: 0.4
+  _menuFadeOutDuration: 0.3
+  _attractFadeInDuration: 0.5
+  _cameraToMenuBlend:
+    Style: 1
+    Time: 1.8
+    CustomCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  _cameraToAttractBlend:
+    Style: 1
+    Time: 1.2
+    CustomCurve:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  _promptPulsePeriod: 1.6
+  _promptMinAlpha: 0.3
+  _promptMaxAlpha: 1

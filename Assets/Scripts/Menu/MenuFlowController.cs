@@ -38,6 +38,10 @@ namespace AlienFarms.Menu
         private MatchSession _session;
 
         [SerializeField] private TitleScreenView _title;
+
+        [SerializeField, Tooltip("Title intro for attract mode, camera transitions, and the menu column.")]
+        private TitleIntroDirector _intro;
+
         [SerializeField] private CharacterSelectView _select;
 
         [SerializeField, Tooltip("Overlay shown while the gameplay scene is about to load.")]
@@ -102,13 +106,17 @@ namespace AlienFarms.Menu
             if (_title != null)
             {
                 _title.Show();
-                _title.SetPlayerJoined(false);
             }
 
             if (OnlineMenuRules.OpensOnlineOnLoad(inOnlineSession, returnToOnline) && _online != null)
             {
                 // Straight back to the room / hub; the first player to join becomes its owner.
                 _phase = MenuPhase.Online;
+                if (_intro != null)
+                {
+                    _intro.SnapToMenu();
+                }
+
                 if (_title != null)
                 {
                     _title.Hide();
@@ -116,10 +124,19 @@ namespace AlienFarms.Menu
 
                 _online.Enter(null);
             }
+            else if (_intro != null)
+            {
+                _intro.SnapToAttract();
+            }
         }
 
         private void OnEnable()
         {
+            if (_intro != null)
+            {
+                _intro.MenuReady += HandleTitleMenuReady;
+            }
+
             if (_online != null)
             {
                 _online.ExitRequested += HandleOnlineExitRequested;
@@ -136,6 +153,11 @@ namespace AlienFarms.Menu
 
         private void OnDisable()
         {
+            if (_intro != null)
+            {
+                _intro.MenuReady -= HandleTitleMenuReady;
+            }
+
             if (_online != null)
             {
                 _online.ExitRequested -= HandleOnlineExitRequested;
@@ -184,6 +206,11 @@ namespace AlienFarms.Menu
         /// <summary>Opens character select from the title or a sub-menu with everyone joined so far.</summary>
         public void Play()
         {
+            if (_phase == MenuPhase.Title && _intro != null && !_intro.IsMenuInteractable)
+            {
+                return;
+            }
+
             if ((_phase != MenuPhase.Title && _phase != MenuPhase.SubMenu) || _isLeaving)
             {
                 return;
@@ -218,6 +245,11 @@ namespace AlienFarms.Menu
         /// <summary>Opens the online panel from the title or a sub-menu for the title owner.</summary>
         public void PlayOnline()
         {
+            if (_phase == MenuPhase.Title && _intro != null && !_intro.IsMenuInteractable)
+            {
+                return;
+            }
+
             PlayerId owner = GetTitleOwner();
             if ((_phase != MenuPhase.Title && _phase != MenuPhase.SubMenu) || _isLeaving || _online == null || owner == PlayerId.None)
             {
@@ -245,6 +277,11 @@ namespace AlienFarms.Menu
         /// <summary>Title sub-menu buttons (Options, How to play): opens <paramref name="panel"/> for the title owner.</summary>
         public void OpenSubMenu(SubMenuPanel panel)
         {
+            if (_phase == MenuPhase.Title && _intro != null && !_intro.IsMenuInteractable)
+            {
+                return;
+            }
+
             if (panel == null || _phase != MenuPhase.Title || _isLeaving)
             {
                 return;
@@ -280,10 +317,35 @@ namespace AlienFarms.Menu
             if (_title != null)
             {
                 _title.Show();
-                _title.SetPlayerJoined(_lobby != null && _lobby.JoinedCount > 0);
             }
 
+            RefreshTitleIntro();
             RequestApplyAll();
+        }
+
+        private void HandleTitleMenuReady()
+        {
+            if (_phase == MenuPhase.Title && !_isLeaving)
+            {
+                RequestApplyAll();
+            }
+        }
+
+        private void RefreshTitleIntro()
+        {
+            if (_intro == null)
+            {
+                return;
+            }
+
+            if (_lobby != null && _lobby.JoinedCount > 0)
+            {
+                _intro.PlayToMenu();
+            }
+            else
+            {
+                _intro.PlayToAttract();
+            }
         }
 
         /// <summary>Title 'Quit' button.</summary>
@@ -326,9 +388,9 @@ namespace AlienFarms.Menu
                 }
             }
 
-            if (_title != null)
+            if (_phase == MenuPhase.Title)
             {
-                _title.SetPlayerJoined(true);
+                RefreshTitleIntro();
             }
 
             // Next frame: never switch maps or (de)activate input inside the join callback, and the join press must not
@@ -359,11 +421,7 @@ namespace AlienFarms.Menu
             switch (_phase)
             {
                 case MenuPhase.Title:
-                    if (_title != null)
-                    {
-                        _title.SetPlayerJoined(_lobby != null && _lobby.JoinedCount > 0);
-                    }
-
+                    RefreshTitleIntro();
                     // The other player may become the title owner.
                     RequestApplyAll();
                     break;
@@ -415,6 +473,12 @@ namespace AlienFarms.Menu
 
         private void HandleSubmitted(PlayerId id)
         {
+            if (!_isLeaving && _phase == MenuPhase.Title && _intro != null && _intro.IsTransitioning)
+            {
+                _intro.Skip();
+                return;
+            }
+
             if (_isLeaving || _phase != MenuPhase.CharacterSelect || !_selection.Confirm(id))
             {
                 return;
@@ -503,9 +567,9 @@ namespace AlienFarms.Menu
             if (_title != null)
             {
                 _title.Show();
-                _title.SetPlayerJoined(_lobby != null && _lobby.JoinedCount > 0);
             }
 
+            RefreshTitleIntro();
             _titleReturnSelection = _playOnlineButton;
             // May come from a button onClick: input routing goes to the next frame.
             RequestApplyAll();
@@ -554,9 +618,9 @@ namespace AlienFarms.Menu
             if (_title != null)
             {
                 _title.Show();
-                _title.SetPlayerJoined(_lobby != null && _lobby.JoinedCount > 0);
             }
 
+            RefreshTitleIntro();
             ApplyAllPlayerStates();
         }
 
@@ -705,10 +769,18 @@ namespace AlienFarms.Menu
                 }
                 else if (isOwner && _phase == MenuPhase.Title && _title != null)
                 {
-                    // Back from a sub-menu: focus the button that opened it.
-                    GameObject selection = _titleReturnSelection != null ? _titleReturnSelection : _title.FirstSelected;
-                    _titleReturnSelection = null;
-                    menu.EnterMenu(_title.MenuRoot, selection);
+                    if (_intro != null && !_intro.IsMenuInteractable)
+                    {
+                        // Keep Submit active for skipping while MenuReady is pending.
+                        menu.EnterMenu(_title.MenuRoot, null);
+                    }
+                    else
+                    {
+                        // Back from a sub-menu: focus the button that opened it.
+                        GameObject selection = _titleReturnSelection != null ? _titleReturnSelection : _title.FirstSelected;
+                        _titleReturnSelection = null;
+                        menu.EnterMenu(_title.MenuRoot, selection);
+                    }
                 }
                 else
                 {
@@ -807,9 +879,9 @@ namespace AlienFarms.Menu
                 Debug.LogWarning($"[{nameof(MenuFlowController)}] Missing MenuLobby or MatchSession on '{name}'.", this);
             }
 
-            if (_title == null || _select == null)
+            if (_title == null || _select == null || _intro == null)
             {
-                Debug.LogWarning($"[{nameof(MenuFlowController)}] Missing TitleScreenView or CharacterSelectView on '{name}'.", this);
+                Debug.LogWarning($"[{nameof(MenuFlowController)}] Missing TitleScreenView, CharacterSelectView or TitleIntroDirector on '{name}'.", this);
             }
 
             if (_online == null || _onlineSession == null || _playOnlineButton == null)
