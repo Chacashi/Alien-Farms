@@ -207,10 +207,6 @@ MonoBehaviour:
     m_Key: online.room.need_picks
     m_Metadata:
       m_Items: []
-  - m_Id: 3979076747120652
-    m_Key: online.room.spectator
-    m_Metadata:
-      m_Items: []
   - m_Id: 3979076747120653
     m_Key: online.room.syncing
     m_Metadata:
@@ -385,14 +381,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 4174257899425794
     m_Key: online.status.timed_out
-    m_Metadata:
-      m_Items: []
-  - m_Id: 4174257899425795
-    m_Key: online.spectator.watching
-    m_Metadata:
-      m_Items: []
-  - m_Id: 4174257899425796
-    m_Key: online.spectator.leave
     m_Metadata:
       m_Items: []
   - m_Id: 4174257899425797

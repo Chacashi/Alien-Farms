@@ -210,10 +210,6 @@ MonoBehaviour:
     m_Localized: Pick your characters
     m_Metadata:
       m_Items: []
-  - m_Id: 3979076747120652
-    m_Localized: You are spectating
-    m_Metadata:
-      m_Items: []
   - m_Id: 3979076747120653
     m_Localized: "Syncing\u2026"
     m_Metadata:
@@ -355,7 +351,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 3979076747120688
-    m_Localized: Spectators cannot pick a character.
+    m_Localized: You don't have a seat in the room yet.
     m_Metadata:
       m_Items: []
   - m_Id: 3979076747120689
@@ -388,14 +384,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 4174257899425794
     m_Localized: '{0} did not come back'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 4174257899425795
-    m_Localized: You are watching
-    m_Metadata:
-      m_Items: []
-  - m_Id: 4174257899425796
-    m_Localized: Leave
     m_Metadata:
       m_Items: []
   - m_Id: 4174257899425797

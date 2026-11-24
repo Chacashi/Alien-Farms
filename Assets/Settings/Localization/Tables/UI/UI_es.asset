@@ -210,10 +210,6 @@ MonoBehaviour:
     m_Localized: Elijan personaje
     m_Metadata:
       m_Items: []
-  - m_Id: 3979076747120652
-    m_Localized: "Est\xE1s mirando"
-    m_Metadata:
-      m_Items: []
   - m_Id: 3979076747120653
     m_Localized: "Sincronizando\u2026"
     m_Metadata:
@@ -355,7 +351,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 3979076747120688
-    m_Localized: Los espectadores no pueden elegir personaje.
+    m_Localized: "A\xFAn no tienes plaza en la sala."
     m_Metadata:
       m_Items: []
   - m_Id: 3979076747120689
@@ -388,14 +384,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 4174257899425794
     m_Localized: "{0} no volvi\xF3"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 4174257899425795
-    m_Localized: "Est\xE1s mirando"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 4174257899425796
-    m_Localized: Salir
     m_Metadata:
       m_Items: []
   - m_Id: 4174257899425797
