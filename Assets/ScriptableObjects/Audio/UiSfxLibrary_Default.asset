@@ -48,20 +48,24 @@ MonoBehaviour:
     _volume: 0.8
     _pitchRange: {x: 1, y: 1}
   _matchSuspended:
-    _clips: []
+    _clips:
+    - {fileID: 8300000, guid: ee4a194f5914d5e4794b703c5a6573be, type: 3}
     _volume: 0.8
-    _pitchRange: {x: 0.95, y: 1.05}
+    _pitchRange: {x: 1, y: 1}
   _playerReconnected:
-    _clips: []
+    _clips:
+    - {fileID: 8300000, guid: 1ed1606e9ce6e4342831762095f8e80c, type: 3}
     _volume: 0.8
-    _pitchRange: {x: 0.95, y: 1.05}
+    _pitchRange: {x: 1, y: 1}
   _matchResumed:
-    _clips: []
+    _clips:
+    - {fileID: 8300000, guid: ff4f5cf1bae83bc4c886e5657b27974c, type: 3}
     _volume: 0.8
-    _pitchRange: {x: 0.95, y: 1.05}
+    _pitchRange: {x: 1, y: 1}
   _matchPaused:
-    _clips: []
+    _clips:
+    - {fileID: 8300000, guid: 48d1f4eb6d789da449109b931195d32e, type: 3}
     _volume: 0.8
-    _pitchRange: {x: 0.95, y: 1.05}
+    _pitchRange: {x: 1, y: 1}
   _resumeAfterReconnectDelay: 0.6
   _arrivalCueDelay: 0.3

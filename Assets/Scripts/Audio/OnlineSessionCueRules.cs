@@ -19,9 +19,11 @@ namespace AlienFarms.Audio
             }
 
             if (curr == OnlineSessionStatus.InSession
-                && (prev == OnlineSessionStatus.Creating || (prev == OnlineSessionStatus.Joining && !joiningIsRejoin)))
+                && (prev == OnlineSessionStatus.Creating || prev == OnlineSessionStatus.Joining))
             {
-                return UiSfxCue.ConnectionSucceeded;
+                return prev == OnlineSessionStatus.Joining && joiningIsRejoin
+                    ? UiSfxCue.PlayerReconnected
+                    : UiSfxCue.ConnectionSucceeded;
             }
 
             if (prev == OnlineSessionStatus.InSession && curr == OnlineSessionStatus.Leaving && hasError && roomWasOpen)

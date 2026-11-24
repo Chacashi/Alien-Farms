@@ -33,6 +33,9 @@ namespace AlienFarms.Core
         /// <summary>The game was resumed; payload: the player who owned the pause menu.</summary>
         public static event Action<PlayerId> OnGameResumed;
 
+        /// <summary>The pause owner chose to keep playing via Resume or Cancel. Raised after OnGameResumed.</summary>
+        public static event Action<PlayerId> OnPauseMenuResumed;
+
         /// <summary>A player pressed Cancel while navigating a menu.</summary>
         public static event Action<PlayerId> OnMenuCancelPressed;
 
@@ -141,6 +144,8 @@ namespace AlienFarms.Core
 
         public static void RaiseGameResumed(PlayerId owner) => OnGameResumed?.Invoke(owner);
 
+        public static void RaisePauseMenuResumed(PlayerId owner) => OnPauseMenuResumed?.Invoke(owner);
+
         public static void RaiseMenuCancelPressed(PlayerId playerId) => OnMenuCancelPressed?.Invoke(playerId);
 
         public static void RaiseCharacterPickConfirmed(PlayerId playerId) => OnCharacterPickConfirmed?.Invoke(playerId);
@@ -234,6 +239,7 @@ namespace AlienFarms.Core
             OnPauseHoldProgress = null;
             OnGamePaused = null;
             OnGameResumed = null;
+            OnPauseMenuResumed = null;
             OnMenuCancelPressed = null;
             OnCharacterPickConfirmed = null;
             OnCharacterPickReleased = null;

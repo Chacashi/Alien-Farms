@@ -23,7 +23,7 @@ namespace AlienFarms.Tests
 
         [TestCase(OnlineSessionStatus.Creating, false, UiSfxCue.ConnectionSucceeded)]
         [TestCase(OnlineSessionStatus.Joining, false, UiSfxCue.ConnectionSucceeded)]
-        [TestCase(OnlineSessionStatus.Joining, true, UiSfxCue.None)]
+        [TestCase(OnlineSessionStatus.Joining, true, UiSfxCue.PlayerReconnected)]
         public void OnStatusChanged_EnteringSession_MapsConnectionCue(OnlineSessionStatus previous,
             bool joiningIsRejoin, UiSfxCue expected)
         {

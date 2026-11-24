@@ -78,7 +78,7 @@ namespace AlienFarms.Match
             GameEvents.OnMatchPhaseChanged -= HandleMatchPhaseChanged;
 
             // Disabled (or torn down) while paused: give input back to whoever is still alive and restore time.
-            Resume();
+            CloseMenu();
             ResetSubMenu();
             RestoreTime();
         }
@@ -145,16 +145,25 @@ namespace AlienFarms.Match
         /// <summary>Closes the pause menu and restores time. Wired to the Resume button.</summary>
         public void Resume()
         {
+            PlayerId owner = CloseMenu();
+            if (owner != PlayerId.None)
+            {
+                GameEvents.RaisePauseMenuResumed(owner);
+            }
+        }
+
+        private PlayerId CloseMenu()
+        {
             if (!_isPaused)
             {
-                return;
+                return PlayerId.None;
             }
 
             PlayerId owner = _owner;
             _isPaused = false;
             _owner = PlayerId.None;
 
-            // Null-checked: Resume also runs from OnDisable during teardown.
+            // Null-checked: the menu also closes during teardown.
             if (_menus != null)
             {
                 _menus.ReleaseMenus();
@@ -166,6 +175,7 @@ namespace AlienFarms.Match
             // Before the event: listeners must already see time running.
             RestoreTime();
             GameEvents.RaiseGameResumed(owner);
+            return owner;
         }
 
         /// <summary>Resumes and restarts the round from the countdown. Wired to the Restart button.</summary>
@@ -176,7 +186,7 @@ namespace AlienFarms.Match
                 return;
             }
 
-            Resume();
+            CloseMenu();
             if (_match != null)
             {
                 _match.RestartRound();
@@ -191,7 +201,7 @@ namespace AlienFarms.Match
                 return;
             }
 
-            Resume();
+            CloseMenu();
             if (_exit != null)
             {
                 _exit.ReturnToTitle();
@@ -261,13 +271,7 @@ namespace AlienFarms.Match
             }
         }
 
-        private void HandlePlayerLeft(PlayerId playerId)
-        {
-            if (_isPaused)
-            {
-                Resume();
-            }
-        }
+        private void HandlePlayerLeft(PlayerId playerId) => CloseMenu();
 
         /// <summary>The owner lost its device: hand the menu to the other player so the game is never stuck.</summary>
         private void HandlePlayerDeviceLost(PlayerId playerId)
