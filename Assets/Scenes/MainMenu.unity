@@ -475,7 +475,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 229701a1f623a54428e8f4997b683a1d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Audio.MusicPlayer
-  _track: {fileID: 8300000, guid: 9783739c3f4c0d146af1d332e8b65510, type: 3}
+  _track: {fileID: 8300000, guid: b6f9576ed8ef50248b5a080d451a1446, type: 3}
   _playDuringPause: 1
 --- !u!82 &151750790
 AudioSource:
@@ -764,7 +764,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 257432448}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.06742353, y: 0.9325749, z: 0.2498827, w: -0.25162804}
+  m_LocalRotation: {x: 0.20820868, y: 0.7455083, z: 0.27134284, w: -0.57204866}
   m_LocalPosition: {x: 65.7, y: 15, z: 71}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
