@@ -248,7 +248,7 @@ namespace AlienFarms.Networking.Tests.Persistence
             _session.SetLocalPlayerId(Owner);
             _sync.Start();
 
-            EnterSession(spectatorLocal: false);
+            EnterSession();
 
             Assert.That(_store.PublicLoadCount, Is.EqualTo(1));
             Assert.That(_store.LastPublicId, Is.EqualTo(Rival));
@@ -260,16 +260,12 @@ namespace AlienFarms.Networking.Tests.Persistence
         }
 
         [Test]
-        public void Spectator_OrRivalStatsOff_ReadsNoRival()
+        public void RivalStatsOff_ReadsNoRival()
         {
             _session.SetLocalPlayerId(Owner);
             _sync.Start();
-            EnterSession(spectatorLocal: true);
-            Assert.That(_store.PublicLoadCount, Is.EqualTo(0));
-
-            _session.TrySetStatus(OnlineSessionStatus.Ready);
             SetBool(_settings, "_readRivalStats", false);
-            EnterSession(spectatorLocal: false);
+            EnterSession();
             Assert.That(_store.PublicLoadCount, Is.EqualTo(0));
             Assert.That(_progress.HasRivalStats, Is.False);
         }
@@ -320,7 +316,7 @@ namespace AlienFarms.Networking.Tests.Persistence
             Assert.That(_progress.HasHostLeftWinNotice, Is.False);
         }
 
-        private void EnterSession(bool spectatorLocal)
+        private void EnterSession()
         {
             if (_session.Status == OnlineSessionStatus.SignedOut)
             {
@@ -332,20 +328,10 @@ namespace AlienFarms.Networking.Tests.Persistence
             _session.TrySetStatus(OnlineSessionStatus.InSession);
             var participants = new[]
             {
-                new OnlineParticipant("host", "Host", true, false, false),
-                new OnlineParticipant(spectatorLocal ? "p2" : Rival, "Two", false, false, false),
-                new OnlineParticipant(Owner, "Me", false, true, spectatorLocal)
+                new OnlineParticipant(Rival, "Rival", true, false),
+                new OnlineParticipant(Owner, "Me", false, true)
             };
-
-            if (!spectatorLocal)
-            {
-                participants[0] = new OnlineParticipant(Rival, "Rival", true, false, false);
-                participants[1] = new OnlineParticipant(Owner, "Me", false, true, false);
-                _session.SetParticipants(participants, 2);
-                return;
-            }
-
-            _session.SetParticipants(participants, 3);
+            _session.SetParticipants(participants, participants.Length);
         }
 
         private static void SetBool(Object target, string field, bool value)

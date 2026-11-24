@@ -13,8 +13,8 @@ namespace AlienFarms.Data
     [CreateAssetMenu(fileName = "OnlineSessionChannel", menuName = "Alien Farms/Networking/Online Session Channel (Runtime)")]
     public sealed class OnlineSessionChannel : ScriptableObject
     {
-        /// <summary>Two players plus one spectator.</summary>
-        public const int MaxParticipants = 3;
+        /// <summary>Two players.</summary>
+        public const int MaxParticipants = 2;
 
         /// <summary>PlayerPrefs key of the name typed by the player on this device (local convenience only).</summary>
         public const string DisplayNamePrefsKey = "AlienFarms.Online.DisplayName";

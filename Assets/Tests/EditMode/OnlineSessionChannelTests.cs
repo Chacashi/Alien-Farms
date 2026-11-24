@@ -198,7 +198,7 @@ namespace AlienFarms.Tests
             _channel.SetParticipants(four, 4);
 
             Assert.That(_channel.ParticipantCount, Is.EqualTo(OnlineSessionChannel.MaxParticipants));
-            Assert.That(_channel.GetParticipant(2).UgsPlayerId, Is.EqualTo("c"));
+            Assert.That(_channel.GetParticipant(1).UgsPlayerId, Is.EqualTo("b"));
             Assert.That(afterFirst, Is.EqualTo(1));
             Assert.That(_changed, Is.EqualTo(1));
         }
@@ -628,7 +628,7 @@ namespace AlienFarms.Tests
 
         private static OnlineParticipant Participant(string id, bool isHost)
         {
-            return new OnlineParticipant(id, id, isHost, false, false);
+            return new OnlineParticipant(id, id, isHost, false);
         }
 
         private void CountChange()

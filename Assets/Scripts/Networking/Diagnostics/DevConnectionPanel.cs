@@ -444,11 +444,6 @@ namespace AlienFarms.Networking.Diagnostics
                     builder.Append(" (host)");
                 }
 
-                if (participant.IsSpectator)
-                {
-                    builder.Append(" (spectator)");
-                }
-
                 if (participant.IsLocal)
                 {
                     builder.Append(" (you)");

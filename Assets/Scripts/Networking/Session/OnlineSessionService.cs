@@ -16,7 +16,7 @@ namespace AlienFarms.Networking.Session
     /// <summary>
     /// Online session service on the persistent NetworkRoot: answers the <see cref="OnlineSessionChannel"/> requests
     /// (sign in, create, join by code, leave) through <see cref="UgsBootstrapper"/> and <see cref="RelaySessionConnection"/>,
-    /// and publishes status, code, participants (two players + spectator) and error keys on the channel. NGO is started
+    /// and publishes status, code, participants (two players) and error keys on the channel. NGO is started
     /// with the same <see cref="ConnectionPayload"/> and approval as the direct connection. Leaving shuts NGO down through
     /// the root first (clients get <see cref="DisconnectReasons.HostDisconnected"/>), then leaves / deletes the session.
     /// A Leave (or the root going away) while creating / joining cancels that start; whatever it still created is left
@@ -25,8 +25,6 @@ namespace AlienFarms.Networking.Session
     [DisallowMultipleComponent]
     public sealed class OnlineSessionService : MonoBehaviour
     {
-        // Delay before retrying a failed spectator property save (s, real time).
-        private const double SpectatorRetrySeconds = 2d;
 
         // Cap of the automatic rejoin delay while the services rate-limit this client (s).
         private const float MaxAutoRejoinBackoffSeconds = 8f;
@@ -58,24 +56,6 @@ namespace AlienFarms.Networking.Session
         private RelaySessionConnection _connection;
 
         private readonly OnlineParticipant[] _participantBuffer = new OnlineParticipant[OnlineSessionChannel.MaxParticipants];
-
-        // RefreshParticipants scratch (host first, then join order) for ParticipantRoleRules.
-        private readonly IReadOnlyPlayer[] _orderedPlayers = new IReadOnlyPlayer[OnlineSessionChannel.MaxParticipants];
-        private readonly string[] _orderedIds = new string[OnlineSessionChannel.MaxParticipants];
-        private readonly bool[] _orderedIsHost = new bool[OnlineSessionChannel.MaxParticipants];
-        private readonly bool[] _orderedIsSpectator = new bool[OnlineSessionChannel.MaxParticipants];
-
-        // Host: the spectator session property must be checked against the seat table (set from NGO callbacks, handled in
-        // Update after the approval handler updated the table); one save at a time.
-        private bool _spectatorPropertyDirty;
-        private bool _isSavingSpectatorProperty;
-
-        // Real time before which a failed spectator save is not retried (0 = no pending retry).
-        private double _spectatorRetryAt;
-
-        // Last spectator id the host actually saved in this session (null = nobody), and whether a save failed since.
-        private string _savedSpectatorId;
-        private bool _spectatorSavePending;
 
         private UgsBootstrapper _bootstrapper;
         private ISession _subscribedSession;
@@ -140,7 +120,6 @@ namespace AlienFarms.Networking.Session
             _channel.DeclineRejoinRequested += HandleDeclineRejoinRequested;
             _manager.OnClientStopped += HandleClientStopped;
             _manager.OnClientDisconnectCallback += HandleClientDisconnected;
-            _manager.OnClientConnectedCallback += HandleClientConnected;
             SubscribeAuthentication();
             ResetAutoRejoin();
 
@@ -175,13 +154,7 @@ namespace AlienFarms.Networking.Session
             {
                 _manager.OnClientStopped -= HandleClientStopped;
                 _manager.OnClientDisconnectCallback -= HandleClientDisconnected;
-                _manager.OnClientConnectedCallback -= HandleClientConnected;
             }
-
-            _spectatorPropertyDirty = false;
-            _spectatorRetryAt = 0d;
-            _savedSpectatorId = null;
-            _spectatorSavePending = false;
 
             UnsubscribeAuthentication();
             UnsubscribeSession();
@@ -383,12 +356,6 @@ namespace AlienFarms.Networking.Session
                 approval.ResetServerStop();
             }
 
-            // A retry left over from the previous session never applies to this one.
-            _spectatorPropertyDirty = false;
-            _spectatorRetryAt = 0d;
-            _savedSpectatorId = null;
-            _spectatorSavePending = false;
-
             // Before NGO starts: the host may approve and sync the gameplay scene (match in progress) before the start
             // returns, and its GameModeRouter reads the mode in Awake. A failure or cancellation sets Local again.
             SetMode(OnlineModeRules.ModeFor(status));
@@ -532,7 +499,7 @@ namespace AlienFarms.Networking.Session
             Debug.Log($"[{nameof(OnlineSessionService)}] Connection lost; rejoin offered for session {sessionId} / {code} ({expiresAt - now:0.#}s of {_settings.ReconnectGraceSeconds:0.#}s grace).", this);
         }
 
-        // Only cheap checks while an offer exists or the host's spectator property may be stale.
+        // Only cheap checks while a rejoin offer exists.
         private void Update()
         {
             if (_channel != null && _channel.HasRejoinOffer)
@@ -546,13 +513,6 @@ namespace AlienFarms.Networking.Session
                 {
                     TickAutoRejoin(now);
                 }
-            }
-
-            if (_spectatorPropertyDirty && !_isSavingSpectatorProperty
-                && Time.realtimeSinceStartupAsDouble >= _spectatorRetryAt)
-            {
-                _spectatorPropertyDirty = false;
-                SyncSpectatorProperty();
             }
         }
 
@@ -742,31 +702,16 @@ namespace AlienFarms.Networking.Session
             EndSessionRemotely(key, SessionExit.AwaitHostEnd);
         }
 
-        // Server: a connection was admitted (seat or spectator place).
-        private void HandleClientConnected(ulong clientId)
-        {
-            if (_manager.IsServer && !IsShuttingDown)
-            {
-                _spectatorPropertyDirty = true;
-            }
-        }
-
         // The host is stopping (graceful or not): the session is about to be deleted, so it is never written again.
         private bool IsShuttingDown =>
             (_manager != null && _manager.ShutdownInProgress)
             || (_root != null && (_root.IsShutdownPending || (_root.Approval != null && _root.Approval.IsServerStopping)));
 
         // NGO reports the local client's drop by the server before shutting down; a self-initiated shutdown does not.
-        // Server: a connection dropped (its seat or spectator place may be free now).
         private void HandleClientDisconnected(ulong clientId)
         {
             if (_manager.IsServer)
             {
-                if (!IsShuttingDown)
-                {
-                    _spectatorPropertyDirty = true;
-                }
-
                 return;
             }
 
@@ -822,7 +767,6 @@ namespace AlienFarms.Networking.Session
             if (_channel.IsHost && approval != null)
             {
                 approval.ReleaseLeftMember(playerId);
-                _spectatorPropertyDirty = true;
             }
         }
 
@@ -834,108 +778,6 @@ namespace AlienFarms.Networking.Session
         private void HandleSessionPropertiesChanged()
         {
             RefreshParticipants();
-        }
-
-        // Host: names the spectator its approval admitted (or nobody) in the session, so every member's participant list
-        // keeps it a spectator whatever its join position (ParticipantRoleRules). Only writes when the value changes.
-        private void SyncSpectatorProperty()
-        {
-            ISession session = _subscribedSession;
-            ConnectionApprovalHandler approval = _root != null ? _root.Approval : null;
-            if (session == null || !session.IsHost || approval == null || approval.Slots == null
-                || _channel.Status != OnlineSessionStatus.InSession || IsShuttingDown)
-            {
-                return;
-            }
-
-            // Against the last saved value, not session.Properties: a failed save left the unsaved value there.
-            string desired = FindSpectatorUgsId(approval.Slots);
-            if (!ParticipantRoleRules.ShouldWriteSpectator(desired, _savedSpectatorId, _spectatorSavePending))
-            {
-                return;
-            }
-
-            _ = SaveSpectatorPropertyAsync(session, desired);
-        }
-
-        private async Task SaveSpectatorPropertyAsync(ISession session, string spectatorId)
-        {
-            _isSavingSpectatorProperty = true;
-            bool saved = false;
-            try
-            {
-                IHostSession host = session.AsHost();
-
-                // Never a null property (deleting the key): SDK 2.4.1 then throws in UpdateDerivedProperties on the next
-                // lobby change. An empty value means nobody (ParticipantRoleRules.NoSpectator).
-                host.SetProperty(ParticipantRoleRules.SpectatorProperty,
-                    new SessionProperty(spectatorId ?? ParticipantRoleRules.NoSpectator, VisibilityPropertyOptions.Member));
-                await host.SavePropertiesAsync();
-                saved = true;
-            }
-            catch (Exception exception)
-            {
-                // Best effort: the list falls back to join order meanwhile; retried after a short delay. A save cut by
-                // the host's own shutdown (session being deleted) is expected and stays quiet.
-                if (this != null && !IsShuttingDown)
-                {
-                    Debug.LogWarning($"[{nameof(OnlineSessionService)}] Saving the spectator property failed (retry in {SpectatorRetrySeconds:0}s): {exception.Message}");
-                }
-            }
-
-            if (this == null)
-            {
-                return;
-            }
-
-            _isSavingSpectatorProperty = false;
-            if (session != _subscribedSession)
-            {
-                return;
-            }
-
-            if (saved)
-            {
-                _savedSpectatorId = spectatorId;
-                _spectatorSavePending = false;
-                _spectatorRetryAt = 0d;
-                RefreshParticipants();
-            }
-            else
-            {
-                _spectatorSavePending = true;
-                _spectatorRetryAt = Time.realtimeSinceStartupAsDouble + SpectatorRetrySeconds;
-            }
-
-            // Saved: the table may have changed during the save. Failed: try again once the delay passed.
-            _spectatorPropertyDirty = true;
-        }
-
-        private static string FindSpectatorUgsId(ServerSlotDirectory slots)
-        {
-            ReadOnlySpan<SpectatorSeat> spectators = slots.Spectators;
-            for (int i = 0; i < spectators.Length; i++)
-            {
-                if (spectators[i].InUse && spectators[i].UgsPlayerId.Length > 0)
-                {
-                    return spectators[i].UgsPlayerId.ToString();
-                }
-            }
-
-            return null;
-        }
-
-        private static string ReadNamedSpectator(ISession session)
-        {
-            IReadOnlyDictionary<string, SessionProperty> properties = session.Properties;
-            if (properties != null
-                && properties.TryGetValue(ParticipantRoleRules.SpectatorProperty, out SessionProperty property)
-                && property != null)
-            {
-                return ParticipantRoleRules.ReadSpectatorId(property.Value);
-            }
-
-            return null;
         }
 
         // Signed out or the session token expired: the session cannot be kept; the menu has to sign in again.
@@ -1049,7 +891,7 @@ namespace AlienFarms.Networking.Session
             // Host first (seat P1), then the rest in join order.
             for (int pass = 0; pass < 2; pass++)
             {
-                for (int i = 0; i < players.Count && count < _orderedPlayers.Length; i++)
+                for (int i = 0; i < players.Count && count < _participantBuffer.Length; i++)
                 {
                     IReadOnlyPlayer player = players[i];
                     bool isHost = string.Equals(player.Id, session.Host, StringComparison.Ordinal);
@@ -1058,32 +900,12 @@ namespace AlienFarms.Networking.Session
                         continue;
                     }
 
-                    _orderedPlayers[count] = player;
-                    _orderedIds[count] = player.Id;
-                    _orderedIsHost[count] = isHost;
-                    count++;
+                    _participantBuffer[count++] = new OnlineParticipant(
+                        player.Id,
+                        ReadDisplayName(player),
+                        isHost,
+                        string.Equals(player.Id, localId, StringComparison.Ordinal));
                 }
-            }
-
-            // The spectator the host named stays one; without a name, past both seats is a spectator.
-            ParticipantRoleRules.Classify(
-                new ReadOnlySpan<string>(_orderedIds, 0, count),
-                new ReadOnlySpan<bool>(_orderedIsHost, 0, count),
-                ReadNamedSpectator(session),
-                ServerSlotDirectory.Capacity,
-                new Span<bool>(_orderedIsSpectator, 0, count));
-
-            for (int i = 0; i < count; i++)
-            {
-                IReadOnlyPlayer player = _orderedPlayers[i];
-                _participantBuffer[i] = new OnlineParticipant(
-                    player.Id,
-                    ReadDisplayName(player),
-                    _orderedIsHost[i],
-                    string.Equals(player.Id, localId, StringComparison.Ordinal),
-                    _orderedIsSpectator[i]);
-                _orderedPlayers[i] = null;
-                _orderedIds[i] = null;
             }
 
             _channel.SetParticipants(_participantBuffer, count);
