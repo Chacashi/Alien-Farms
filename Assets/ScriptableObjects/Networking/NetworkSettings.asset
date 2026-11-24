@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 13b2ffe1bff5b2c40ab2b14151978dbd, type: 3}
   m_Name: NetworkSettings
   m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Data.NetworkSettings
-  _protocolVersion: 4
+  _protocolVersion: 5
   _environmentName: dev
   _reconnectGraceSeconds: 20
   _hostLeaveNoticeSeconds: 0.5
