@@ -3,7 +3,7 @@ tags: [modulo, modulo/data]
 ---
 # Módulo Data
 
-Carpeta `Assets/Scripts/Data/` · 23 tipos. Las cajas punteadas son tipos de otros módulos.
+Carpeta `Assets/Scripts/Data/` · 29 tipos. Las cajas punteadas son tipos de otros módulos.
 
 Leyenda: `--|>` hereda · `..|>` implementa · `-->` tiene un campo/propiedad de ese tipo. Se muestran campos `[SerializeField]` y la API pública.
 
@@ -14,6 +14,7 @@ classDiagram
   class AnimalData {
     <<ScriptableObject>>
     -Animal _prefab
+    -Sprite _icon
     -int _points
     -float _mass
     -float _wanderSpeed
@@ -25,8 +26,7 @@ classDiagram
     -float _minFleeTime
     -float _detectionInterval
     -float _wanderRadius
-    -Vector2 _idleTimeRange
-    ...46 más
+    ...48 más
   }
   class AnimalSpawnEntry {
     <<struct>>
@@ -132,10 +132,11 @@ classDiagram
     <<ScriptableObject>>
     +bool IsReady
     +GameMode Mode
-    +CharacterDefinition LocalCharacter
+    +bool ReturnToOnlineMenu
     +SetSlot(SessionSlot slot) void
     +SetMode(GameMode mode) void
-    +SetLocalCharacter(CharacterDefinition character) void
+    +RequestReturnToOnlineMenu() void
+    +ConsumeReturnToOnlineMenu() bool
     +TryGetSlot(PlayerId id, SessionSlot slot) bool
     +Clear() void
   }
@@ -161,9 +162,10 @@ classDiagram
     <<ScriptableObject>>
     -int _protocolVersion
     -string _environmentName
-    -int _maxPlayers
-    -bool _allowSpectator
     -float _reconnectGraceSeconds
+    -float _hostLeaveNoticeSeconds
+    -bool _autoRejoin
+    -float _autoRejoinRetrySeconds
     -int _inputRedundancy
     -int _inputBufferTarget
     -float _interpolationDelay
@@ -171,8 +173,7 @@ classDiagram
     -float _visualSmoothingRate
     -bool _predictionDefault
     -float _maxRewindSeconds
-    -float _tackleRewindTolerance
-    ...17 más
+    ...44 más
   }
   class ObstacleLayoutSettings {
     <<ScriptableObject>>
@@ -204,12 +205,63 @@ classDiagram
     +ObstacleVariantData Variant
     +int Weight
   }
+  class OnlineLobbyChannel {
+    <<ScriptableObject>>
+    +event Action Changed
+    +event Action~int~ CharacterRequested
+    +event Action StartRequested
+    +OnlineLobbyPhase Phase
+    +int SeatCount
+    +PlayerId LocalPlayerId
+    +bool CanStart
+    +string LastRejectKey
+    +bool HasReject
+    +GetSeat(int index) OnlineLobbySeat
+    +TryGetSeat(PlayerId id, OnlineLobbySeat seat) bool
+    +RequestCharacter(int characterIndex) bool
+    +RequestStart() bool
+    ...4 más
+  }
+  class OnlineSessionChannel {
+    <<ScriptableObject>>
+    +event Action Changed
+    +event Action SignInRequested
+    +event Action CreateRequested
+    +event Action~string~ JoinRequested
+    +event Action LeaveRequested
+    +event Action RejoinRequested
+    +event Action DeclineRejoinRequested
+    +OnlineSessionStatus Status
+    +bool IsRejoining
+    +string Code
+    +bool IsHost
+    +string LocalPlayerId
+    +string LocalPlayerName
+    ...25 más
+  }
   class PauseSettings {
     <<ScriptableObject>>
     -float _holdDuration
     -float _showProgressAfter
     +float HoldDuration
     +float ShowProgressAfter
+  }
+  class PlayerProgressChannel {
+    <<ScriptableObject>>
+    +event Action Changed
+    +event Action HostLeftWinNoticeConsumeRequested
+    +PlayerProgressStatus Status
+    +PlayerStatsSummary Stats
+    +bool HasStats
+    +PlayerProgressSaveStatus SaveStatus
+    +string LastErrorKey
+    +bool HasError
+    +PlayerProgressStatus RivalStatus
+    +PlayerStatsSummary RivalStats
+    +bool HasRivalStats
+    +bool HasHostLeftWinNotice
+    +SetUnavailable() void
+    ...11 más
   }
   class PlayerSettings {
     <<ScriptableObject>>
@@ -269,12 +321,67 @@ classDiagram
     +float MaxElevation
     ...5 más
   }
+  class TitleIntroSettings {
+    <<ScriptableObject>>
+    -float _attractFadeOutDuration
+    -float _menuFadeInDuration
+    -float _menuFadeOutDuration
+    -float _attractFadeInDuration
+    -float _promptPulsePeriod
+    -float _promptMinAlpha
+    -float _promptMaxAlpha
+    +float AttractFadeOutDuration
+    +float MenuFadeInDuration
+    +float MenuFadeOutDuration
+    +float AttractFadeInDuration
+    +CinemachineBlendDefinition CameraToMenuBlend
+    +CinemachineBlendDefinition CameraToAttractBlend
+    ...3 más
+  }
+  class UiSfxCue {
+    <<enumeration>>
+    None
+    CreateRoom
+    JoinRoom
+    CharacterConfirm
+    CharacterRelease
+    PlayerJoined
+    ConnectionSucceeded
+    ConnectionLost
+    MatchSuspended
+    PlayerReconnected
+    MatchResumed
+    MatchPaused
+  }
+  class UiSfxLibrary {
+    <<ScriptableObject>>
+    -SoundCue _createRoom
+    -SoundCue _joinRoom
+    -SoundCue _characterConfirm
+    -SoundCue _characterRelease
+    -SoundCue _playerJoined
+    -SoundCue _connectionSucceeded
+    -SoundCue _connectionLost
+    -SoundCue _matchSuspended
+    -SoundCue _playerReconnected
+    -SoundCue _matchResumed
+    -SoundCue _matchPaused
+    -float _resumeAfterReconnectDelay
+    -float _arrivalCueDelay
+    ...3 más
+  }
   class Animal:::external
   <<abstract>> Animal
   class Bomb:::external
   <<MonoBehaviour>> Bomb
   class BombBlastVfx:::external
   <<MonoBehaviour>> BombBlastVfx
+  class OnlineLobbySeat:::external
+  <<struct>> OnlineLobbySeat
+  class OnlineParticipant:::external
+  <<struct>> OnlineParticipant
+  class PlayerStatsSummary:::external
+  <<struct>> PlayerStatsSummary
   AnimalData --> Animal
   AnimalData --> ThrowSettings
   AnimalSpawnEntry --> AnimalData
@@ -286,12 +393,15 @@ classDiagram
   CharacterDefinition --> CharacterTheme
   CharacterRoster --> CharacterDefinition
   ChickenData --|> AnimalData
-  MatchSession --> CharacterDefinition
   MatchSession --> SessionData
   ObstacleLayoutSettings --> ObstacleWeightEntry
   ObstacleWeightEntry --> ObstacleVariantData
+  OnlineLobbyChannel --> OnlineLobbySeat
+  OnlineSessionChannel --> OnlineParticipant
+  PlayerProgressChannel --> PlayerStatsSummary
   SessionData --> SessionSlot
   SessionSlot --> CharacterDefinition
+  UiSfxLibrary --> SoundCue
   classDef external fill:#eee,stroke:#999,stroke-dasharray: 4 3,color:#555
 ```
 
@@ -316,12 +426,18 @@ classDiagram
 | [[ObstacleLayoutSettings]] | ScriptableObject | Rules for the random obstacle layout of the Animal Zone (rolled every new round). |
 | [[ObstacleVariantData]] | ScriptableObject | One obstacle type (fence, UFO disc...) and the yaws it may be placed with. |
 | [[ObstacleWeightEntry]] | struct | One weighted obstacle variant in `ObstacleLayoutSettings`. |
+| [[OnlineLobbyChannel]] | ScriptableObject | Runtime channel between the online room menu (requests, views) and the network lobby (state). The menu only calls the Request* methods and r… |
+| [[OnlineSessionChannel]] | ScriptableObject | Runtime channel between the online menu (requests, views) and the session service on the NetworkRoot (state). The menu only calls the Reques… |
 | [[PauseSettings]] | ScriptableObject | Hold-to-pause tuning. |
+| [[PlayerProgressChannel]] | ScriptableObject | Runtime channel with the local player's persistent progress (lifetime stats) and, in the online room, the rival's public stats. Views only r… |
 | [[PlayerSettings]] | ScriptableObject | Tunable movement, camera, grab, aim and tackle values shared by player characters. |
 | [[SessionData]] | class | Plain C# store of the players' pre-match choices, one `SessionSlot` per `PlayerId`. |
 | [[SessionSlot]] | struct | What one player chose before the match: its control scheme, the devices it used (both keyboard and mouse for KeyboardMouse) and its characte… |
 | [[SoundCue]] | class | One sound effect: candidate clips (one picked at random), volume and random pitch range. |
 | [[ThrowSettings]] | ScriptableObject | Launch and trajectory-preview tuning for thrown objects. |
+| [[TitleIntroSettings]] | ScriptableObject |  |
+| [[UiSfxCue]] | enumeration |  |
+| [[UiSfxLibrary]] | ScriptableObject |  |
 
 ## Depende de
-[[Modulo Animals|Animals]] (1), [[Modulo Audio|Audio]] (1), [[Modulo Core|Core]] (4), [[Modulo Items|Items]] (2), [[Modulo Networking|Networking]] (1)
+[[Modulo Animals|Animals]] (1), [[Modulo Audio|Audio]] (1), [[Modulo Core|Core]] (17), [[Modulo Items|Items]] (2), [[Modulo Networking|Networking]] (4)

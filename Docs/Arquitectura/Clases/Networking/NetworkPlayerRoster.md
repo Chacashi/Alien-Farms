@@ -7,7 +7,7 @@ tags: [clase, modulo/networking]
 ---
 # NetworkPlayerRoster
 
-> Online `IPlayerRoster` (server only): spawns a Player_Net as the player object of every seated client at its seat's spawn point, keeps the registry the match drives (respawn, freeze) and raises `GameEvents.OnPlayerCharacterAssigned` / `GameEvents.OnPlayerJoined` / `GameEvents.OnPlayerLeft` on the server. Inert on clients (they raise those from NetworkPlayer). Lives under the gameplay scene's OnlineModeRoot; the GameModeRouter binds it to the match.
+> Online `IPlayerRoster` (server only): spawns a Player_Net as the player object of every seated client at its seat's spawn point, keeps the registry the match drives (respawn, freeze) and raises `GameEvents.OnPlayerCharacterAssigned` / `GameEvents.OnPlayerJoined` / `GameEvents.OnPlayerLeft` on the server. Inert on clients (they raise those from NetworkPlayer). Lives under the gameplay scene's OnlineModeRoot; the GameModeRouter binds it to the match. Reconnection grace: a dropped player's pose is saved in its seat before its avatar despawns, and the avatar of the returning client is placed there (`PlayerSpawned` with restored = true).
 
 **Módulo:** [[Modulo Networking|Networking]] · **Namespace:** `AlienFarms.Networking.Player` · **Archivo:** `Assets/Scripts/Networking/Player/NetworkPlayerRoster.cs`
 
@@ -24,6 +24,7 @@ classDiagram
     -CharacterRoster _characters
     -NetworkObject _playerPrefab
     -Transform[] _spawnPoints
+    +event Action~PlayerId, bool~ PlayerSpawned
     +int JoinedCount
     +TryGetRig(PlayerId id, PlayerRig rig) bool
     +RespawnAll() void
@@ -50,7 +51,10 @@ classDiagram
 ```
 
 ## Usa
-[[CharacterDefinition]], [[CharacterRoster]], [[ConnectionPayload]], [[GameEvents]], [[IPlayerRoster]], [[NetworkPlayer]], [[NetworkRuntimeAnchor]], [[NetworkSceneLoader]], [[PlayerId]], [[PlayerRig]], [[PlayerSlot]], [[ServerSlotDirectory]]
+[[CharacterDefinition]], [[CharacterPickRules]], [[CharacterRoster]], [[DropReason]], [[GameEvents]], [[IPlayerRoster]], [[NetworkPlayer]], [[NetworkRuntimeAnchor]], [[NetworkSceneLoader]], [[PlayerGrabber]], [[PlayerId]], [[PlayerRig]], [[PlayerSlot]], [[ServerSlotDirectory]]
+
+## Usado por
+[[ReconnectGraceCoordinator]]
 
 ## Eventos que publica
 [[Eventos GameEvents#OnPlayerCharacterAssigned|OnPlayerCharacterAssigned]], [[Eventos GameEvents#OnPlayerJoined|OnPlayerJoined]], [[Eventos GameEvents#OnPlayerLeft|OnPlayerLeft]]

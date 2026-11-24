@@ -12,7 +12,7 @@ tags: [clase, modulo/networking]
 **Módulo:** [[Modulo Networking|Networking]] · **Namespace:** `AlienFarms.Networking.Session` · **Archivo:** `Assets/Scripts/Networking/Session/IConnectionStrategy.cs`
 
 ## Derivados / implementaciones
-[[DirectConnection]]
+[[DirectConnection]], [[RelaySessionConnection]]
 
 ## Diagrama
 ```mermaid
@@ -27,4 +27,4 @@ classDiagram
 ```
 
 ## Usado por
-[[DevConnectionPanel]], [[DirectConnection]], [[NetworkRootLifetime]], [[NetworkRuntimeAnchor]], [[Status]]
+[[DevConnectionPanel]], [[DirectConnection]], [[NetworkRootLifetime]], [[NetworkRuntimeAnchor]], [[RelaySessionConnection]], [[Status]]

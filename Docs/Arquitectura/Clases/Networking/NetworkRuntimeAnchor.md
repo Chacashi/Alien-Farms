@@ -28,12 +28,12 @@ classDiagram
     +NetworkSceneLoader SceneLoader
     +IConnectionStrategy Connection
     +NetworkPlayer LocalPlayer
+    +Camera ViewCamera
+    +PlayerStatsLedger PlayerStats
     +bool IsServer
     +bool IsPureClient
     +Publish(NetworkRootLifetime root) void
-    +SetLocalPlayer(NetworkPlayer player) void
-    +ClearLocalPlayer(NetworkPlayer player) void
-    ...3 más
+    ...12 más
   }
   class ConnectionApprovalHandler:::external
   <<MonoBehaviour>> ConnectionApprovalHandler
@@ -44,18 +44,20 @@ classDiagram
   <<MonoBehaviour>> NetworkRootLifetime
   class NetworkSceneLoader:::external
   <<MonoBehaviour>> NetworkSceneLoader
+  class PlayerStatsLedger:::external
   class ServerSlotDirectory:::external
   NetworkRuntimeAnchor --> ConnectionApprovalHandler
   NetworkRuntimeAnchor --> IConnectionStrategy
   NetworkRuntimeAnchor --> NetworkPlayer
   NetworkRuntimeAnchor --> NetworkRootLifetime
   NetworkRuntimeAnchor --> NetworkSceneLoader
+  NetworkRuntimeAnchor --> PlayerStatsLedger
   NetworkRuntimeAnchor --> ServerSlotDirectory
   classDef external fill:#eee,stroke:#999,stroke-dasharray: 4 3,color:#555
 ```
 
 ## Usa
-[[ConnectionApprovalHandler]], [[IConnectionStrategy]], [[NetworkPlayer]], [[NetworkRootLifetime]], [[NetworkSceneLoader]], [[ServerSlotDirectory]]
+[[ConnectionApprovalHandler]], [[IConnectionStrategy]], [[NetworkPlayer]], [[NetworkRootLifetime]], [[NetworkSceneLoader]], [[PlayerId]], [[PlayerPrefsPendingStatsStore]], [[PlayerStatsLedger]], [[ServerSlotDirectory]]
 
 ## Usado por
-[[DevConnectionPanel]], [[LocalPlayerRigLookup]], [[NetworkPlayer]], [[NetworkPlayerRoster]], [[NetworkRootLifetime]], [[OnlineMatchBootstrap]], [[OnlineMatchExitHandler]], [[Status]]
+[[CloudSaveStatsService]], [[DevConnectionPanel]], [[LobbyStateSpawner]], [[LocalPlayerRigLookup]], [[NetworkAnimalPoolHandler]], [[NetworkBombPoolHandler]], [[NetworkCarriable]], [[NetworkLobbyState]], [[NetworkMatchExit]], [[NetworkNameTag]], [[NetworkPlayer]], [[NetworkPlayerRoster]], [[NetworkRootLifetime]], [[NetworkSpawnRegistry]], [[OnlineMatchBootstrap]], [[OnlineMatchExitHandler]], [[OnlineMatchStatsRecorder]], [[OnlineSessionService]], [[PoolStatsView]], [[ReconnectGraceCoordinator]], [[SessionExit]], [[Status]]

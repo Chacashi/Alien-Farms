@@ -11,6 +11,9 @@ tags: [clase, modulo/items]
 
 **Módulo:** [[Modulo Items|Items]] · **Namespace:** `AlienFarms.Items` · **Archivo:** `Assets/Scripts/Items/IBombNetworkHook.cs`
 
+## Derivados / implementaciones
+[[NetworkSpawnRegistry]]
+
 ## Diagrama
 ```mermaid
 classDiagram
@@ -27,4 +30,4 @@ classDiagram
 [[Bomb]]
 
 ## Usado por
-[[Bomb]], [[BombSpawner]]
+[[Bomb]], [[BombSpawner]], [[NetworkSpawnRegistry]]

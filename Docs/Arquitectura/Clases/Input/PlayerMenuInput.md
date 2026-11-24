@@ -33,7 +33,7 @@ classDiagram
     +event Action~int~ VerticalStep
     +event Action Submitted
     +event Action Canceled
-    ...6 más
+    ...7 más
   }
   class AxisStepDetector:::external
   class DeferredDisableGate:::external
@@ -55,7 +55,7 @@ classDiagram
 [[AxisStepDetector]], [[DeferredDisableGate]], [[GameEvents]], [[InputMapNames]], [[MenuSettings]], [[PlayerId]], [[PlayerIdentity]], [[PlayerInputHandler]]
 
 ## Usado por
-[[MenuFlowController]], [[MenuLobby]], [[PlayerMenuRouter]], [[PlayerRig]]
+[[MenuFlowController]], [[MenuLobby]], [[OnlineMenuController]], [[PlayerMenuRouter]], [[PlayerRig]]
 
 ## Eventos que publica
 [[Eventos GameEvents#OnMenuCancelPressed|OnMenuCancelPressed]], [[Eventos GameEvents#OnPlayerDeviceLost|OnPlayerDeviceLost]], [[Eventos GameEvents#OnPlayerDeviceRegained|OnPlayerDeviceRegained]]

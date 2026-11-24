@@ -39,4 +39,4 @@ classDiagram
 [[CharacterDefinition]], [[LocalizationKeys]], [[LocalizedStringBinding]], [[PlayerId]], [[PlayerSlotState]]
 
 ## Usado por
-[[CharacterSelectView]]
+[[CharacterSelectView]], [[OnlineSeatView]]

@@ -7,7 +7,7 @@ tags: [clase, modulo/core]
 ---
 # MatchResult
 
-> Final outcome of a round. `Winner` is `PlayerId.None` on a draw.
+> Final outcome of a round. `Winner` is `PlayerId.None` on a draw. On a `MatchEndReason.Forfeit` the winner is the player who stayed, not the score leader.
 
 **Módulo:** [[Modulo Core|Core]] · **Namespace:** `AlienFarms.Core` · **Archivo:** `Assets/Scripts/Core/MatchResult.cs`
 
@@ -20,14 +20,17 @@ classDiagram
     +PlayerId Winner
     +int Player1Score
     +int Player2Score
+    +MatchEndReason EndReason
     +bool IsDraw
+    +bool IsForfeit
+    +PlayerId Forfeiter
     +GetScore(PlayerId id) int
   }
   classDef external fill:#eee,stroke:#999,stroke-dasharray: 4 3,color:#555
 ```
 
 ## Usa
-[[PlayerId]]
+[[MatchEndReason]], [[PlayerId]]
 
 ## Usado por
-[[GameEvents]], [[MatchResultsView]], [[MatchScore]], [[ResultsMenuController]]
+[[GameEvents]], [[MatchResultRules]], [[MatchResultsView]], [[MatchScore]], [[MatchStatsTally]], [[OnlineMatchStatsRecorder]], [[PlayerStatsRules]], [[ResultsMenuController]], [[ResultsState]], [[ScoreBoard]]

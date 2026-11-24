@@ -34,4 +34,4 @@ classDiagram
 [[DropReason]], [[PlayerId]]
 
 ## Usado por
-[[IThrowable]], [[PlayerAim]], [[PlayerGrabber]]
+[[IThrowable]], [[Mode]], [[NetworkAnimal]], [[NetworkBomb]], [[NetworkCarriable]], [[NetworkCarry]], [[PlayerAim]], [[PlayerGrabber]]

@@ -28,4 +28,4 @@ classDiagram
 `Empty`, `Choosing`, `Ready`
 
 ## Usado por
-[[CharacterSelectView]], [[MenuFlowController]], [[PlayerSlotStatusView]]
+[[CharacterSelectView]], [[MenuFlowController]], [[OnlineSeatView]], [[PlayerSlotStatusView]]

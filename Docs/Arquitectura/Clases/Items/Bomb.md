@@ -24,6 +24,7 @@ classDiagram
     -SphereCollider _collider
     -GameObject _armedIndicator
     +event Action~Bomb~ StateChanged
+    +event Action~Bomb, Vector3, float~ Detonated
     +BombState State
     +SimulationRole Role
     +PlayerId Thrower
@@ -32,8 +33,7 @@ classDiagram
     +ThrowSettings ThrowSettings
     +float CollisionRadius
     +float HalfHeight
-    +PlayerId Holder
-    ...11 más
+    ...12 más
   }
   class BombData:::external
   <<ScriptableObject>> BombData
@@ -57,7 +57,7 @@ classDiagram
 [[Animal]], [[BombBlastRules]], [[BombData]], [[BombState]], [[DropReason]], [[GameEvents]], [[IBombNetworkHook]], [[IScareable]], [[ISimulationRoleTarget]], [[IStunnable]], [[IThrowable]], [[LayerNames]], [[PlayerId]], [[PlayerIdentity]], [[SimulationRole]], [[ThrowSettings]]
 
 ## Usado por
-[[Animal]], [[AnimalSpawner]], [[BombData]], [[BombSfxPlayer]], [[BombSpawner]], [[GameEvents]], [[IBombNetworkHook]], [[LayerNames]], [[PlayerGrabber]]
+[[Animal]], [[AnimalSpawner]], [[BombData]], [[BombSfxPlayer]], [[BombSpawner]], [[GameEvents]], [[IBombNetworkHook]], [[LayerNames]], [[NetworkBomb]], [[NetworkBombPoolHandler]], [[NetworkSpawnRegistry]], [[PlayerGrabber]]
 
 ## Eventos que publica
 [[Eventos GameEvents#OnBombArmed|OnBombArmed]], [[Eventos GameEvents#OnBombDespawned|OnBombDespawned]], [[Eventos GameEvents#OnBombDetonated|OnBombDetonated]], [[Eventos GameEvents#OnBombGrabbed|OnBombGrabbed]], [[Eventos GameEvents#OnBombSpawned|OnBombSpawned]]

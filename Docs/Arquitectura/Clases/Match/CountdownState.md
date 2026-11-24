@@ -30,7 +30,7 @@ classDiagram
 ```
 
 ## Usa
-[[GameEvents]], [[IMatchContext]], [[MatchPhase]], [[MatchState]]
+[[GameEvents]], [[IMatchContext]], [[MatchPhase]], [[MatchState]], [[Phase]]
 
 ## Usado por
 [[MatchStateMachine]]

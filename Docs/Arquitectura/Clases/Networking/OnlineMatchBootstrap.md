@@ -7,7 +7,7 @@ tags: [clase, modulo/networking]
 ---
 # OnlineMatchBootstrap
 
-> Online setup of the shared match objects. Pure client: the match is the server's, so MatchManager is disabled and the spawners and obstacle field become Replicas (state arrives from the network). On the server everything stays Authority. Every instance: the match exit buttons use the `OnlineMatchExitHandler`. Pure client: when this client is dropped (host left, kicked) the NetworkRoot is torn down and the main menu loaded on the next frame, leaving the reason on the anchor for the menu. Lives under OnlineModeRoot: the GameModeRouter activates it inside its own Awake, so this Awake runs before the obstacle field's Awake and the spawners' Start.
+> Online setup of the shared match objects. Pure client: the match is the server's, so MatchManager is disabled and the spawners and obstacle field become Replicas (state arrives from the network). On the server everything stays Authority. Every instance: the match exit buttons use the `OnlineMatchExitHandler`. Pure client: when this client is dropped (host left, kicked) the NetworkRoot is torn down and the main menu loaded on the next frame, leaving the reason on the anchor for the menu. Host: when its server stops while in gameplay (session Leave, dev shutdown) the same exit runs, so the host is never left in a dead gameplay scene. Lives under OnlineModeRoot: the GameModeRouter activates it inside its own Awake, so this Awake runs before the obstacle field's Awake and the spawners' Start.
 
 **Módulo:** [[Modulo Networking|Networking]] · **Namespace:** `AlienFarms.Networking.Match` · **Archivo:** `Assets/Scripts/Networking/Match/OnlineMatchBootstrap.cs`
 
@@ -27,6 +27,7 @@ classDiagram
     -AnimalSpawner _animalSpawner
     -BombSpawner _bombSpawner
     -ObstacleField _obstacles
+    -OnlineMatchStatsRecorder _stats
     +SimulationRole AppliedRole
   }
   class AnimalSpawner:::external
@@ -43,6 +44,8 @@ classDiagram
   <<ScriptableObject>> NetworkRuntimeAnchor
   class ObstacleField:::external
   <<MonoBehaviour>> ObstacleField
+  class OnlineMatchStatsRecorder:::external
+  <<MonoBehaviour>> OnlineMatchStatsRecorder
   OnlineMatchBootstrap --> AnimalSpawner
   OnlineMatchBootstrap --> BombSpawner
   OnlineMatchBootstrap --> MatchExit
@@ -50,8 +53,9 @@ classDiagram
   OnlineMatchBootstrap --> MatchSession
   OnlineMatchBootstrap --> NetworkRuntimeAnchor
   OnlineMatchBootstrap --> ObstacleField
+  OnlineMatchBootstrap --> OnlineMatchStatsRecorder
   classDef external fill:#eee,stroke:#999,stroke-dasharray: 4 3,color:#555
 ```
 
 ## Usa
-[[AnimalSpawner]], [[BombSpawner]], [[DisconnectReasons]], [[MatchExit]], [[MatchManager]], [[MatchSession]], [[NetworkRootLifetime]], [[NetworkRuntimeAnchor]], [[ObstacleField]], [[OnlineMatchExitHandler]], [[SceneFlow]], [[SimulationRole]]
+[[AnimalSpawner]], [[BombSpawner]], [[DisconnectReasons]], [[MatchExit]], [[MatchManager]], [[MatchSession]], [[NetworkRootLifetime]], [[NetworkRuntimeAnchor]], [[ObstacleField]], [[OnlineMatchExitHandler]], [[OnlineMatchStatsRecorder]], [[SceneFlow]], [[SimulationRole]]

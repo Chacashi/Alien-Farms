@@ -31,4 +31,4 @@ classDiagram
 `Inactive`, `Wandering`, `Fleeing`, `Carried`, `Captured`, `Airborne`
 
 ## Usado por
-[[Animal]], [[AnimalSpawner]], [[CaptureRules]]
+[[Animal]], [[AnimalNetState]], [[AnimalSpawner]], [[CaptureRules]], [[MatchScore]], [[NetworkAnimal]]

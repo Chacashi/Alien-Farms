@@ -7,6 +7,8 @@ fecha: 2026-11-12
 
 # Diseño de la tarea 2.2: sala online en MainMenu
 
+> **Espectador retirado (Bloque 0, 2026-11-24).** El online quedó en dos plazas jugables, P1 y P2 (`NetworkSettings.SessionCapacity = 2`, sesión UGS de 2). Una tercera cuenta recibe «La sala está llena.» (`online.error.session_full`). Las menciones a espectador de este documento (participante `IsSpectator`, fila e insignia de la sala, propiedad de sesión `"spectator"`) ya no existen en el código. Commits `02a0e4a`…`7e17e8d`.
+
 Este diseño baja la fila 2.2 del [[Plan Modo Online]] a clases y cableado concretos. Lo hizo el arquitecto sobre el commit `a9d0c5e`.
 
 ## Decisiones (aprobadas por el usuario el 2026-11-12)

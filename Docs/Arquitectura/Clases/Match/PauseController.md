@@ -51,13 +51,13 @@ classDiagram
 ```
 
 ## Usa
-[[GameEvents]], [[MatchExit]], [[MatchManager]], [[PauseRules]], [[PlayerId]], [[PlayerMenuRouter]], [[SubMenuPanel]]
+[[GameEvents]], [[MatchExit]], [[MatchManager]], [[MatchPhase]], [[PauseRules]], [[PlayerId]], [[PlayerMenuRouter]], [[SubMenuPanel]]
 
 ## Usado por
 [[GameModeRouter]]
 
 ## Eventos que publica
-[[Eventos GameEvents#OnGamePaused|OnGamePaused]], [[Eventos GameEvents#OnGameResumed|OnGameResumed]]
+[[Eventos GameEvents#OnGamePaused|OnGamePaused]], [[Eventos GameEvents#OnGameResumed|OnGameResumed]], [[Eventos GameEvents#OnPauseMenuResumed|OnPauseMenuResumed]]
 
 ## Eventos que escucha
-[[Eventos GameEvents#OnMenuCancelPressed|OnMenuCancelPressed]], [[Eventos GameEvents#OnPauseRequested|OnPauseRequested]], [[Eventos GameEvents#OnPlayerDeviceLost|OnPlayerDeviceLost]], [[Eventos GameEvents#OnPlayerDeviceRegained|OnPlayerDeviceRegained]], [[Eventos GameEvents#OnPlayerLeft|OnPlayerLeft]]
+[[Eventos GameEvents#OnMatchPhaseChanged|OnMatchPhaseChanged]], [[Eventos GameEvents#OnMenuCancelPressed|OnMenuCancelPressed]], [[Eventos GameEvents#OnPauseRequested|OnPauseRequested]], [[Eventos GameEvents#OnPlayerDeviceLost|OnPlayerDeviceLost]], [[Eventos GameEvents#OnPlayerDeviceRegained|OnPlayerDeviceRegained]], [[Eventos GameEvents#OnPlayerLeft|OnPlayerLeft]]

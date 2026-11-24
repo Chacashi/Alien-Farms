@@ -25,10 +25,14 @@ classDiagram
     -PlayerMovement _movement
     -PlayerGrabber _grabber
     -PlayerAim _aim
+    +IPlayerCommandSource ServerCommands
+    +bool IsRemotePaused
     +uint LastAppliedSeq
     +OnNetworkSpawn() void
     +OnNetworkDespawn() void
   }
+  class IPlayerCommandSource:::external
+  <<interface>> IPlayerCommandSource
   class InputCommandBatch:::external
   <<struct>> InputCommandBatch
   class InputCommandBuffer:::external
@@ -45,6 +49,7 @@ classDiagram
   <<MonoBehaviour>> PlayerMovement
   class ThirdPersonCamera:::external
   <<MonoBehaviour>> ThirdPersonCamera
+  NetworkPlayerInput --> IPlayerCommandSource
   NetworkPlayerInput --> InputCommandBatch
   NetworkPlayerInput --> InputCommandBuffer
   NetworkPlayerInput --> NetworkCommandSource
@@ -58,7 +63,7 @@ classDiagram
 ```
 
 ## Usa
-[[InputCommandBatch]], [[InputCommandBuffer]], [[Mode]], [[NetworkCommandSource]], [[NetworkSettings]], [[PlayerAim]], [[PlayerGrabber]], [[PlayerInputCommand]], [[PlayerInputHandler]], [[PlayerMovement]], [[ThirdPersonCamera]]
+[[IPlayerCommandSource]], [[InputCommandBatch]], [[InputCommandBuffer]], [[Mode]], [[NetworkCommandSource]], [[NetworkSettings]], [[PlayerAim]], [[PlayerGrabber]], [[PlayerInputCommand]], [[PlayerInputHandler]], [[PlayerMovement]], [[ThirdPersonCamera]]
 
 ## Usado por
-[[NetworkPlayerMotion]]
+[[Mode]], [[NetworkCarry]], [[NetworkPlayerMotion]]

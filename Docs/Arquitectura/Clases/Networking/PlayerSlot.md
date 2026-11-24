@@ -7,7 +7,7 @@ tags: [clase, modulo/networking]
 ---
 # PlayerSlot
 
-> Server-side record of one player seat. Reconnection fields (`UgsPlayerId`, `DisconnectedAt`, `SavedPosition`, `SavedFacingYaw`) are reserved for week 2 and not used yet.
+> Server-side record of one player seat (plan: PlayerId, UgsPlayerId, ClientId, Name, Character, Connected, DisconnectedAt, SavedPose). A seat whose client dropped keeps `Connected` false and `DisconnectedAt` while it waits for the same `UgsPlayerId` to reconnect (`ServerSlotDirectory.MarkDisconnected`, used from 2.7).
 
 **Módulo:** [[Modulo Networking|Networking]] · **Namespace:** `AlienFarms.Networking.Session` · **Archivo:** `Assets/Scripts/Networking/Session/PlayerSlot.cs`
 
@@ -24,9 +24,12 @@ classDiagram
     +bool Connected
     +FixedString64Bytes UgsPlayerId
     +double DisconnectedAt
+    +bool HasSavedPose
     +Vector3 SavedPosition
     +float SavedFacingYaw
     +bool IsOccupied
+    +bool HasCharacter
+    +bool IsAwaitingReconnect
   }
   classDef external fill:#eee,stroke:#999,stroke-dasharray: 4 3,color:#555
 ```
@@ -35,4 +38,4 @@ classDiagram
 [[PlayerId]]
 
 ## Usado por
-[[ConnectionApprovalHandler]], [[NetworkPlayerRoster]], [[ServerSlotDirectory]]
+[[ApprovalRules]], [[ConnectionApprovalHandler]], [[LobbyRules]], [[LobbySlotEntry]], [[NetworkLobbyState]], [[NetworkPlayer]], [[NetworkPlayerRoster]], [[ReconnectGraceCoordinator]], [[ReconnectGraceRules]], [[SeatGraceRules]], [[ServerSlotDirectory]]

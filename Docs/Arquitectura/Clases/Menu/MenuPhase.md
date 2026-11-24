@@ -21,12 +21,13 @@ classDiagram
     CharacterSelect
     Loading
     SubMenu
+    Online
   }
   classDef external fill:#eee,stroke:#999,stroke-dasharray: 4 3,color:#555
 ```
 
 ## Valores
-`Title`, `CharacterSelect`, `Loading`, `SubMenu`
+`Title`, `CharacterSelect`, `Loading`, `SubMenu`, `Online`
 
 ## Usado por
 [[MenuFlowController]]

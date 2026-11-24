@@ -30,4 +30,4 @@ classDiagram
 `Released`, `Stolen`, `Forced`, `Thrown`, `Stunned`
 
 ## Usado por
-[[Animal]], [[AnimalSfxPlayer]], [[Bomb]], [[GameEvents]], [[IGrabbable]], [[PlayerGrabber]], [[PlayerRig]], [[PlayerStunReceiver]], [[PlayerTackle]]
+[[Animal]], [[AnimalNetState]], [[AnimalSfxPlayer]], [[Bomb]], [[GameEvents]], [[IGrabbable]], [[Mode]], [[NetworkAnimal]], [[NetworkCarry]], [[NetworkPlayerRoster]], [[PlayerGrabber]], [[PlayerRig]], [[PlayerStunReceiver]], [[PlayerTackle]]

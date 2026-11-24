@@ -22,9 +22,10 @@ classDiagram
     <<ScriptableObject>>
     -int _protocolVersion
     -string _environmentName
-    -int _maxPlayers
-    -bool _allowSpectator
     -float _reconnectGraceSeconds
+    -float _hostLeaveNoticeSeconds
+    -bool _autoRejoin
+    -float _autoRejoinRetrySeconds
     -int _inputRedundancy
     -int _inputBufferTarget
     -float _interpolationDelay
@@ -32,11 +33,10 @@ classDiagram
     -float _visualSmoothingRate
     -bool _predictionDefault
     -float _maxRewindSeconds
-    -float _tackleRewindTolerance
-    ...17 más
+    ...44 más
   }
   classDef external fill:#eee,stroke:#999,stroke-dasharray: 4 3,color:#555
 ```
 
 ## Usado por
-[[ConnectionApprovalHandler]], [[DevConnectionPanel]], [[Mode]], [[NetworkPlayerInput]], [[NetworkPlayerMotion]], [[Status]]
+[[ApprovalPolicy]], [[CloudSaveStatsService]], [[ConnectionApprovalHandler]], [[DevConnectionPanel]], [[Mode]], [[NetworkCarriable]], [[NetworkCarry]], [[NetworkLobbyState]], [[NetworkNameTag]], [[NetworkPlayerInput]], [[NetworkPlayerMotion]], [[NetworkRootLifetime]], [[OnlineMatchStatsRecorder]], [[OnlineSessionService]], [[PlayerStatsSync]], [[PoolStatsView]], [[ReconnectGraceCoordinator]], [[RelaySessionConnection]], [[SessionExit]], [[Status]]

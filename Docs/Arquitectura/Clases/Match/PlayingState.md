@@ -7,7 +7,7 @@ tags: [clase, modulo/match]
 ---
 # PlayingState
 
-> Round in progress: timer runs (1 Hz event) and score changes are published.
+> Round in progress: timer runs (1 Hz event) and score changes are published. A missing player either aborts the round (local) or ends it as a forfeit won by the player who stayed (`IMatchContext.ForfeitOnPlayerMissing`).
 
 **Módulo:** [[Modulo Match|Match]] · **Namespace:** `AlienFarms.Match` · **Archivo:** `Assets/Scripts/Match/PlayingState.cs`
 
@@ -30,7 +30,7 @@ classDiagram
 ```
 
 ## Usa
-[[GameEvents]], [[IMatchContext]], [[MatchPhase]], [[MatchState]], [[MatchTimer]]
+[[GameEvents]], [[IMatchContext]], [[MatchPhase]], [[MatchResultRules]], [[MatchState]], [[MatchTimer]], [[Phase]], [[PlayerId]]
 
 ## Usado por
 [[MatchStateMachine]]

@@ -17,6 +17,7 @@ classDiagram
     -SphereCollider _collider
     -GameObject _armedIndicator
     +event Action~Bomb~ StateChanged
+    +event Action~Bomb, Vector3, float~ Detonated
     +BombState State
     +SimulationRole Role
     +PlayerId Thrower
@@ -25,8 +26,7 @@ classDiagram
     +ThrowSettings ThrowSettings
     +float CollisionRadius
     +float HalfHeight
-    +PlayerId Holder
-    ...11 más
+    ...12 más
   }
   class BombBlastRules {
     <<static>>
@@ -66,11 +66,14 @@ classDiagram
     -Transform _bombsContainer
     +int ActiveCount
     +SimulationRole Role
+    +int PoolCountActive
+    +int PoolCountInactive
+    +int PoolCountAll
+    +int PrewarmCount
     +ResetBombs() void
     +SetSimulationRole(SimulationRole role) void
     +SetNetworkHook(IBombNetworkHook hook) void
-    +GetForReplica(Vector3 position) Bomb
-    +ReleaseToPool(Bomb bomb) void
+    ...2 más
   }
   class BombState {
     <<enumeration>>

@@ -33,4 +33,4 @@ classDiagram
 ```
 
 ## Usado por
-[[IMatchContext]], [[MatchManager]]
+[[IMatchContext]], [[MatchManager]], [[NetworkMatchState]]

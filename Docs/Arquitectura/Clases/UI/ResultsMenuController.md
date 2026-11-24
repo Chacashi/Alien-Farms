@@ -7,7 +7,7 @@ tags: [clase, modulo/ui]
 ---
 # ResultsMenuController
 
-> Gives the results menu to the winner (Player 1 on a draw) once the match accepts a rematch (`MatchManager.IsRematchReady`, the same clock that gates the rematch), so a button held at the end of the round does not click it. Handed to the other player if the owner loses its device; released when leaving Results.
+> Gives the results menu to the winner (Player 1 on a draw) once Results accepts input (`MatchManager.IsResultsInputReady`, the same clock that gates the rematch), so a button held at the end of the round does not click it. Handed to the other player if the owner loses its device; released when leaving Results. The rematch button (_firstSelected) looks disabled while the rematch is not ready or the match is suspended (online: a player's seat awaits its reconnection).
 
 **Módulo:** [[Modulo UI|UI]] · **Namespace:** `AlienFarms.UI` · **Archivo:** `Assets/Scripts/UI/ResultsMenuController.cs`
 
@@ -35,7 +35,7 @@ classDiagram
 ```
 
 ## Usa
-[[GameEvents]], [[MatchManager]], [[MatchPhase]], [[MatchResult]], [[PlayerId]], [[PlayerMenuRouter]]
+[[GameEvents]], [[MatchManager]], [[MatchPhase]], [[MatchResult]], [[PlayerConnectionStatus]], [[PlayerId]], [[PlayerMenuRouter]]
 
 ## Eventos que escucha
-[[Eventos GameEvents#OnMatchEnded|OnMatchEnded]], [[Eventos GameEvents#OnMatchPhaseChanged|OnMatchPhaseChanged]], [[Eventos GameEvents#OnPlayerDeviceLost|OnPlayerDeviceLost]], [[Eventos GameEvents#OnPlayerDeviceRegained|OnPlayerDeviceRegained]]
+[[Eventos GameEvents#OnMatchEnded|OnMatchEnded]], [[Eventos GameEvents#OnMatchPhaseChanged|OnMatchPhaseChanged]], [[Eventos GameEvents#OnPlayerConnectionChanged|OnPlayerConnectionChanged]], [[Eventos GameEvents#OnPlayerDeviceLost|OnPlayerDeviceLost]], [[Eventos GameEvents#OnPlayerDeviceRegained|OnPlayerDeviceRegained]]

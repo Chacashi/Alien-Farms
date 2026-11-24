@@ -7,7 +7,7 @@ tags: [clase, modulo/networking]
 ---
 # ServerSlotDirectory
 
-> Server-side seat table: which client holds Player1 / Player2. Plain C#, owned by the approval handler and shared with the roster through the runtime anchor. Version 1.5: a seat is freed as soon as its client disconnects.
+> Server-side seat table: which client holds Player1 / Player2. Plain C#, owned by the approval handler and shared with the roster and the room through the runtime anchor. A seat is freed with `Release`, or kept for its player with `MarkDisconnected` until it reconnects (`ApprovalOutcome.Reconnect`) or `ReleaseExpired` drops it (grace, from 2.7).
 
 **Módulo:** [[Modulo Networking|Networking]] · **Namespace:** `AlienFarms.Networking.Session` · **Archivo:** `Assets/Scripts/Networking/Session/ServerSlotDirectory.cs`
 
@@ -16,12 +16,20 @@ tags: [clase, modulo/networking]
 classDiagram
   direction LR
   class ServerSlotDirectory {
+    +ReadOnlySpan~PlayerSlot~ Seats
     +int ConnectedCount
-    +TryAssign(ulong clientId, ConnectionPayload payload, PlayerId id) bool
+    +int CountAwaiting
+    +TryApply(ApprovalDecision decision, ulong clientId, ConnectionPayload payload) bool
+    +TryAssign(PlayerId id, ulong clientId, ConnectionPayload payload) bool
+    +TryReconnect(PlayerId id, ulong clientId, ConnectionPayload payload) bool
+    +TrySetCharacter(PlayerId id, byte characterIndex) bool
+    +TrySavePose(PlayerId id, Vector3 position, float facingYaw) bool
+    +ClearSavedPose(PlayerId id) bool
+    +TryFindAwaiting(FixedString64Bytes ugsPlayerId, PlayerId id) bool
+    +IsUgsIdInUse(FixedString64Bytes ugsPlayerId) bool
     +TryGetByClient(ulong clientId, PlayerSlot slot) bool
     +TryGet(PlayerId id, PlayerSlot slot) bool
-    +Release(ulong clientId, PlayerId id) bool
-    +Clear() void
+    ...5 más
   }
   class PlayerSlot:::external
   <<struct>> PlayerSlot
@@ -30,7 +38,7 @@ classDiagram
 ```
 
 ## Usa
-[[ConnectionPayload]], [[PlayerId]], [[PlayerSlot]]
+[[ApprovalDecision]], [[ApprovalOutcome]], [[ApprovalRules]], [[ConnectionPayload]], [[PlayerId]], [[PlayerSlot]]
 
 ## Usado por
-[[ConnectionApprovalHandler]], [[NetworkPlayerRoster]], [[NetworkRuntimeAnchor]]
+[[ApprovalPolicy]], [[ConnectionApprovalHandler]], [[NetworkLobbyState]], [[NetworkPlayerRoster]], [[NetworkRuntimeAnchor]], [[ReconnectGraceCoordinator]]

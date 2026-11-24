@@ -27,6 +27,7 @@ classDiagram
     -Transform _animalsContainer
     +int ActiveCount
     +SimulationRole Role
+    +int TypeCount
     +SetSimulationRole(SimulationRole role) void
     +SetNetworkHook(IAnimalNetworkHook hook) void
     +TryGetTypeIndex(AnimalData data, int typeIndex) bool
@@ -61,4 +62,4 @@ classDiagram
 [[Animal]], [[AnimalData]], [[AnimalSpawnEntry]], [[AnimalSpawnSettings]], [[AnimalState]], [[AnimalSteering]], [[AnimalTypePool]], [[AnimalZone]], [[Bomb]], [[IAnimalNetworkHook]], [[ISimulationRoleTarget]], [[IZoneResolver]], [[LayerNames]], [[PlayerZoneRegistry]], [[SimulationRole]]
 
 ## Usado por
-[[MatchManager]], [[OnlineMatchBootstrap]]
+[[MatchManager]], [[NetworkAnimalPoolHandler]], [[NetworkSpawnRegistry]], [[OnlineMatchBootstrap]]

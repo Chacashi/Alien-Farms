@@ -24,6 +24,10 @@ classDiagram
     +int JoinedPlayerCount
     +MatchTimer Timer
     +MatchScore Score
+    +bool ForfeitOnPlayerMissing
+    +PlayerId ForfeitWinner
+    +IsPlayerPresent(PlayerId id) bool
+    +EndByForfeit(PlayerId winner) void
     +ChangeState(MatchPhase next) void
     +ResetRound(bool respawnPlayers) void
     +SetPlayerControlsEnabled(bool enabled) void
@@ -39,7 +43,7 @@ classDiagram
 ```
 
 ## Usa
-[[MatchPhase]], [[MatchScore]], [[MatchSettings]], [[MatchTimer]]
+[[MatchPhase]], [[MatchScore]], [[MatchSettings]], [[MatchTimer]], [[PlayerId]]
 
 ## Usado por
 [[CountdownState]], [[MatchManager]], [[MatchState]], [[MatchStateMachine]], [[PlayingState]], [[ResultsState]], [[WaitingForPlayersState]]

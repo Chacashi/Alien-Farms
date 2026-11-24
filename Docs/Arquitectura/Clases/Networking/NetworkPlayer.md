@@ -28,16 +28,17 @@ classDiagram
     -PlayerGrabber _grabber
     -PlayerStunReceiver _stunReceiver
     -NetworkPlayerMotion _motion
+    -NetworkCarry _carry
     -PlayerInput _playerInput
     -Camera _camera
     -AudioListener _audioListener
-    -Behaviour[] _ownerOnlyBehaviours
-    ...9 más
+    ...17 más
   }
   class CharacterDefinition:::external
   <<ScriptableObject>> CharacterDefinition
   class CharacterRoster:::external
   <<ScriptableObject>> CharacterRoster
+  class NetworkCarry:::external
   class NetworkPlayerMotion:::external
   class NetworkRuntimeAnchor:::external
   <<ScriptableObject>> NetworkRuntimeAnchor
@@ -55,6 +56,7 @@ classDiagram
   <<MonoBehaviour>> PlayerStunReceiver
   NetworkPlayer --> CharacterDefinition
   NetworkPlayer --> CharacterRoster
+  NetworkPlayer --> NetworkCarry
   NetworkPlayer --> NetworkPlayerMotion
   NetworkPlayer --> NetworkRuntimeAnchor
   NetworkPlayer --> PlayerAppearance
@@ -67,10 +69,13 @@ classDiagram
 ```
 
 ## Usa
-[[CharacterDefinition]], [[CharacterRoster]], [[ConnectionPayload]], [[GameEvents]], [[NetworkPlayerMotion]], [[NetworkRuntimeAnchor]], [[PlayerAppearance]], [[PlayerGrabber]], [[PlayerId]], [[PlayerIdentity]], [[PlayerMovement]], [[PlayerRig]], [[PlayerStunReceiver]], [[SimulationRole]], [[ThirdPersonCamera]]
+[[CharacterDefinition]], [[CharacterRoster]], [[DisplayNameSanitizer]], [[GameEvents]], [[MatchPhase]], [[NetworkCarry]], [[NetworkPlayerMotion]], [[NetworkRuntimeAnchor]], [[PlayerAppearance]], [[PlayerGrabber]], [[PlayerId]], [[PlayerIdentity]], [[PlayerMovement]], [[PlayerRig]], [[PlayerSlot]], [[PlayerStunReceiver]], [[SimulationRole]], [[ThirdPersonCamera]]
 
 ## Usado por
-[[LocalPlayerRigLookup]], [[NetworkPlayerRoster]], [[NetworkRuntimeAnchor]]
+[[CarriableOwnerTint]], [[LocalPlayerRigLookup]], [[NetworkCarriable]], [[NetworkMatchExit]], [[NetworkNameTag]], [[NetworkPlayerRoster]], [[NetworkRuntimeAnchor]], [[OnlineMatchExitHandler]], [[OnlineMatchStatsRecorder]]
 
 ## Eventos que publica
 [[Eventos GameEvents#OnPlayerCharacterAssigned|OnPlayerCharacterAssigned]], [[Eventos GameEvents#OnPlayerJoined|OnPlayerJoined]], [[Eventos GameEvents#OnPlayerLeft|OnPlayerLeft]]
+
+## Eventos que escucha
+[[Eventos GameEvents#OnMatchPhaseChanged|OnMatchPhaseChanged]]

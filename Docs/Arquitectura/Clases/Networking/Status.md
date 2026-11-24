@@ -29,7 +29,7 @@ classDiagram
 `NoRoot`, `Offline`, `Starting`, `Hosting`, `Connecting`, `Connected`
 
 ## Usa
-[[CharacterRoster]], [[ConnectionPayload]], [[DirectConnection]], [[GameMode]], [[IConnectionStrategy]], [[MatchSession]], [[NetworkRootLifetime]], [[NetworkRuntimeAnchor]], [[NetworkSceneLoader]], [[NetworkSettings]], [[SceneFlow]], [[SceneNames]]
+[[ConnectionPayload]], [[DirectConnection]], [[DisplayNameResolver]], [[GameMode]], [[IConnectionStrategy]], [[MatchSession]], [[NetworkRootLifetime]], [[NetworkRuntimeAnchor]], [[NetworkSceneLoader]], [[NetworkSettings]], [[OnlineLobbyChannel]], [[OnlineParticipant]], [[OnlineSessionChannel]], [[OnlineSessionStatus]], [[SceneFlow]], [[SceneNames]], [[UgsBootstrapper]]
 
 ## Usado por
-[[DevConnectionPanel]]
+[[DevConnectionPanel]], [[LobbyStateSpawner]], [[MenuFlowController]], [[NetworkSeatPresence]], [[OnlineMenuController]], [[OnlineSessionChannel]], [[OnlineSessionService]], [[OnlineSessionSfxPlayer]], [[PlayerProgressChannel]], [[PlayerStatsSync]], [[PresenceChange]], [[ReconnectGraceRules]], [[SeatPresence]], [[SeatPresenceRules]], [[SessionExit]]

@@ -26,11 +26,14 @@ classDiagram
     -Transform _bombsContainer
     +int ActiveCount
     +SimulationRole Role
+    +int PoolCountActive
+    +int PoolCountInactive
+    +int PoolCountAll
+    +int PrewarmCount
     +ResetBombs() void
     +SetSimulationRole(SimulationRole role) void
     +SetNetworkHook(IBombNetworkHook hook) void
-    +GetForReplica(Vector3 position) Bomb
-    +ReleaseToPool(Bomb bomb) void
+    ...2 más
   }
   class AnimalZone:::external
   <<MonoBehaviour>> AnimalZone
@@ -62,7 +65,7 @@ classDiagram
 [[Animal]], [[AnimalZone]], [[Bomb]], [[BombData]], [[BombPlacement]], [[BombSpawnSchedule]], [[BombSpawnSettings]], [[BombState]], [[GameEvents]], [[IBombNetworkHook]], [[IRandomSource]], [[ISimulationRoleTarget]], [[LayerNames]], [[MatchPhase]], [[SimulationRole]], [[SystemRandomSource]]
 
 ## Usado por
-[[MatchManager]], [[OnlineMatchBootstrap]]
+[[MatchManager]], [[NetworkBombPoolHandler]], [[NetworkSpawnRegistry]], [[OnlineMatchBootstrap]]
 
 ## Eventos que escucha
 [[Eventos GameEvents#OnMatchPhaseChanged|OnMatchPhaseChanged]]

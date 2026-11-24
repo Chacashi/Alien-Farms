@@ -45,4 +45,4 @@ classDiagram
 [[AnimalSpawnEntry]]
 
 ## Usado por
-[[AnimalSpawner]]
+[[AnimalSpawner]], [[NetworkSpawnRegistry]], [[OnlineMatchStatsRecorder]], [[PenInventoryView]]

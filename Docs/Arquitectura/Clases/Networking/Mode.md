@@ -26,7 +26,7 @@ classDiagram
 `Idle`, `OwnerSender`, `ServerReceiver`
 
 ## Usa
-[[InputCommandBatch]], [[InputCommandBuffer]], [[NetworkCommandSource]], [[NetworkSettings]], [[PlayerAim]], [[PlayerGrabber]], [[PlayerInputCommand]], [[PlayerInputHandler]], [[PlayerMovement]], [[ThirdPersonCamera]]
+[[IPlayerCommandSource]], [[InputCommandBatch]], [[InputCommandBuffer]], [[NetworkCommandSource]], [[NetworkSettings]], [[PlayerAim]], [[PlayerGrabber]], [[PlayerInputCommand]], [[PlayerInputHandler]], [[PlayerMovement]], [[ThirdPersonCamera]]
 
 ## Usado por
-[[GameModeRouter]], [[LanguageSelector]], [[MatchSession]], [[NetworkPlayerInput]]
+[[GameModeRouter]], [[JoinPromptView]], [[LanguageSelector]], [[MatchSession]], [[NetworkCarry]], [[NetworkPlayerInput]], [[OnlinePanelView]], [[SaveStatusBadgeView]]

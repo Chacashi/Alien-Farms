@@ -24,4 +24,4 @@ classDiagram
 ```
 
 ## Usado por
-[[CharacterCardView]], [[CountdownView]], [[MatchResultsView]], [[PauseMenuView]], [[PlayerSlotStatusView]]
+[[CharacterCardView]], [[ConnectionStatusView]], [[CountdownView]], [[MatchResultsView]], [[OnlinePanelView]], [[OnlineSeatView]], [[PauseMenuView]], [[PlayerSlotStatusView]], [[RivalStatsView]], [[SaveStatusBadgeView]], [[TitleStatsView]]

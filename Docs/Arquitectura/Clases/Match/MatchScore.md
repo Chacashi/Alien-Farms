@@ -21,6 +21,8 @@ classDiagram
     +GetCountByType(PlayerId id, AnimalData type) int
     +TryAdd(PlayerId zoneOwner, object animal, int points, PlayerId movedFrom) bool
     +TryAdd(PlayerId zoneOwner, object animal, int points, object typeKey, PlayerId movedFrom) bool
+    +TryCapture(MatchPhase phase, AnimalState state, PlayerId zoneOwner, object animal, int points, object typeKey, PlayerId movedFrom) bool
+    +TryRelease(MatchPhase phase, PlayerId zoneOwner, object animal) bool
     +TryRemove(PlayerId zoneOwner, object animal) bool
     +Reset() void
     +Evaluate() MatchResult
@@ -29,7 +31,7 @@ classDiagram
 ```
 
 ## Usa
-[[AnimalData]], [[MatchResult]], [[PlayerId]]
+[[AnimalData]], [[AnimalState]], [[CaptureRules]], [[MatchPhase]], [[MatchResult]], [[PlayerId]]
 
 ## Usado por
 [[IMatchContext]], [[MatchManager]]

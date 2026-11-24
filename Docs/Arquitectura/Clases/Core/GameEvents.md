@@ -23,20 +23,20 @@ classDiagram
     +event Action~PlayerId, float~ OnPauseHoldProgress$
     +event Action~PlayerId~ OnGamePaused$
     +event Action~PlayerId~ OnGameResumed$
+    +event Action~PlayerId~ OnPauseMenuResumed$
     +event Action~PlayerId~ OnMenuCancelPressed$
+    +event Action~PlayerId~ OnCharacterPickConfirmed$
+    +event Action~PlayerId~ OnCharacterPickReleased$
     +event Action~PlayerId~ OnPlayerDeviceLost$
     +event Action~PlayerId~ OnPlayerDeviceRegained$
     +event Action~PlayerId, CharacterDefinition~ OnPlayerCharacterAssigned$
-    +event Action~PlayerId, Animal~ OnAnimalGrabbed$
-    +event Action~PlayerId, Animal, DropReason~ OnAnimalDropped$
-    +event Action~PlayerId, Animal~ OnAnimalCaptured$
-    ...45 más
+    ...52 más
   }
   classDef external fill:#eee,stroke:#999,stroke-dasharray: 4 3,color:#555
 ```
 
 ## Usa
-[[Animal]], [[Bomb]], [[CharacterDefinition]], [[DropReason]], [[MatchPhase]], [[MatchResult]], [[PlayerId]]
+[[Animal]], [[Bomb]], [[CharacterDefinition]], [[DropReason]], [[MatchPhase]], [[MatchResult]], [[PenInventorySnapshot]], [[PlayerConnectionStatus]], [[PlayerId]]
 
 ## Usado por
-[[Animal]], [[AnimalSfxPlayer]], [[Bomb]], [[BombBlastVfxPlayer]], [[BombSfxPlayer]], [[BombSpawner]], [[CountdownState]], [[CountdownView]], [[JoinPromptView]], [[MatchManager]], [[MatchResultsView]], [[MatchStateMachine]], [[MatchTimerView]], [[NetworkPlayer]], [[NetworkPlayerRoster]], [[PauseController]], [[PauseHoldIndicatorView]], [[PauseMenuView]], [[PlayerHudThemeView]], [[PlayerJoinCoordinator]], [[PlayerMenuInput]], [[PlayerMenuRouter]], [[PlayerPauseInput]], [[PlayerStunReceiver]], [[PlayingState]], [[ResultsMenuController]], [[ResultsState]], [[ScoreView]]
+[[Animal]], [[AnimalSfxPlayer]], [[Bomb]], [[BombBlastVfxPlayer]], [[BombSfxPlayer]], [[BombSpawner]], [[CharacterSelectSfxPlayer]], [[ConnectionStatusView]], [[CountdownState]], [[CountdownView]], [[JoinPromptView]], [[MatchManager]], [[MatchResultsView]], [[MatchStateMachine]], [[MatchStatusSfxPlayer]], [[MatchTimerView]], [[MenuFlowController]], [[NetworkAnimal]], [[NetworkBomb]], [[NetworkMatchState]], [[NetworkPenLedger]], [[NetworkPlayer]], [[NetworkPlayerRoster]], [[NetworkSeatPresence]], [[OnlineMatchStatsRecorder]], [[PauseController]], [[PauseHoldIndicatorView]], [[PauseMenuView]], [[PenInventoryView]], [[PlayerHudThemeView]], [[PlayerJoinCoordinator]], [[PlayerMenuInput]], [[PlayerMenuRouter]], [[PlayerPauseInput]], [[PlayerStunReceiver]], [[PlayingState]], [[ResultsMenuController]], [[ResultsState]], [[ScoreView]]

@@ -7,7 +7,7 @@ tags: [clase, modulo/ui]
 ---
 # JoinPromptView
 
-> Shows the "press a button to join" prompt while the lobby is not full. When a MainMenu session is ready the players join by themselves at Start, so the prompt stays hidden for the first frame and only shows afterwards if a session player could not be joined.
+> Shows the "press a button to join" prompt while the lobby is not full. When a MainMenu session is ready the players join by themselves at Start, so the prompt stays hidden for the first frame and only shows afterwards if a session player could not be joined. Online mode never shows it: players join by connecting, and an avatar despawned during a reconnection grace raises `GameEvents.OnPlayerLeft` without anyone able to join.
 
 **Módulo:** [[Modulo UI|UI]] · **Namespace:** `AlienFarms.UI` · **Archivo:** `Assets/Scripts/UI/JoinPromptView.cs`
 
@@ -31,7 +31,7 @@ classDiagram
 ```
 
 ## Usa
-[[GameEvents]], [[MatchSession]], [[PlayerId]]
+[[GameEvents]], [[GameMode]], [[MatchSession]], [[Mode]], [[PlayerId]]
 
 ## Eventos que escucha
 [[Eventos GameEvents#OnPlayerJoined|OnPlayerJoined]], [[Eventos GameEvents#OnPlayerLeft|OnPlayerLeft]]

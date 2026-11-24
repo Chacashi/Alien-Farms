@@ -27,4 +27,4 @@ classDiagram
 `Auto`, `External`
 
 ## Usado por
-[[PlayerGrabber]]
+[[Mode]], [[NetworkCarry]], [[PlayerGrabber]]

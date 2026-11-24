@@ -59,10 +59,10 @@ classDiagram
     +bool IsHolding
     +IGrabbable Held
     +bool IsInputEnabled
+    +bool IsPaused
     +ReleaseMode ReleaseMode
     +SimulationRole Role
-    +ForceDrop(DropReason reason, Vector3 extraVelocity) void
-    ...8 más
+    ...10 más
   }
   class PlayerJoinCoordinator {
     <<MonoBehaviour>>
@@ -117,7 +117,7 @@ classDiagram
     +PlayerGrabber Grabber
     +PlayerMenuInput Menu
     +PlayerMovement Movement
-    ...8 más
+    ...9 más
   }
   class PlayerStunIndicator {
     <<MonoBehaviour>>

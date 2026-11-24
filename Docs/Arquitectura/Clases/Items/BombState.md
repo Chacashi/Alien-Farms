@@ -29,4 +29,4 @@ classDiagram
 `Inactive`, `Idle`, `Carried`, `Armed`
 
 ## Usado por
-[[Bomb]], [[BombBlastRules]], [[BombSpawner]]
+[[Bomb]], [[BombBlastRules]], [[BombNetState]], [[BombSpawner]], [[NetworkBomb]]

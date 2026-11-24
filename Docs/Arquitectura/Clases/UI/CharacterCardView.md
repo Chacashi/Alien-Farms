@@ -46,4 +46,4 @@ classDiagram
 [[CharacterDefinition]], [[LocalizationKeys]], [[LocalizedStringBinding]], [[PlayerId]]
 
 ## Usado por
-[[CharacterSelectView]]
+[[CharacterCardButton]], [[CharacterSelectView]], [[OnlinePanelView]]

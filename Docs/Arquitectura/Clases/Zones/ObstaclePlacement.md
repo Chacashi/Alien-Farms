@@ -26,4 +26,4 @@ classDiagram
 ```
 
 ## Usado por
-[[ObstacleField]], [[ObstacleLayoutPlanner]]
+[[NetworkMatchState]], [[ObstacleField]], [[ObstacleLayoutPlanner]], [[ObstacleLayoutState]]

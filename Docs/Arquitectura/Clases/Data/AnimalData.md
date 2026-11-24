@@ -24,6 +24,7 @@ classDiagram
   class AnimalData {
     <<ScriptableObject>>
     -Animal _prefab
+    -Sprite _icon
     -int _points
     -float _mass
     -float _wanderSpeed
@@ -35,8 +36,7 @@ classDiagram
     -float _minFleeTime
     -float _detectionInterval
     -float _wanderRadius
-    -Vector2 _idleTimeRange
-    ...46 más
+    ...48 más
   }
   class Animal:::external
   <<abstract>> Animal
@@ -51,4 +51,4 @@ classDiagram
 [[Animal]], [[SoundCue]], [[ThrowSettings]]
 
 ## Usado por
-[[Animal]], [[AnimalSfxPlayer]], [[AnimalSpawnEntry]], [[AnimalSpawner]], [[AnimalTypePool]], [[ChickenData]], [[MatchManager]], [[MatchScore]]
+[[Animal]], [[AnimalSfxPlayer]], [[AnimalSpawnEntry]], [[AnimalSpawner]], [[AnimalTypePool]], [[ChickenData]], [[MatchManager]], [[MatchScore]], [[NetworkAnimalPoolHandler]], [[NetworkSpawnRegistry]]

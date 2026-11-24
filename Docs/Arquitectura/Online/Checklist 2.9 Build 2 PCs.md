@@ -25,7 +25,7 @@ Objetivo: jugar una partida completa por internet entre dos PCs, usando Relay, y
 | 6 | Nueva sala y partida. Durante la partida, **el host sale**. | El cliente ve un aviso de que el host se fue y gana. Vuelve al menú sin quedarse colgado. |
 | 7 | Nueva partida. **Desconectar el wifi del cliente** unos 5–10 segundos y volver a conectarlo. | Al caerse, el cliente vuelve al Hub con «Conexión perdida» y *Reconectar (n s)*. **Sin tocar nada**, cuando vuelve la red el Hub pasa a «Uniendo…» (reintenta solo cada ~2 s mientras dure la gracia, ~18 s) y el cliente **vuelve automáticamente a la misma ronda**; en el host, «P2 volvió». *Reconectar* manual sigue funcionando. Si el cliente sale del Hub al título, no debe volver solo a la partida. Al terminar, la ronda **cuenta una sola vez** en las estadísticas. En el Player.log del cliente: `Rejoining session ... (auto)`. Si tras el corte aparece `join_failed` (la oferta desaparece), adjuntar el Player.log de **ambos** PCs. |
 | 8 | **Cerrar los dos juegos y volver a abrirlos.** | En el título, las estadísticas (victorias, derrotas, partidas) son las mismas que antes de cerrar. |
-| 9 | *Opcional:* una **tercera PC** se une a la sala con el código mientras la partida está en curso. | Entra como **espectador**: ve la partida pero no juega. |
+| 9 | *Opcional:* una **tercera PC** se une a la sala con el código mientras la partida está en curso. | Recibe «La sala está llena.» y puede volver al Hub (el espectador se retiró en el Bloque 0; la build es protocolo 4 o superior y hay que regenerarla). |
 
 ## Qué anotar
 

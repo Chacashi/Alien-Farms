@@ -30,10 +30,10 @@ classDiagram
     +bool IsHolding
     +IGrabbable Held
     +bool IsInputEnabled
+    +bool IsPaused
     +ReleaseMode ReleaseMode
     +SimulationRole Role
-    +ForceDrop(DropReason reason, Vector3 extraVelocity) void
-    ...8 más
+    ...10 más
   }
   class IGrabbable:::external
   <<interface>> IGrabbable
@@ -63,4 +63,4 @@ classDiagram
 [[Animal]], [[Bomb]], [[DropReason]], [[IGrabbable]], [[IPlayerCommandSource]], [[ISimulationRoleTarget]], [[LayerNames]], [[PlayerAim]], [[PlayerId]], [[PlayerIdentity]], [[PlayerMovement]], [[PlayerSettings]], [[ReleaseMode]], [[SimulationRole]]
 
 ## Usado por
-[[Mode]], [[NetworkPlayer]], [[NetworkPlayerInput]], [[PlayerAim]], [[PlayerRig]], [[PlayerStunReceiver]], [[PlayerTackle]]
+[[Mode]], [[NetworkCarriable]], [[NetworkCarry]], [[NetworkPlayer]], [[NetworkPlayerInput]], [[NetworkPlayerRoster]], [[PlayerAim]], [[PlayerRig]], [[PlayerStunReceiver]], [[PlayerTackle]]

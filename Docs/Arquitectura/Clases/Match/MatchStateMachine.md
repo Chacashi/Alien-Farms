@@ -18,6 +18,7 @@ classDiagram
   class MatchStateMachine {
     +MatchPhase CurrentPhase
     +bool IsRematchReady
+    +bool IsResultsInputReady
     +ChangeState(MatchPhase next) bool
     +Tick(float deltaTime) void
     +OnConfirmPressed(PlayerId playerId) void
@@ -32,7 +33,7 @@ classDiagram
 ```
 
 ## Usa
-[[CountdownState]], [[GameEvents]], [[IMatchContext]], [[MatchPhase]], [[MatchState]], [[PlayerId]], [[PlayingState]], [[ResultsState]], [[WaitingForPlayersState]]
+[[CountdownState]], [[GameEvents]], [[IMatchContext]], [[MatchPhase]], [[MatchState]], [[Phase]], [[PlayerId]], [[PlayingState]], [[ResultsState]], [[WaitingForPlayersState]]
 
 ## Usado por
 [[MatchManager]]

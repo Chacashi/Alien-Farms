@@ -29,4 +29,4 @@ classDiagram
 ```
 
 ## Usado por
-[[AnimalData]], [[AudioVariation]], [[BombData]], [[BombSfxPlayer]]
+[[AnimalData]], [[AudioVariation]], [[BombData]], [[BombSfxPlayer]], [[SfxVoicePool]], [[UiSfxLibrary]]

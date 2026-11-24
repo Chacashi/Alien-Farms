@@ -7,7 +7,7 @@ tags: [clase, modulo/networking]
 ---
 # ApprovalRules
 
-> Pure connection approval rules (version 1.5): valid payload, same protocol and a free seat. Reconnection to a previous seat and spectators come in week 2. Reasons are stable keys the client maps to localized text.
+> Pure connection approval rules, in order: same protocol, valid payload, one connection per UGS player (a dropped player gets its own seat back while the grace lasts), a free seat (Player1 first), otherwise "room full". Every rejection carries a `DisconnectReasons` key the client maps to localized text.
 
 **Módulo:** [[Modulo Networking|Networking]] · **Namespace:** `AlienFarms.Networking.Session` · **Archivo:** `Assets/Scripts/Networking/Session/ApprovalRules.cs`
 
@@ -17,13 +17,17 @@ classDiagram
   direction LR
   class ApprovalRules {
     <<static>>
-    +Evaluate(bool payloadValid, ConnectionPayload payload, int protocolVersion, int occupiedSeats, int maxPlayers)$ ApprovalDecision
+    +CheckMembership(bool isHostClient, bool onlineSession, bool hasUgsPlayerId)$ SessionMembership
+    +NeedsIdentity(bool payloadValid, ConnectionPayload payload, ApprovalPolicy policy)$ bool
+    +Evaluate(bool payloadValid, ConnectionPayload payload, ApprovalPolicy policy)$ ApprovalDecision
+    +IsSeatFree(PlayerSlot seat, double now, float graceSeconds)$ bool
+    +IsReservationExpired(PlayerSlot seat, double now, float graceSeconds)$ bool
   }
   classDef external fill:#eee,stroke:#999,stroke-dasharray: 4 3,color:#555
 ```
 
 ## Usa
-[[ApprovalDecision]], [[ConnectionPayload]], [[DisconnectReasons]]
+[[ApprovalDecision]], [[ApprovalPolicy]], [[ConnectionPayload]], [[DisconnectReasons]], [[PlayerId]], [[PlayerSlot]], [[SessionMembership]]
 
 ## Usado por
-[[ConnectionApprovalHandler]]
+[[ConnectionApprovalHandler]], [[SeatGraceRules]], [[ServerSlotDirectory]]

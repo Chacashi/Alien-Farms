@@ -32,4 +32,4 @@ classDiagram
 [[IRandomSource]]
 
 ## Usado por
-[[AnimalSfxPlayer]], [[BombSfxPlayer]], [[BombSpawner]], [[ObstacleField]]
+[[AnimalSfxPlayer]], [[BombSfxPlayer]], [[BombSpawner]], [[CharacterSelectSfxPlayer]], [[MatchStatusSfxPlayer]], [[ObstacleField]], [[OnlineSessionSfxPlayer]]

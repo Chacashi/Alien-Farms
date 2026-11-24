@@ -5,6 +5,8 @@ estado: aprobado con cambios
 fecha: 2026-11-12
 ---
 
+> **Espectador retirado (Bloque 0, 2026-11-24) — prevalece sobre todo lo demás:** el online tiene solo dos plazas (P1 y P2). Ya no existen `SpectatorSeat`, `ParticipantRoleRules`, `SpectatorModeController`, `SpectatorPanelView` ni la cámara de espectador del anchor; `SeatPresenceBoard` lleva solo P1 y P2 (36 bytes, protocolo 4). Una plaza reservada por la gracia solo la recupera su dueño (mismo UgsPlayerId, ClientId nuevo); un tercero recibe «Sala llena» (`room_full` en NGO o lobby lleno en UGS) y, si llega a NGO, el host lo quita de la sesión UGS para no bloquear la vuelta de P2. El ingreso tardío se demuestra ahora con la reconexión de P2 y con un jugador nuevo tras vencer la gracia.
+
 > **Cambios aprobados por el usuario (2026-11-12) — prevalecen sobre el resto del documento:**
 > - Decisiones 1 (salida voluntaria libera al instante) y 2 (reconexión con botón en el Hub): **aprobadas**.
 > - Decisión 6 **reemplazada**: el nombre lo **escribe el jugador** en el Hub online (`INP_Name`, TMP_InputField), saneado con `DisplayNameSanitizer`, guardado por dispositivo en `PlayerPrefs` (conveniencia local) y enviado en el `ConnectionPayload` como hoy. Vacío → nombre de UGS autogenerado (`GetPlayerNameAsync(true)`) y, sin UGS, «Player». `OnlineSessionChannel` expone `DisplayName`/`SetDisplayName(string)`.

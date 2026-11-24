@@ -32,4 +32,4 @@ classDiagram
 [[SceneNames]]
 
 ## Usado por
-[[DevConnectionPanel]], [[NetworkPlayerRoster]], [[NetworkRootLifetime]], [[NetworkRuntimeAnchor]], [[Status]]
+[[DevConnectionPanel]], [[LobbyStateSpawner]], [[NetworkLobbyState]], [[NetworkPlayerRoster]], [[NetworkRootLifetime]], [[NetworkRuntimeAnchor]], [[Status]]

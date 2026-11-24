@@ -23,6 +23,7 @@ classDiagram
     +MatchPhase Phase*
     #IMatchContext Context
     +bool IsRematchReady
+    +bool IsResultsInputReady
     +Enter() void
     +Tick(float deltaTime) void
     +Exit() void
@@ -36,7 +37,7 @@ classDiagram
 ```
 
 ## Usa
-[[IMatchContext]], [[MatchPhase]], [[PlayerId]]
+[[IMatchContext]], [[MatchPhase]], [[Phase]], [[PlayerId]]
 
 ## Usado por
 [[CountdownState]], [[MatchStateMachine]], [[PlayingState]], [[ResultsState]], [[WaitingForPlayersState]]

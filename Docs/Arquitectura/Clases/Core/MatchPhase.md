@@ -30,4 +30,4 @@ classDiagram
 `None`, `WaitingForPlayers`, `Countdown`, `Playing`, `Results`
 
 ## Usado por
-[[BombSpawner]], [[CaptureRules]], [[CountdownState]], [[CountdownView]], [[GameEvents]], [[IMatchContext]], [[MatchManager]], [[MatchResultsView]], [[MatchState]], [[MatchStateMachine]], [[PauseHoldIndicatorView]], [[PauseRules]], [[PlayingState]], [[ResultsMenuController]], [[ResultsState]], [[WaitingForPlayersState]]
+[[BombSpawner]], [[CaptureRules]], [[CountdownState]], [[CountdownView]], [[GameEvents]], [[IMatchContext]], [[MatchClock]], [[MatchConnectionCueTracker]], [[MatchManager]], [[MatchResultsView]], [[MatchScore]], [[MatchState]], [[MatchStateMachine]], [[MatchStatsTally]], [[MatchStatusSfxPlayer]], [[MatchSuspendRules]], [[NetworkMatchExit]], [[NetworkMatchState]], [[NetworkPlayer]], [[OnlineMatchStatsRecorder]], [[PauseController]], [[PauseHoldIndicatorView]], [[PauseRules]], [[PlayingState]], [[ReconnectGraceCoordinator]], [[ResultsMenuController]], [[ResultsState]], [[WaitingForPlayersState]]

@@ -32,4 +32,4 @@ classDiagram
 [[AnimalData]]
 
 ## Usado por
-[[AnimalSpawnSettings]], [[AnimalSpawner]]
+[[AnimalSpawnSettings]], [[AnimalSpawner]], [[NetworkSpawnRegistry]], [[PenInventoryView]]

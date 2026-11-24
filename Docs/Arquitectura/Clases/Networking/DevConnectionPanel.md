@@ -23,28 +23,35 @@ classDiagram
     -NetworkRuntimeAnchor _anchor
     -MatchSession _session
     -NetworkSettings _settings
-    -CharacterRoster _characters
     -string _displayName
     -TMP_Text _statusLabel
     -TMP_InputField _addressField
-    +Host() void
-    +Client() void
-    +Shutdown() void
+    -OnlineSessionChannel _sessionChannel
+    -TMP_InputField _codeField
+    -OnlineLobbyChannel _lobbyChannel
+    +SignIn() void
+    +CreateSession() void
+    +JoinSession() void
+    +LeaveSession() void
+    ...4 más
   }
-  class CharacterRoster:::external
-  <<ScriptableObject>> CharacterRoster
   class MatchSession:::external
   <<ScriptableObject>> MatchSession
   class NetworkRuntimeAnchor:::external
   <<ScriptableObject>> NetworkRuntimeAnchor
   class NetworkSettings:::external
   <<ScriptableObject>> NetworkSettings
-  DevConnectionPanel --> CharacterRoster
+  class OnlineLobbyChannel:::external
+  <<ScriptableObject>> OnlineLobbyChannel
+  class OnlineSessionChannel:::external
+  <<ScriptableObject>> OnlineSessionChannel
   DevConnectionPanel --> MatchSession
   DevConnectionPanel --> NetworkRuntimeAnchor
   DevConnectionPanel --> NetworkSettings
+  DevConnectionPanel --> OnlineLobbyChannel
+  DevConnectionPanel --> OnlineSessionChannel
   classDef external fill:#eee,stroke:#999,stroke-dasharray: 4 3,color:#555
 ```
 
 ## Usa
-[[CharacterRoster]], [[ConnectionPayload]], [[DirectConnection]], [[GameMode]], [[IConnectionStrategy]], [[MatchSession]], [[NetworkRootLifetime]], [[NetworkRuntimeAnchor]], [[NetworkSceneLoader]], [[NetworkSettings]], [[SceneFlow]], [[SceneNames]], [[Status]]
+[[ConnectionPayload]], [[DirectConnection]], [[DisplayNameResolver]], [[GameMode]], [[IConnectionStrategy]], [[MatchSession]], [[NetworkRootLifetime]], [[NetworkRuntimeAnchor]], [[NetworkSceneLoader]], [[NetworkSettings]], [[OnlineLobbyChannel]], [[OnlineParticipant]], [[OnlineSessionChannel]], [[OnlineSessionStatus]], [[SceneFlow]], [[SceneNames]], [[Status]], [[UgsBootstrapper]]

@@ -7,7 +7,7 @@ tags: [clase, modulo/match]
 ---
 # ResultsState
 
-> Round over: publishes the result, freezes players and restarts on Confirm after a short delay.
+> Round over: publishes the result, freezes players and restarts on Confirm after a short delay. A forfeit result (the rival left during Playing) stays on screen with one player; the rematch still needs both.
 
 **Módulo:** [[Modulo Match|Match]] · **Namespace:** `AlienFarms.Match` · **Archivo:** `Assets/Scripts/Match/ResultsState.cs`
 
@@ -21,6 +21,7 @@ classDiagram
   class ResultsState {
     +MatchPhase Phase
     +bool IsRematchReady
+    +bool IsResultsInputReady
     +Enter() void
     +Tick(float deltaTime) void
     +OnConfirmPressed(PlayerId playerId) void
@@ -32,7 +33,7 @@ classDiagram
 ```
 
 ## Usa
-[[GameEvents]], [[IMatchContext]], [[MatchPhase]], [[MatchState]], [[PlayerId]]
+[[GameEvents]], [[IMatchContext]], [[MatchPhase]], [[MatchResult]], [[MatchResultRules]], [[MatchState]], [[Phase]], [[PlayerId]]
 
 ## Usado por
 [[MatchStateMachine]]

@@ -53,6 +53,7 @@ classDiagram
     -Transform _animalsContainer
     +int ActiveCount
     +SimulationRole Role
+    +int TypeCount
     +SetSimulationRole(SimulationRole role) void
     +SetNetworkHook(IAnimalNetworkHook hook) void
     +TryGetTypeIndex(AnimalData data, int typeIndex) bool
@@ -81,6 +82,7 @@ classDiagram
     +AnimalData Data
     +int CountActive
     +int CountInactive
+    +int CountAll
     +IAnimalNetworkHook NetworkHook
     +Get() Animal
     +Release(Animal animal) void

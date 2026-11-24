@@ -27,6 +27,7 @@ classDiagram
     +bool IsSprintHeld
     +bool IsGrabHeld
     +bool IsAimHeld
+    +bool IsPaused
     +Apply(PlayerInputCommand command) void
     +Reset() void
   }

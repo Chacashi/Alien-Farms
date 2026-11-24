@@ -45,4 +45,4 @@ classDiagram
 [[IPlayerCommandSource]], [[InputSchemeNames]]
 
 ## Usado por
-[[Mode]], [[NetworkPlayerInput]], [[PlayerMenuInput]], [[PlayerPauseInput]]
+[[Mode]], [[NetworkCarry]], [[NetworkPlayerInput]], [[PlayerMenuInput]], [[PlayerPauseInput]]

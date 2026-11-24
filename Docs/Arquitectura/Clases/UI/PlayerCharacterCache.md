@@ -30,4 +30,4 @@ classDiagram
 [[CharacterDefinition]], [[PlayerId]]
 
 ## Usado por
-[[MatchResultsView]], [[PauseMenuView]]
+[[ConnectionStatusView]], [[MatchResultsView]], [[PauseMenuView]]

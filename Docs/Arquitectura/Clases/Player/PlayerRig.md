@@ -33,7 +33,7 @@ classDiagram
     +PlayerGrabber Grabber
     +PlayerMenuInput Menu
     +PlayerMovement Movement
-    ...8 más
+    ...9 más
   }
   class PlayerAim:::external
   <<MonoBehaviour>> PlayerAim

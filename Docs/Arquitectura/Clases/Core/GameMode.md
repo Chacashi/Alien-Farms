@@ -27,4 +27,4 @@ classDiagram
 `Local`, `Online`
 
 ## Usado por
-[[DevConnectionPanel]], [[GameModeRouter]], [[MatchSession]], [[Status]]
+[[DevConnectionPanel]], [[GameModeRouter]], [[JoinPromptView]], [[MatchSession]], [[OnlineModeRules]], [[OnlineSessionService]], [[SaveStatusBadgeView]], [[SessionExit]], [[Status]]

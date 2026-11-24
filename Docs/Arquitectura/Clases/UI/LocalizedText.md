@@ -27,4 +27,4 @@ classDiagram
 ```
 
 ## Usado por
-[[LocalizationSetupMenu]], [[ViewDrivenTextCollector]]
+[[LocalizationSetupMenu]], [[OnlinePanelView]], [[ViewDrivenTextCollector]]

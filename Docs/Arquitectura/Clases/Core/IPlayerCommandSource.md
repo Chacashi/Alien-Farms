@@ -33,4 +33,4 @@ classDiagram
 ```
 
 ## Usado por
-[[NetworkCommandSource]], [[PlayerAim]], [[PlayerGrabber]], [[PlayerInputHandler]], [[PlayerMovement]], [[ThirdPersonCamera]]
+[[Mode]], [[NetworkCarry]], [[NetworkCommandSource]], [[NetworkPlayerInput]], [[PlayerAim]], [[PlayerGrabber]], [[PlayerInputHandler]], [[PlayerMovement]], [[ThirdPersonCamera]]

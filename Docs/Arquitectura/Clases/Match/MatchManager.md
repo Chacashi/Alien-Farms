@@ -7,7 +7,7 @@ tags: [clase, modulo/match]
 ---
 # MatchManager
 
-> Scene composition root of the match: owns the phase state machine, score and timer, and bridges them to the players (via `PlayerJoinCoordinator`) and the animals (via `AnimalSpawner`). The score (sum of each captured animal's points) mirrors zone occupancy from `GameEvents.OnAnimalCaptured` / `GameEvents.OnAnimalLeftZone`; it is tracked in every phase but only published while playing. The players come from an `IPlayerRoster`: the serialized coordinator unless another one is bound with `Bind` before Start.
+> Scene composition root of the match: owns the phase state machine, score and timer, and bridges them to the players (via `PlayerJoinCoordinator`) and the animals (via `AnimalSpawner`). The score (sum of each captured animal's points) mirrors zone occupancy from `GameEvents.OnAnimalCaptured` / `GameEvents.OnAnimalLeftZone` while playing; outside Playing it is frozen (`CaptureRules.TracksScore`), so the result published on entering Results is also the final `GetScore` and what the online score board replicates. The players come from an `IPlayerRoster`: the serialized coordinator unless another one is bound with `Bind` before Start.
 
 **Módulo:** [[Modulo Match|Match]] · **Namespace:** `AlienFarms.Match` · **Archivo:** `Assets/Scripts/Match/MatchManager.cs`
 
@@ -28,12 +28,12 @@ classDiagram
     +MatchPhase CurrentPhase
     +float RemainingTime
     +bool IsSuspended
+    +bool IsResultsInputReady
     +bool IsRematchReady
-    +Bind(IPlayerRoster roster) void
-    +SetSuspended(bool suspended) void
-    +ChangeState(MatchPhase next) void
-    +RestartRound() void
-    ...4 más
+    +MatchSettings Settings
+    +bool ForfeitOnPlayerMissing
+    +PlayerId ForfeitWinner
+    ...11 más
   }
   class AnimalSpawner:::external
   <<MonoBehaviour>> AnimalSpawner
@@ -66,10 +66,10 @@ classDiagram
 ```
 
 ## Usa
-[[Animal]], [[AnimalData]], [[AnimalSpawner]], [[BombSpawner]], [[CaptureRules]], [[GameEvents]], [[IMatchContext]], [[IPlayerRoster]], [[MatchPhase]], [[MatchScore]], [[MatchSettings]], [[MatchStateMachine]], [[MatchTimer]], [[ObstacleField]], [[PlayerId]], [[PlayerJoinCoordinator]]
+[[Animal]], [[AnimalData]], [[AnimalSpawner]], [[BombSpawner]], [[CaptureRules]], [[GameEvents]], [[IMatchContext]], [[IPlayerRoster]], [[MatchPhase]], [[MatchResumeAction]], [[MatchScore]], [[MatchSettings]], [[MatchStateMachine]], [[MatchSuspendRules]], [[MatchTimer]], [[ObstacleField]], [[PlayerId]], [[PlayerJoinCoordinator]]
 
 ## Usado por
-[[GameModeRouter]], [[LocalMatchExitHandler]], [[MatchExit]], [[OnlineMatchBootstrap]], [[OnlineMatchExitHandler]], [[PauseController]], [[ResultsMenuController]]
+[[GameModeRouter]], [[LocalMatchExitHandler]], [[MatchExit]], [[NetworkMatchExit]], [[NetworkMatchState]], [[OnlineMatchBootstrap]], [[PauseController]], [[ReconnectGraceCoordinator]], [[ResultsMenuController]]
 
 ## Eventos que publica
 [[Eventos GameEvents#OnMatchTimeChanged|OnMatchTimeChanged]], [[Eventos GameEvents#OnPenInventoryChanged|OnPenInventoryChanged]], [[Eventos GameEvents#OnScoreChanged|OnScoreChanged]]

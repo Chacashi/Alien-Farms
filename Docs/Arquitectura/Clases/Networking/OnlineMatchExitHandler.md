@@ -7,7 +7,7 @@ tags: [clase, modulo/networking]
 ---
 # OnlineMatchExitHandler
 
-> Online match exit (version 1.5). Back to title: clears the session, tears the NetworkRoot down (shutdown + destroy; the MainMenu brings a fresh one) and loads the main menu. Rematch: only the server restarts the match; a client's request is ignored until NetworkMatchExit (1.6) forwards it.
+> Online match exit. Back to title: records a loss first when leaving during live Playing (persisted before the shutdown, see `OnlineMatchStatsRecorder.RecordLeaveLoss`), clears the session, on a pure client sends the voluntary-leave notice and drops any rejoin offer, tears the NetworkRoot down (shutdown + destroy; the MainMenu brings a fresh one) and loads the main menu once the teardown ended (a host with clients first lets its leaving notice through, see `NetworkRootLifetime.ShutdownSessionAsync`), which opens on the online hub. Rematch: marks the local player ready; the server's `NetworkMatchExit` restarts the match when both players are.
 
 **Módulo:** [[Modulo Networking|Networking]] · **Namespace:** `AlienFarms.Networking.Match` · **Archivo:** `Assets/Scripts/Networking/Match/OnlineMatchExitHandler.cs`
 
@@ -24,21 +24,21 @@ classDiagram
   }
   class IMatchExitHandler:::external
   <<interface>> IMatchExitHandler
-  class MatchManager:::external
-  <<MonoBehaviour>> MatchManager
   class MatchSession:::external
   <<ScriptableObject>> MatchSession
   class NetworkRuntimeAnchor:::external
   <<ScriptableObject>> NetworkRuntimeAnchor
-  OnlineMatchExitHandler --> MatchManager
+  class OnlineMatchStatsRecorder:::external
+  <<MonoBehaviour>> OnlineMatchStatsRecorder
   OnlineMatchExitHandler --> MatchSession
   OnlineMatchExitHandler --> NetworkRuntimeAnchor
+  OnlineMatchExitHandler --> OnlineMatchStatsRecorder
   OnlineMatchExitHandler ..|> IMatchExitHandler
   classDef external fill:#eee,stroke:#999,stroke-dasharray: 4 3,color:#555
 ```
 
 ## Usa
-[[IMatchExitHandler]], [[MatchManager]], [[MatchSession]], [[NetworkRootLifetime]], [[NetworkRuntimeAnchor]], [[SceneFlow]]
+[[IMatchExitHandler]], [[MatchSession]], [[NetworkPlayer]], [[NetworkRootLifetime]], [[NetworkRuntimeAnchor]], [[OnlineMatchStatsRecorder]], [[SceneFlow]]
 
 ## Usado por
 [[OnlineMatchBootstrap]]

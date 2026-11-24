@@ -74,7 +74,7 @@ classDiagram
 [[AirborneOutcome]], [[AnimalData]], [[AnimalLanding]], [[AnimalState]], [[AnimalSteering]], [[AnimalTypePool]], [[AvoidanceSide]], [[Bomb]], [[CornerEscape]], [[DropReason]], [[GameEvents]], [[IAnimalNetworkHook]], [[IScareable]], [[ISimulationRoleTarget]], [[IThrowable]], [[IZoneResolver]], [[LayerNames]], [[ObstacleAvoidance]], [[PlayerId]], [[SimulationRole]], [[ThrowSettings]]
 
 ## Usado por
-[[AnimalData]], [[AnimalSfxPlayer]], [[AnimalSpawner]], [[AnimalTypePool]], [[Bomb]], [[BombSpawner]], [[Chicken]], [[Cow]], [[GameEvents]], [[IAnimalNetworkHook]], [[LayerNames]], [[MatchManager]], [[PlayerGrabber]], [[Sheep]], [[ThirdPersonCamera]], [[ThrowTrajectoryView]]
+[[AnimalData]], [[AnimalSfxPlayer]], [[AnimalSpawner]], [[AnimalTypePool]], [[Bomb]], [[BombSpawner]], [[Chicken]], [[Cow]], [[GameEvents]], [[IAnimalNetworkHook]], [[LayerNames]], [[MatchManager]], [[NetworkAnimal]], [[NetworkAnimalPoolHandler]], [[NetworkSpawnRegistry]], [[PlayerGrabber]], [[Sheep]], [[ThirdPersonCamera]], [[ThrowTrajectoryView]]
 
 ## Eventos que publica
 [[Eventos GameEvents#OnAnimalCaptured|OnAnimalCaptured]], [[Eventos GameEvents#OnAnimalDropped|OnAnimalDropped]], [[Eventos GameEvents#OnAnimalGrabbed|OnAnimalGrabbed]], [[Eventos GameEvents#OnAnimalLeftZone|OnAnimalLeftZone]]

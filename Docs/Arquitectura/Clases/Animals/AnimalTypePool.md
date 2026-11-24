@@ -19,6 +19,7 @@ classDiagram
     +AnimalData Data
     +int CountActive
     +int CountInactive
+    +int CountAll
     +IAnimalNetworkHook NetworkHook
     +Get() Animal
     +Release(Animal animal) void
@@ -45,4 +46,4 @@ classDiagram
 [[Animal]], [[AnimalData]], [[IAnimalNetworkHook]], [[IZoneResolver]], [[SimulationRole]]
 
 ## Usado por
-[[Animal]], [[AnimalSpawner]]
+[[Animal]], [[AnimalSpawner]], [[NetworkAnimalPoolHandler]], [[NetworkSpawnRegistry]]

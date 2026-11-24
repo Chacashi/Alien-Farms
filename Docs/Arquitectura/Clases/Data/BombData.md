@@ -53,4 +53,4 @@ classDiagram
 [[Bomb]], [[BombBlastVfx]], [[SoundCue]], [[ThrowSettings]]
 
 ## Usado por
-[[Bomb]], [[BombBlastVfxPlayer]], [[BombSfxPlayer]], [[BombSpawner]]
+[[Bomb]], [[BombBlastVfxPlayer]], [[BombSfxPlayer]], [[BombSpawner]], [[NetworkSpawnRegistry]]

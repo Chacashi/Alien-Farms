@@ -7,7 +7,7 @@ tags: [clase, modulo/networking]
 ---
 # ConnectionPayload
 
-> What a client sends in `NetworkConfig.ConnectionData` when it connects. Written by the client, read by the server's approval. `UgsPlayerId` is reserved for reconnection (week 2) and not evaluated yet.
+> What a client sends in `NetworkConfig.ConnectionData` when it connects. Written by the client, read by the server's approval (`ApprovalRules`): `UgsPlayerId` identifies the player across reconnections (empty for a direct dev connection without Unity Gaming Services). The character is picked inside the online room (`NetworkLobbyState`), so it is not part of the payload (removed in protocol 2).
 
 **Módulo:** [[Modulo Networking|Networking]] · **Namespace:** `AlienFarms.Networking.Session` · **Archivo:** `Assets/Scripts/Networking/Session/ConnectionPayload.cs`
 
@@ -22,10 +22,10 @@ classDiagram
     <<struct>>
     +int ProtocolVersion
     +FixedString32Bytes DisplayName
-    +byte CharacterIndex
     +FixedString64Bytes UgsPlayerId
-    +Create(int protocolVersion, string displayName, int characterIndex)$ ConnectionPayload
-    +bool HasCharacter
+    +Create(int protocolVersion, string displayName, string ugsPlayerId)$ ConnectionPayload
+    +bool HasUgsPlayerId
+    +WithSanitizedName() ConnectionPayload
     +NetworkSerialize(BufferSerializer~T~ serializer) void
     +ToBytes() byte[]
     +TryParse(byte data, ConnectionPayload payload)$ bool
@@ -33,5 +33,8 @@ classDiagram
   classDef external fill:#eee,stroke:#999,stroke-dasharray: 4 3,color:#555
 ```
 
+## Usa
+[[DisplayNameSanitizer]]
+
 ## Usado por
-[[ApprovalRules]], [[ConnectionApprovalHandler]], [[DevConnectionPanel]], [[NetworkPlayer]], [[NetworkPlayerRoster]], [[ServerSlotDirectory]], [[Status]]
+[[ApprovalRules]], [[ConnectionApprovalHandler]], [[DevConnectionPanel]], [[OnlineSessionService]], [[ServerSlotDirectory]], [[SessionExit]], [[Status]]

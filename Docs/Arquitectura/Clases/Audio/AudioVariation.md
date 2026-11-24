@@ -29,4 +29,4 @@ classDiagram
 [[IRandomSource]], [[SoundCue]]
 
 ## Usado por
-[[AnimalSfxPlayer]], [[BombSfxPlayer]]
+[[AnimalSfxPlayer]], [[BombSfxPlayer]], [[SfxVoicePool]]

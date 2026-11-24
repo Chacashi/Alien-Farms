@@ -27,4 +27,4 @@ classDiagram
 ```
 
 ## Usado por
-[[AnimalSfxPlayer]], [[AudioVariation]], [[BombPlacement]], [[BombSfxPlayer]], [[BombSpawnSchedule]], [[BombSpawner]], [[ObstacleField]], [[ObstacleLayoutPlanner]], [[SystemRandomSource]]
+[[AnimalSfxPlayer]], [[AudioVariation]], [[BombPlacement]], [[BombSfxPlayer]], [[BombSpawnSchedule]], [[BombSpawner]], [[CharacterSelectSfxPlayer]], [[MatchStatusSfxPlayer]], [[ObstacleField]], [[ObstacleLayoutPlanner]], [[OnlineSessionSfxPlayer]], [[SfxVoicePool]], [[SystemRandomSource]]

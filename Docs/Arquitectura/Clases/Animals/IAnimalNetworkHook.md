@@ -11,6 +11,9 @@ tags: [clase, modulo/animals]
 
 **Módulo:** [[Modulo Animals|Animals]] · **Namespace:** `AlienFarms.Animals` · **Archivo:** `Assets/Scripts/Animals/IAnimalNetworkHook.cs`
 
+## Derivados / implementaciones
+[[NetworkSpawnRegistry]]
+
 ## Diagrama
 ```mermaid
 classDiagram
@@ -27,4 +30,4 @@ classDiagram
 [[Animal]]
 
 ## Usado por
-[[Animal]], [[AnimalSpawner]], [[AnimalTypePool]]
+[[Animal]], [[AnimalSpawner]], [[AnimalTypePool]], [[NetworkSpawnRegistry]]

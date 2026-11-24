@@ -64,7 +64,7 @@ classDiagram
     +event Action~int~ VerticalStep
     +event Action Submitted
     +event Action Canceled
-    ...6 más
+    ...7 más
   }
   class PlayerPauseInput {
     <<MonoBehaviour>>
