@@ -25,13 +25,14 @@ namespace AlienFarms.Networking.Diagnostics
         [SerializeField, Range(0.05f, 2f), Tooltip("Seconds between stats samples.")] private float _refreshInterval = 0.25f;
 
         private readonly char[] _buffer = new char[InterestStatsFormatter.BufferSize];
+        private readonly KnownObjectsCounter _knownObjects = new KnownObjectsCounter();
         private InterestStatsSample _shown;
         private bool _hasShown;
         private bool _visible;
         private bool _hasWindow;
         private float _nextSample;
         private float _windowStart;
-        private ulong _rxAtWindowStart;
+        private ulong _bytesAtWindowStart;
 
         private NetworkManager Manager => _anchor != null ? _anchor.Manager : null;
 
@@ -47,6 +48,7 @@ namespace AlienFarms.Networking.Diagnostics
             PoolStatsToggle.Changed -= ApplyVisibility;
             GameEvents.OnMatchPhaseChanged -= HandleMatchPhaseChanged;
             _hasWindow = false;
+            _knownObjects.Clear();
         }
 
         private void ApplyVisibility()
@@ -70,7 +72,8 @@ namespace AlienFarms.Networking.Diagnostics
         {
             if (current == MatchPhase.Playing)
             {
-                _rxAtWindowStart = ReadRxBytes(Manager);
+                NetworkManager manager = Manager;
+                _bytesAtWindowStart = ReadTrafficBytes(manager, manager != null && manager.IsServer);
                 _windowStart = Time.unscaledTime;
                 _hasWindow = true;
                 _nextSample = 0f;
@@ -100,7 +103,7 @@ namespace AlienFarms.Networking.Diagnostics
             NetworkManager manager = Manager;
             bool isHost = manager != null && manager.IsServer;
             bool hasInterest = isHost && _interest != null && _interest.isActiveAndEnabled;
-            KnownObjectsCounts known = KnownObjectsCounter.Count(manager);
+            KnownObjectsCounts known = _knownObjects.Count(manager);
             int totalAnimals = isHost && _registry != null ? _registry.AnimalStats.Active : known.Animals;
             int totalBombs = isHost && _registry != null ? _registry.BombStats.Active : known.Bombs;
 
@@ -116,16 +119,16 @@ namespace AlienFarms.Networking.Diagnostics
             }
 
             float elapsed = _hasWindow ? now - _windowStart : 0f;
-            ulong currentRx = _hasWindow ? ReadRxBytes(manager) : 0;
-            double receivedKb = currentRx >= _rxAtWindowStart ? (currentRx - _rxAtWindowStart) / 1024d : 0d;
-            long rateTenths = elapsed > 0f ? (long)Math.Round(receivedKb * 10d / elapsed) : 0;
+            ulong currentBytes = _hasWindow ? ReadTrafficBytes(manager, isHost) : 0;
+            double trafficKb = currentBytes >= _bytesAtWindowStart ? (currentBytes - _bytesAtWindowStart) / 1024d : 0d;
+            long rateTenths = elapsed > 0f ? (long)Math.Round(trafficKb * 10d / elapsed) : 0;
             return new InterestStatsSample(isHost, hasInterest && _interest.IsActive,
                 hasInterest ? _interest.EnterRadius : 0f, hasInterest ? _interest.ExitRadius : 0f,
                 hasInterest ? _interest.ReviewIntervalTicks : 0, known, remote, totalAnimals, totalBombs,
-                (int)(hasInterest ? _interest.WindowSeconds : elapsed), (long)Math.Round(receivedKb), rateTenths);
+                (int)(hasInterest ? _interest.WindowSeconds : elapsed), isHost, (long)Math.Round(trafficKb), rateTenths);
         }
 
-        private static ulong ReadRxBytes(NetworkManager manager)
+        private static ulong ReadTrafficBytes(NetworkManager manager, bool isTx)
         {
             if (manager == null || !manager.IsListening || manager.NetworkConfig.NetworkTransport is not UnityTransport transport)
             {
@@ -139,7 +142,7 @@ namespace AlienFarms.Networking.Diagnostics
             }
 
             DriverStatistics stats = driver.GetStatistics();
-            return stats.RxTotalBytes;
+            return isTx ? stats.TxTotalBytes : stats.RxTotalBytes;
         }
 
         private void OnValidate()

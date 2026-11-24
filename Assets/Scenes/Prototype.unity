@@ -3441,6 +3441,7 @@ MonoBehaviour:
   _bombData: {fileID: 11400000, guid: e196b9e3263ec96438029ffd2a5a4a45, type: 2}
   _animalSpawner: {fileID: 188548379}
   _bombSpawner: {fileID: 617870294}
+  _matchState: {fileID: 338905659}
 --- !u!1001 &564885869
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7140,6 +7141,7 @@ MonoBehaviour:
   _settings: {fileID: 11400000, guid: 3a32d76f5f828a041aa15f612aa0ee34, type: 2}
   _anchor: {fileID: 11400000, guid: 73498404eacadb24f9a4e5c637046ab3, type: 2}
   _roster: {fileID: 138388043}
+  _match: {fileID: 1011480437}
 --- !u!4 &1107138816
 Transform:
   m_ObjectHideFlags: 0

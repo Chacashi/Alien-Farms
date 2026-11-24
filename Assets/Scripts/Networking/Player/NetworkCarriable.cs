@@ -39,18 +39,6 @@ namespace AlienFarms.Networking.Player
         private IInterestPolicy _interest;
         private NetworkObject.VisibilityDelegate _visibilityCheck;
 
-        internal int InterestIndex { get; set; } = -1;
-
-        public abstract InterestKind InterestKind { get; }
-        public abstract bool IsInterestExempt { get; }
-
-        public void ServerBindInterest(IInterestPolicy policy)
-        {
-            _interest = policy;
-            NetworkObject.CheckObjectVisibility = policy != null ? _visibilityCheck : null;
-        }
-
-        private bool EvaluateVisibility(ulong clientId) => _interest == null || _interest.Evaluate(this, clientId);
         private PlayerId _serverHolder = PlayerId.None;
         private bool _serverParented;
         private PlayerId _mirroredHolder = PlayerId.None;
@@ -86,6 +74,19 @@ namespace AlienFarms.Networking.Player
 
         /// <summary>Network spawns of this pooled instance so far, the current one included (pool lifecycle log).</summary>
         public int SpawnCount { get; private set; }
+
+        internal int InterestIndex { get; set; } = -1;
+
+        public abstract InterestKind InterestKind { get; }
+        public abstract bool IsInterestExempt { get; }
+
+        public void ServerBindInterest(IInterestPolicy policy)
+        {
+            _interest = policy;
+            NetworkObject.CheckObjectVisibility = policy != null ? _visibilityCheck : null;
+        }
+
+        private bool EvaluateVisibility(ulong clientId) => _interest == null || _interest.Evaluate(this, clientId);
 
         /// <summary>Owner as the views show it (server, a seat, or a client not resolved yet). No allocation.</summary>
         public CarriableOwner ResolveOwner()

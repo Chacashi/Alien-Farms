@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using AlienFarms.Core;
 using AlienFarms.Data;
+using AlienFarms.Match;
 using AlienFarms.Networking.Data;
 using AlienFarms.Networking.Player;
 using AlienFarms.Networking.Session;
@@ -15,6 +16,8 @@ namespace AlienFarms.Networking.Interest
         [SerializeField, Tooltip("Server-side interest filtering settings.")] private InterestSettings _settings;
         [SerializeField, Tooltip("Network runtime anchor for the session and observer avatars.")] private NetworkRuntimeAnchor _anchor;
         [SerializeField, Tooltip("Online roster providing fallback spawn positions.")] private NetworkPlayerRoster _roster;
+
+        [SerializeField, Tooltip("Authoritative match phase when interest filtering starts.")] private MatchManager _match;
 
         private readonly List<NetworkCarriable> _tracked = new List<NetworkCarriable>(128);
         private readonly HashSet<NetworkCarriable> _dirty = new HashSet<NetworkCarriable>(128);
@@ -56,13 +59,24 @@ namespace AlienFarms.Networking.Interest
         private void TryStart()
         {
             NetworkManager manager = Manager;
-            if (_tickSystem != null || !isActiveAndEnabled || manager == null ||
+            if (_tickSystem != null)
+            {
+                if (manager != null && _tickSystem == manager.NetworkTickSystem)
+                {
+                    return;
+                }
+
+                Stop();
+            }
+
+            if (!isActiveAndEnabled || manager == null ||
                 !manager.IsListening || !manager.IsServer || manager.NetworkTickSystem == null)
             {
                 return;
             }
 
             _active = _settings != null && InterestToggle.IsEnabled(_settings.Enabled);
+            HandleMatchPhaseChanged(MatchPhase.None, _match != null ? _match.CurrentPhase : MatchPhase.None);
             _server = manager;
             _tickSystem = manager.NetworkTickSystem;
             _tickSystem.Tick += HandleTick;
@@ -85,6 +99,7 @@ namespace AlienFarms.Networking.Interest
             }
 
             NetworkManager manager = _server;
+            bool sameTickSystem = manager != null && _tickSystem == manager.NetworkTickSystem;
             _server = null;
             _tickSystem.Tick -= HandleTick;
             _tickSystem = null;
@@ -98,7 +113,7 @@ namespace AlienFarms.Networking.Interest
             _active = false;
             BindTracked();
 
-            if (manager != null && manager.IsListening && manager.IsServer && !manager.ShutdownInProgress)
+            if (sameTickSystem && manager == Manager && manager.IsListening && manager.IsServer && !manager.ShutdownInProgress)
             {
                 Review(manager, dirtyOnly: false, showLimit: 0);
                 return;
@@ -504,9 +519,9 @@ namespace AlienFarms.Networking.Interest
 
         private void OnValidate()
         {
-            if (_settings == null || _anchor == null || _roster == null)
+            if (_settings == null || _anchor == null || _roster == null || _match == null)
             {
-                Debug.LogWarning($"[{nameof(NetworkInterestManager)}] Assign interest settings, runtime anchor and online roster.", this);
+                Debug.LogWarning($"[{nameof(NetworkInterestManager)}] Assign interest settings, runtime anchor, online roster and match manager.", this);
             }
         }
     }

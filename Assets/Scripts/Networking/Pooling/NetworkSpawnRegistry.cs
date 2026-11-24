@@ -5,6 +5,7 @@ using AlienFarms.Networking.Animals;
 using AlienFarms.Networking.Data;
 using AlienFarms.Networking.Items;
 using AlienFarms.Networking.Interest;
+using AlienFarms.Networking.Match;
 using AlienFarms.Networking.Player;
 using Unity.Netcode;
 using UnityEngine;
@@ -44,6 +45,9 @@ namespace AlienFarms.Networking.Pooling
 
         [SerializeField, Tooltip("Optional bomb spawner whose pool backs the bomb handler.")]
         private BombSpawner _bombSpawner;
+
+        [SerializeField, Tooltip("Always-observed match state that broadcasts bomb spawn cues.")]
+        private NetworkMatchState _matchState;
 
         private NetworkManager _manager;
         private NetworkPoolLog _poolLog;
@@ -305,6 +309,11 @@ namespace AlienFarms.Networking.Pooling
             }
 
             networkObject.Spawn(true);
+            if (_matchState != null)
+            {
+                _matchState.ServerNotifyBombSpawned();
+            }
+
             _poolLog?.Spawned(networkBomb, networkBomb.SpawnCount);
         }
 
@@ -356,6 +365,11 @@ namespace AlienFarms.Networking.Pooling
             if (_bombSpawner != null && _bombData == null)
             {
                 Debug.LogWarning($"[{nameof(NetworkSpawnRegistry)}] Bomb spawner set without BombData on '{name}'; bombs are not replicated.", this);
+            }
+
+            if (_bombSpawner != null && _matchState == null)
+            {
+                Debug.LogWarning($"[{nameof(NetworkSpawnRegistry)}] Assign NetworkMatchState on '{name}' to broadcast bomb spawn cues.", this);
             }
         }
     }

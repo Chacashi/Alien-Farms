@@ -15,12 +15,13 @@ namespace AlienFarms.Networking.Diagnostics
         public int TotalAnimals { get; }
         public int TotalBombs { get; }
         public int WindowSeconds { get; }
-        public long RxKilobytes { get; }
-        public long RxKilobytesPerSecondTenths { get; }
+        public bool IsTx { get; }
+        public long TrafficKilobytes { get; }
+        public long TrafficKilobytesPerSecondTenths { get; }
 
         public InterestStatsSample(bool isHost, bool isActive, float enterRadius, float exitRadius,
             int reviewIntervalTicks, KnownObjectsCounts known, InterestCounters remote, int totalAnimals,
-            int totalBombs, int windowSeconds, long rxKilobytes, long rxKilobytesPerSecondTenths)
+            int totalBombs, int windowSeconds, bool isTx, long trafficKilobytes, long trafficKilobytesPerSecondTenths)
         {
             IsHost = isHost;
             IsActive = isActive;
@@ -32,8 +33,9 @@ namespace AlienFarms.Networking.Diagnostics
             TotalAnimals = totalAnimals;
             TotalBombs = totalBombs;
             WindowSeconds = windowSeconds;
-            RxKilobytes = rxKilobytes;
-            RxKilobytesPerSecondTenths = rxKilobytesPerSecondTenths;
+            IsTx = isTx;
+            TrafficKilobytes = trafficKilobytes;
+            TrafficKilobytesPerSecondTenths = trafficKilobytesPerSecondTenths;
         }
 
         public bool Equals(InterestStatsSample other) =>
@@ -43,14 +45,14 @@ namespace AlienFarms.Networking.Diagnostics
             Remote.Shows == other.Remote.Shows && Remote.Hides == other.Remote.Hides &&
             Remote.VisibleAnimals == other.Remote.VisibleAnimals && Remote.VisibleBombs == other.Remote.VisibleBombs &&
             TotalAnimals == other.TotalAnimals && TotalBombs == other.TotalBombs && WindowSeconds == other.WindowSeconds &&
-            RxKilobytes == other.RxKilobytes && RxKilobytesPerSecondTenths == other.RxKilobytesPerSecondTenths;
+            IsTx == other.IsTx && TrafficKilobytes == other.TrafficKilobytes && TrafficKilobytesPerSecondTenths == other.TrafficKilobytesPerSecondTenths;
 
         public override bool Equals(object obj) => obj is InterestStatsSample other && Equals(other);
 
         public override int GetHashCode() => HashCode.Combine(
-            HashCode.Combine(IsHost, IsActive, EnterRadius, ExitRadius, ReviewIntervalTicks),
+            HashCode.Combine(IsHost, IsActive, EnterRadius, ExitRadius, ReviewIntervalTicks, IsTx),
             HashCode.Combine(Known.Animals, Known.Bombs, Known.Other),
             HashCode.Combine(Remote.Shows, Remote.Hides, Remote.VisibleAnimals, Remote.VisibleBombs),
-            HashCode.Combine(TotalAnimals, TotalBombs, WindowSeconds, RxKilobytes, RxKilobytesPerSecondTenths));
+            HashCode.Combine(TotalAnimals, TotalBombs, WindowSeconds, TrafficKilobytes, TrafficKilobytesPerSecondTenths));
     }
 }

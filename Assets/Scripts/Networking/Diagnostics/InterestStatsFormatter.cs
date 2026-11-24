@@ -54,12 +54,12 @@ namespace AlienFarms.Networking.Diagnostics
                 Append(output, ref offset, " s");
             }
 
-            Append(output, ref offset, "\nRx ventana ");
-            AppendNumber(output, ref offset, sample.RxKilobytes);
+            Append(output, ref offset, sample.IsTx ? "\nTx ventana " : "\nRx ventana ");
+            AppendNumber(output, ref offset, sample.TrafficKilobytes);
             Append(output, ref offset, " KB \u00b7 ");
-            AppendNumber(output, ref offset, sample.RxKilobytesPerSecondTenths / 10);
+            AppendNumber(output, ref offset, sample.TrafficKilobytesPerSecondTenths / 10);
             Append(output, ref offset, ".");
-            AppendNumber(output, ref offset, sample.RxKilobytesPerSecondTenths % 10);
+            AppendNumber(output, ref offset, sample.TrafficKilobytesPerSecondTenths % 10);
             Append(output, ref offset, " KB/s");
 
             return offset;

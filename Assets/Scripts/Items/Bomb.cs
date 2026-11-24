@@ -141,7 +141,7 @@ namespace AlienFarms.Items
 
             _networkHook?.OnSpawned(this);
             NotifyStateChanged();
-            GameEvents.RaiseBombSpawned(this);
+            GameEvents.RaiseBombSpawned();
         }
 
         /// <summary>Network hook this bomb reports its authority spawns and despawns to (null = local pooling).</summary>

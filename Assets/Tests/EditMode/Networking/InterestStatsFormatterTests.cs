@@ -11,7 +11,7 @@ namespace AlienFarms.Networking.Tests
             "Conocidos 41  anim 28 \u00b7 bombas 1 \u00b7 otros 12\n" +
             "P2 ve  anim 14/38 \u00b7 bombas 0/1\n" +
             "Altas 23  Bajas 21  \u00b7 ventana 37 s\n" +
-            "Rx ventana 412 KB \u00b7 6.9 KB/s";
+            "Tx ventana 412 KB \u00b7 6.9 KB/s";
 
         [Test]
         public void HostShowsAllLines()
@@ -29,6 +29,16 @@ namespace AlienFarms.Networking.Tests
             Assert.That(Render(CreateSample(isHost: false), InterestStatsFormatter.BufferSize), Is.EqualTo(expected));
         }
 
+        [Test]
+        public void TrafficDirectionChangesTheLabelAndSampleEquality()
+        {
+            InterestStatsSample tx = CreateSample(isHost: true);
+            InterestStatsSample rx = CreateSample(isHost: true, isTx: false);
+
+            Assert.That(tx.Equals(rx), Is.False);
+            Assert.That(Render(rx, InterestStatsFormatter.BufferSize), Does.EndWith("Rx ventana 412 KB \u00b7 6.9 KB/s"));
+        }
+
         [TestCase(0)]
         [TestCase(13)]
         [TestCase(82)]
@@ -37,11 +47,11 @@ namespace AlienFarms.Networking.Tests
             Assert.That(Render(CreateSample(isHost: true), capacity), Is.EqualTo(HostText.Substring(0, capacity)));
         }
 
-        private static InterestStatsSample CreateSample(bool isHost)
+        private static InterestStatsSample CreateSample(bool isHost, bool? isTx = null)
         {
             var known = new KnownObjectsCounts(28, 1, 12);
             var remote = new InterestCounters(23, 21, 14, 0);
-            return new InterestStatsSample(isHost, true, 30f, 36f, 5, known, remote, 38, 1, 37, 412, 69);
+            return new InterestStatsSample(isHost, true, 30f, 36f, 5, known, remote, 38, 1, 37, isTx ?? isHost, 412, 69);
         }
 
         private static string Render(InterestStatsSample sample, int capacity)

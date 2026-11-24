@@ -117,7 +117,7 @@ namespace AlienFarms.Audio
             }
         }
 
-        private void HandleBombSpawned(Bomb bomb)
+        private void HandleBombSpawned()
         {
             if (_data != null)
             {

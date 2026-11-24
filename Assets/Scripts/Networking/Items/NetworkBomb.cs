@@ -14,7 +14,7 @@ namespace AlienFarms.Networking.Items
     /// server). The detonation (event, not state) reaches clients through <see cref="DetonatedRpc"/>, and the stuns it
     /// causes through <see cref="PlayerStunnedRpc"/> (the stun itself is replicated in the player snapshot).
     /// Clients: the bomb is a Replica; the state is applied with <see cref="Bomb.ApplyReplicatedState"/> and the bomb
-    /// GameEvents are raised here (never on the server).
+    /// instance-specific GameEvents are raised here.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class NetworkBomb : NetworkCarriable
@@ -24,9 +24,6 @@ namespace AlienFarms.Networking.Items
         private Bomb _bomb;
 
         private readonly NetworkVariable<BombNetState> _state = new NetworkVariable<BombNetState>(
-            default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
-
-        private readonly NetworkVariable<int> _spawnTick = new NetworkVariable<int>(
             default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
         private BombNetState _applied;
@@ -69,7 +66,6 @@ namespace AlienFarms.Networking.Items
         public void ServerPrepareForSpawn()
         {
             _state.Reset(default);
-            _spawnTick.Reset(Anchor.Manager.ServerTime.Tick);
             _detonating = false;
         }
 
@@ -92,13 +88,6 @@ namespace AlienFarms.Networking.Items
 
             _applied = default;
             _state.OnValueChanged += HandleReplicatedStateChanged;
-
-            // A visibility re-entry applies the current state without replaying the spawn sound.
-            if (SpawnFreshnessRules.IsFresh(_spawnTick.Value, NetworkManager.ServerTime.Tick,
-                (int)NetworkManager.NetworkConfig.TickRate))
-            {
-                GameEvents.RaiseBombSpawned(_bomb);
-            }
 
             ApplyReplicated(_state.Value);
         }
@@ -127,11 +116,13 @@ namespace AlienFarms.Networking.Items
             else if (!IsServer)
             {
                 _state.OnValueChanged -= HandleReplicatedStateChanged;
-                _applied = default;
-                if (_bomb != null)
+                // Armed bombs are exempt from interest filtering and may still own a looping fuse.
+                if (_bomb != null && _applied.State == BombState.Armed)
                 {
                     GameEvents.RaiseBombDespawned(_bomb);
                 }
+
+                _applied = default;
             }
 
             base.OnNetworkDespawn();

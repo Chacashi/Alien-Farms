@@ -91,7 +91,7 @@ namespace AlienFarms.Core
         public static event Action<MatchResult> OnMatchEnded;
 
         /// <summary>Global: a bomb appeared (inert) in the Animal Zone.</summary>
-        public static event Action<Bomb> OnBombSpawned;
+        public static event Action OnBombSpawned;
 
         /// <summary>A player picked up a bomb.</summary>
         public static event Action<PlayerId, Bomb> OnBombGrabbed;
@@ -181,7 +181,7 @@ namespace AlienFarms.Core
 
         public static void RaiseMatchEnded(MatchResult result) => OnMatchEnded?.Invoke(result);
 
-        public static void RaiseBombSpawned(Bomb bomb) => OnBombSpawned?.Invoke(bomb);
+        public static void RaiseBombSpawned() => OnBombSpawned?.Invoke();
 
         public static void RaiseBombGrabbed(PlayerId playerId, Bomb bomb) => OnBombGrabbed?.Invoke(playerId, bomb);
 

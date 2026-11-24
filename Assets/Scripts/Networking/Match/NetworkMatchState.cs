@@ -164,6 +164,21 @@ namespace AlienFarms.Networking.Match
 
         #region Server
 
+        public void ServerNotifyBombSpawned()
+        {
+            if (IsServerSpawned)
+            {
+                BombSpawnedRpc();
+            }
+        }
+
+        // The match object is observed even when the new bomb is outside a client's interest area.
+        [Rpc(SendTo.NotServer, Delivery = RpcDelivery.Reliable, InvokePermission = RpcInvokePermission.Server)]
+        private void BombSpawnedRpc()
+        {
+            GameEvents.RaiseBombSpawned();
+        }
+
         /// <summary>
         /// Server: freezes the round clock every instance shows at the match's remaining time (the match is suspended by
         /// a reconnection grace, so its own timer is not ticking). Idempotent: a second freeze keeps the first value.
