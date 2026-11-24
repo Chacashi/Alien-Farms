@@ -475,7 +475,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 229701a1f623a54428e8f4997b683a1d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Audio.MusicPlayer
-  _track: {fileID: 0}
+  _track: {fileID: 8300000, guid: 9783739c3f4c0d146af1d332e8b65510, type: 3}
   _playDuringPause: 1
 --- !u!82 &151750790
 AudioSource:
