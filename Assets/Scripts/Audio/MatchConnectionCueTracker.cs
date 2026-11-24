@@ -32,7 +32,7 @@ namespace AlienFarms.Audio
         }
 
         /// <summary>Tracks a seat transition and writes up to two cues into the supplied buffer.</summary>
-        public int Apply(PlayerId id, PlayerConnectionStatus status, Span<UiSfxCue> output)
+        public int Apply(PlayerId id, PlayerConnectionStatus status, Span<UiSfxCue> output, bool isLocalSeat = false)
         {
             int index = (int)id - 1;
             if (index < 0 || index >= _known.Length)
@@ -80,7 +80,12 @@ namespace AlienFarms.Audio
                         return 1;
                     }
 
-                    output[0] = UiSfxCue.PlayerReconnected;
+                    int count = 0;
+                    if (!isLocalSeat)
+                    {
+                        output[count++] = UiSfxCue.PlayerReconnected;
+                    }
+
                     if (_suspended && !IsAnySeatReconnecting())
                     {
                         _suspended = false;
@@ -88,12 +93,11 @@ namespace AlienFarms.Audio
                         _seatReleasedWhileSuspended = false;
                         if (shouldResume)
                         {
-                            output[1] = UiSfxCue.MatchResumed;
-                            return 2;
+                            output[count++] = UiSfxCue.MatchResumed;
                         }
                     }
 
-                    return 1;
+                    return count;
 
                 case PlayerConnectionStatus.Left:
                 case PlayerConnectionStatus.TimedOut:

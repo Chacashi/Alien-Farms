@@ -56,6 +56,29 @@ namespace AlienFarms.Tests
         }
 
         [Test]
+        public void LocalSeatReconnectDuringSuspension_OnlyEmitsMatchResumed()
+        {
+            Apply(PlayerId.Player2, PlayerConnectionStatus.Reconnecting);
+
+            int count = _tracker.Apply(PlayerId.Player2, PlayerConnectionStatus.Connected, _output, isLocalSeat: true);
+
+            Assert.That(count, Is.EqualTo(1));
+            Assert.That(_output[0], Is.EqualTo(UiSfxCue.MatchResumed));
+        }
+
+        [Test]
+        public void RemoteSeatReconnectDuringSuspension_EmitsPlayerReconnectedAndMatchResumed()
+        {
+            Apply(PlayerId.Player2, PlayerConnectionStatus.Reconnecting);
+
+            int count = _tracker.Apply(PlayerId.Player2, PlayerConnectionStatus.Connected, _output, isLocalSeat: false);
+
+            Assert.That(count, Is.EqualTo(2));
+            Assert.That(_output[0], Is.EqualTo(UiSfxCue.PlayerReconnected));
+            Assert.That(_output[1], Is.EqualTo(UiSfxCue.MatchResumed));
+        }
+
+        [Test]
         public void TwoReconnectingSeats_ResumeOnlyAfterLastReconnect()
         {
             Apply(PlayerId.Player1, PlayerConnectionStatus.Connected);

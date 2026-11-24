@@ -62,24 +62,29 @@ namespace AlienFarms.Audio
 
         private void HandleMatchPhaseChanged(MatchPhase previous, MatchPhase current) => _tracker.SetPhase(current);
 
-        private void HandlePlayerConnectionChanged(PlayerId id, PlayerConnectionStatus status, float graceSeconds)
+        private void HandlePlayerConnectionChanged(PlayerId id, PlayerConnectionStatus status, float graceSeconds,
+            bool isLocalSeat)
         {
-            int count = _tracker.Apply(id, status, _buffer);
+            int count = _tracker.Apply(id, status, _buffer, isLocalSeat);
             if (count == 0)
             {
                 return;
             }
 
             UiSfxCue cue = _buffer[0];
-            if (cue != UiSfxCue.PlayerReconnected)
+            if (cue != UiSfxCue.MatchResumed)
             {
-                _pendingCue = UiSfxCue.None;
+                if (cue != UiSfxCue.PlayerReconnected)
+                {
+                    _pendingCue = UiSfxCue.None;
+                }
+
+                Play(cue);
             }
 
-            Play(cue);
-            if (count == 2 && _buffer[1] == UiSfxCue.MatchResumed && _library != null)
+            if (_buffer[count - 1] == UiSfxCue.MatchResumed && _library != null)
             {
-                _pendingCue = _buffer[1];
+                _pendingCue = UiSfxCue.MatchResumed;
                 _pendingCueTime = Time.unscaledTime + _library.ResumeAfterReconnectDelay;
             }
         }

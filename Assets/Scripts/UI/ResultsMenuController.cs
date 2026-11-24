@@ -131,7 +131,8 @@ namespace AlienFarms.UI
             Release();
         }
 
-        private void HandlePlayerConnectionChanged(PlayerId playerId, PlayerConnectionStatus status, float graceLeft)
+        private void HandlePlayerConnectionChanged(PlayerId playerId, PlayerConnectionStatus status, float graceLeft,
+            bool isLocalSeat)
         {
             if (playerId == PlayerId.None)
             {

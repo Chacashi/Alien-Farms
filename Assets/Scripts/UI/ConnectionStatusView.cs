@@ -130,7 +130,7 @@ namespace AlienFarms.UI
             }
         }
 
-        private void HandleConnectionChanged(PlayerId id, PlayerConnectionStatus status, float graceLeft)
+        private void HandleConnectionChanged(PlayerId id, PlayerConnectionStatus status, float graceLeft, bool isLocalSeat)
         {
             int index = ToIndex(id);
             if (index < 0)

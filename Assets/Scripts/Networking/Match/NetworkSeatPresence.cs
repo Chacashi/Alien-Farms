@@ -117,10 +117,15 @@ namespace AlienFarms.Networking.Match
 
         private void Raise(int count)
         {
+            NetworkManager manager = NetworkManager;
+            SeatPresenceBoard board = _applied;
             for (int i = 0; i < count; i++)
             {
                 PresenceChange change = _changes[i];
-                GameEvents.RaisePlayerConnectionChanged(change.Id, change.Status, change.GraceLeft);
+                SeatPresence seat = board.Get(change.Id);
+                bool isLocalSeat = manager != null && manager.IsClient && seat.IsSeated
+                    && seat.ClientId == manager.LocalClientId;
+                GameEvents.RaisePlayerConnectionChanged(change.Id, change.Status, change.GraceLeft, isLocalSeat);
             }
         }
 

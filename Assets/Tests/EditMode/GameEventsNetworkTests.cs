@@ -133,7 +133,7 @@ namespace AlienFarms.Tests
             _lastInt = count;
         }
 
-        private void HandleConnection(PlayerId playerId, PlayerConnectionStatus status, float graceSeconds)
+        private void HandleConnection(PlayerId playerId, PlayerConnectionStatus status, float graceSeconds, bool isLocalSeat)
         {
             _calls++;
             _lastPlayer = playerId;
