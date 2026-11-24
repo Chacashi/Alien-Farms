@@ -1,5 +1,6 @@
 using AlienFarms.Animals;
 using AlienFarms.Core;
+using AlienFarms.Networking.Interest;
 using AlienFarms.Networking.Player;
 using Unity.Netcode;
 using UnityEngine;
@@ -33,6 +34,9 @@ namespace AlienFarms.Networking.Animals
         public AnimalNetState ReplicatedState => _state.Value;
 
         public override IGrabbable Grabbable => _animal;
+
+        public override InterestKind InterestKind => InterestKind.Animal;
+        public override bool IsInterestExempt => _animal.State is AnimalState.Carried or AnimalState.Airborne;
 
         public override PlayerId Claimant =>
             _state.Value.State == AnimalState.Carried ? _state.Value.Holder : PlayerId.None;

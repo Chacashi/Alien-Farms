@@ -12,14 +12,15 @@ namespace AlienFarms.Data
         // 1v1: host + 1 client; not adjustable
         public const int SessionCapacity = 2;
 
-        private const int MinimumProtocolVersion = 4;
+        private const int MinimumProtocolVersion = 5;
 
         [Header("Session")]
         // History: 1 = payload with CharacterIndex (1.5); 2 = character picked in the room, removed from the payload (2.3);
         // 3 = MatchResult.EndReason / forfeit winner replicated by NetworkMatchState (2.8);
         // 4 = SeatPresenceBoard with only player seats (Block 0).
+        // 5 = NetworkBomb replicates its original spawn tick.
         [SerializeField, Min(1), Tooltip("Connection protocol version; clients with a different one are rejected. Bump it whenever the connection payload or any replicated layout changes.")]
-        private int _protocolVersion = 4;
+        private int _protocolVersion = 5;
 
         [SerializeField, Tooltip("Unity Gaming Services environment name.")]
         private string _environmentName = "dev";

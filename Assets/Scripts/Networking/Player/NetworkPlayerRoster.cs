@@ -66,6 +66,16 @@ namespace AlienFarms.Networking.Player
             }
         }
 
+        public bool TryGetSpawnPosition(PlayerId id, out Vector3 position)
+        {
+            int index = (int)id - 1;
+            Transform spawn = _spawnPoints != null && index >= 0 && index < _spawnPoints.Length
+                ? _spawnPoints[index]
+                : null;
+            position = spawn != null ? spawn.position : default;
+            return spawn != null;
+        }
+
         public bool TryGetRig(PlayerId id, out PlayerRig rig)
         {
             int index = (int)id - 1;

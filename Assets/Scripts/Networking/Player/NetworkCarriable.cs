@@ -2,6 +2,7 @@ using System;
 using AlienFarms.Core;
 using AlienFarms.Data;
 using AlienFarms.Networking.Data;
+using AlienFarms.Networking.Interest;
 using AlienFarms.Player;
 using Unity.Netcode;
 using Unity.Netcode.Components;
@@ -35,6 +36,21 @@ namespace AlienFarms.Networking.Player
         private NetworkTransform _networkTransform;
 
         private NetworkRuntimeAnchor _anchor;
+        private IInterestPolicy _interest;
+        private NetworkObject.VisibilityDelegate _visibilityCheck;
+
+        internal int InterestIndex { get; set; } = -1;
+
+        public abstract InterestKind InterestKind { get; }
+        public abstract bool IsInterestExempt { get; }
+
+        public void ServerBindInterest(IInterestPolicy policy)
+        {
+            _interest = policy;
+            NetworkObject.CheckObjectVisibility = policy != null ? _visibilityCheck : null;
+        }
+
+        private bool EvaluateVisibility(ulong clientId) => _interest == null || _interest.Evaluate(this, clientId);
         private PlayerId _serverHolder = PlayerId.None;
         private bool _serverParented;
         private PlayerId _mirroredHolder = PlayerId.None;
@@ -107,6 +123,7 @@ namespace AlienFarms.Networking.Player
 
         protected virtual void Awake()
         {
+            _visibilityCheck = EvaluateVisibility;
             if (_networkTransform == null)
             {
                 TryGetComponent(out _networkTransform);
@@ -200,6 +217,7 @@ namespace AlienFarms.Networking.Player
                 {
                     if (NetworkObject.OwnerClientId != player.OwnerClientId)
                     {
+                        _interest?.EnsureVisibleTo(this, player.OwnerClientId);
                         NetworkObject.ChangeOwnership(player.OwnerClientId);
                     }
 

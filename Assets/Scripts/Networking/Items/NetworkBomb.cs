@@ -1,5 +1,6 @@
 using AlienFarms.Core;
 using AlienFarms.Items;
+using AlienFarms.Networking.Interest;
 using AlienFarms.Networking.Player;
 using Unity.Netcode;
 using UnityEngine;
@@ -25,6 +26,9 @@ namespace AlienFarms.Networking.Items
         private readonly NetworkVariable<BombNetState> _state = new NetworkVariable<BombNetState>(
             default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
+        private readonly NetworkVariable<int> _spawnTick = new NetworkVariable<int>(
+            default, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
         private BombNetState _applied;
         private bool _serverListening;
 
@@ -36,6 +40,9 @@ namespace AlienFarms.Networking.Items
         public BombNetState ReplicatedState => _state.Value;
 
         public override IGrabbable Grabbable => _bomb;
+
+        public override InterestKind InterestKind => InterestKind.Bomb;
+        public override bool IsInterestExempt => _bomb.State is BombState.Carried or BombState.Armed;
 
         /// <summary>Carried: the holder. Armed: the thrower (it keeps ownership until the detonation).</summary>
         public override PlayerId Claimant
@@ -62,6 +69,7 @@ namespace AlienFarms.Networking.Items
         public void ServerPrepareForSpawn()
         {
             _state.Reset(default);
+            _spawnTick.Reset(Anchor.Manager.ServerTime.Tick);
             _detonating = false;
         }
 
@@ -85,8 +93,13 @@ namespace AlienFarms.Networking.Items
             _applied = default;
             _state.OnValueChanged += HandleReplicatedStateChanged;
 
-            // Spawned before any state event, as on the server (a late joiner may receive it already carried or armed).
-            GameEvents.RaiseBombSpawned(_bomb);
+            // A visibility re-entry applies the current state without replaying the spawn sound.
+            if (SpawnFreshnessRules.IsFresh(_spawnTick.Value, NetworkManager.ServerTime.Tick,
+                (int)NetworkManager.NetworkConfig.TickRate))
+            {
+                GameEvents.RaiseBombSpawned(_bomb);
+            }
+
             ApplyReplicated(_state.Value);
         }
 
