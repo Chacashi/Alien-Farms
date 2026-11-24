@@ -53,7 +53,7 @@ namespace AlienFarms.Tests
         [Test]
         public void Diff_SamePickStateWithChangedSeatMetadata_IsSilent()
         {
-            var current = new OnlineLobbySnapshot(OnlineLobbyPhase.Open, false, 2,
+            var current = new OnlineLobbySnapshot(OnlineLobbyPhase.Open, 2,
                 new OnlineLobbySeat(PlayerId.Player2, 2, "Renamed", false, true),
                 new OnlineLobbySeat(PlayerId.Player1, NoPick, "Local", true, false));
             var output = new UiSfxCue[4];
@@ -66,7 +66,7 @@ namespace AlienFarms.Tests
         public void Diff_RemoteSeatChanges_EmitCueEvenWithRemotePicksDisabled(bool joins, UiSfxCue expected)
         {
             OnlineLobbySnapshot fullRoom = Room(NoPick, 1);
-            var localOnly = new OnlineLobbySnapshot(OnlineLobbyPhase.Open, false, 1, fullRoom.Seat0, default);
+            var localOnly = new OnlineLobbySnapshot(OnlineLobbyPhase.Open, 1, fullRoom.Seat0, default);
             var output = new UiSfxCue[4];
 
             int count = OnlineLobbyCueRules.Diff(joins ? localOnly : fullRoom,
@@ -80,28 +80,16 @@ namespace AlienFarms.Tests
         public void Diff_LocalExit_IsSilent()
         {
             OnlineLobbySnapshot fullRoom = Room(NoPick, NoPick);
-            var remoteOnly = new OnlineLobbySnapshot(OnlineLobbyPhase.Open, false, 1, fullRoom.Seat1, default);
+            var remoteOnly = new OnlineLobbySnapshot(OnlineLobbyPhase.Open, 1, fullRoom.Seat1, default);
             var output = new UiSfxCue[4];
 
             Assert.That(OnlineLobbyCueRules.Diff(fullRoom, remoteOnly, true, output), Is.Zero);
             Assert.That(OnlineLobbyCueRules.Diff(fullRoom, default, true, output), Is.Zero);
         }
 
-        [Test]
-        public void Diff_SpectatorInRoom_HearsRemoteArrival()
-        {
-            var previous = new OnlineLobbySnapshot(OnlineLobbyPhase.Open, true, 0, default, default);
-            var remote = new OnlineLobbySeat(PlayerId.Player1, NoPick, "Remote", false, true);
-            var current = new OnlineLobbySnapshot(OnlineLobbyPhase.Open, true, 1, remote, default);
-            var output = new UiSfxCue[4];
-
-            Assert.That(OnlineLobbyCueRules.Diff(previous, current, false, output), Is.EqualTo(1));
-            Assert.That(output[0], Is.EqualTo(UiSfxCue.PlayerJoined));
-        }
-
         private static OnlineLobbySnapshot Room(int localPick, int remotePick, OnlineLobbyPhase phase = OnlineLobbyPhase.Open)
         {
-            return new OnlineLobbySnapshot(phase, false, 2,
+            return new OnlineLobbySnapshot(phase, 2,
                 new OnlineLobbySeat(PlayerId.Player1, localPick, "Local", true, true),
                 new OnlineLobbySeat(PlayerId.Player2, remotePick, "Remote", false, false));
         }

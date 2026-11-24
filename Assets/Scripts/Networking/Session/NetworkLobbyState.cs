@@ -336,11 +336,10 @@ namespace AlienFarms.Networking.Session
                     entry.ClientId == NetworkManager.ServerClientId);
             }
 
-            bool isSpectator = count >= MaxSeats && localId == PlayerId.None;
             bool canStart = LobbyRules.CanStart(_publishEntries, count, RequiredSeats);
 
             _lobbyChannel.SetPhase(_phase.Value);
-            _lobbyChannel.SetSeats(_publishSeats, count, localId, isSpectator, canStart);
+            _lobbyChannel.SetSeats(_publishSeats, count, localId, canStart);
         }
 
         private void Unsubscribe()

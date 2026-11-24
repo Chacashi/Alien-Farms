@@ -11,7 +11,7 @@ namespace AlienFarms.Networking.Tests
     {
         private const ulong HostClient = 0;
         private const ulong GuestClient = 7;
-        private const ulong SpectatorClient = 9;
+        private const ulong UnseatedClient = 9;
         private const int Roster = 4;
         private const byte None = PlayerSlot.NoCharacter;
 
@@ -110,8 +110,8 @@ namespace AlienFarms.Networking.Tests
         {
             LobbySlotEntry[] entries = Room(None, None);
 
-            Assert.That(LobbyRules.ApplyRequest(entries, 2, SpectatorClient, 0, Roster, true), Is.EqualTo(LobbyRequestResult.RejectedNotSeated));
-            Assert.That(LobbyRules.ApplyRequest(entries, 2, SpectatorClient, LobbyRules.Release, Roster, true), Is.EqualTo(LobbyRequestResult.RejectedNotSeated));
+            Assert.That(LobbyRules.ApplyRequest(entries, 2, UnseatedClient, 0, Roster, true), Is.EqualTo(LobbyRequestResult.RejectedNotSeated));
+            Assert.That(LobbyRules.ApplyRequest(entries, 2, UnseatedClient, LobbyRules.Release, Roster, true), Is.EqualTo(LobbyRequestResult.RejectedNotSeated));
         }
 
         [Test]

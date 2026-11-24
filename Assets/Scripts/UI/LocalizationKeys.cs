@@ -68,7 +68,6 @@ namespace AlienFarms.UI
         public const string OnlineRoomWaitingPlayer = "online.room.waiting_player";
         public const string OnlineRoomWaitingHost = "online.room.waiting_host";
         public const string OnlineRoomNeedPicks = "online.room.need_picks";
-        public const string OnlineRoomSpectator = "online.room.spectator";
         public const string OnlineRoomSyncing = "online.room.syncing";
         public const string OnlineBadgeHost = "online.badge.host";
         public const string OnlineBadgeYou = "online.badge.you";
@@ -79,13 +78,11 @@ namespace AlienFarms.UI
         public const string OnlineBusyStarting = "online.busy.starting";
         public const string OnlineBusyCancel = "online.busy.cancel";
 
-        // UI table: connection status, spectator, rejoin and name (task 2.7).
+        // UI table: connection status, rejoin and name (task 2.7).
         public const string OnlineStatusReconnecting = "online.status.reconnecting";
         public const string OnlineStatusReturned = "online.status.returned";
         public const string OnlineStatusLeft = "online.status.left";
         public const string OnlineStatusTimedOut = "online.status.timed_out";
-        public const string OnlineSpectatorWatching = "online.spectator.watching";
-        public const string OnlineSpectatorLeave = "online.spectator.leave";
         public const string OnlineHubRejoin = "online.hub.rejoin";
         public const string OnlineHubNameLabel = "online.hub.name_label";
         public const string OnlineHubNamePlaceholder = "online.hub.name_placeholder";

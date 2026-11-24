@@ -37,7 +37,7 @@ namespace AlienFarms.Core
         // Online room (lobby).
         /// <summary>The requested character is already picked by the other player.</summary>
         public const string CharacterTaken = "online.error.character_taken";
-        /// <summary>The request came from a participant without a player seat (spectator).</summary>
+        /// <summary>The request came from a client without a player seat yet.</summary>
         public const string NotSeated = "online.error.not_seated";
         /// <summary>Start requested while the room does not allow it (missing player or pick).</summary>
         public const string CannotStart = "online.error.cannot_start";

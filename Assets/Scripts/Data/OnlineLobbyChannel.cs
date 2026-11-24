@@ -26,7 +26,6 @@ namespace AlienFarms.Data
         [NonSerialized] private OnlineLobbyPhase _phase;
         [NonSerialized] private int _seatCount;
         [NonSerialized] private PlayerId _localPlayerId;
-        [NonSerialized] private bool _isLocalSpectator;
         [NonSerialized] private bool _canStart;
         [NonSerialized] private string _lastRejectKey;
 
@@ -44,11 +43,8 @@ namespace AlienFarms.Data
         /// <summary>Occupied seats (0..<see cref="MaxSeats"/>).</summary>
         public int SeatCount => IsCurrent ? _seatCount : 0;
 
-        /// <summary>Seat held by this machine; <see cref="PlayerId.None"/> when spectating or not seated yet.</summary>
+        /// <summary>Seat held by this machine; <see cref="PlayerId.None"/> while not seated yet.</summary>
         public PlayerId LocalPlayerId => IsCurrent ? _localPlayerId : PlayerId.None;
-
-        /// <summary>True when both seats are taken and none is this machine's.</summary>
-        public bool IsLocalSpectator => IsCurrent && _isLocalSpectator;
 
         /// <summary>True when the match can start (computed by the publisher: two seats with distinct picks).</summary>
         public bool CanStart => IsCurrent && _canStart;
@@ -154,9 +150,9 @@ namespace AlienFarms.Data
 
         /// <summary>
         /// Replaces the seats with the first <paramref name="count"/> entries (at most <see cref="MaxSeats"/>) and the
-        /// local role. A spectator never has a local seat.
+        /// local seat (None while not seated yet).
         /// </summary>
-        public void SetSeats(OnlineLobbySeat[] seats, int count, PlayerId localPlayerId, bool isLocalSpectator, bool canStart)
+        public void SetSeats(OnlineLobbySeat[] seats, int count, PlayerId localPlayerId, bool canStart)
         {
             EnsureCurrent();
             if (seats == null)
@@ -165,14 +161,8 @@ namespace AlienFarms.Data
             }
 
             count = Mathf.Clamp(count, 0, Mathf.Min(MaxSeats, seats?.Length ?? 0));
-            if (isLocalSpectator)
-            {
-                localPlayerId = PlayerId.None;
-            }
-
             bool changed = count != _seatCount
                 || localPlayerId != _localPlayerId
-                || isLocalSpectator != _isLocalSpectator
                 || canStart != _canStart;
             for (int i = 0; i < count; i++)
             {
@@ -191,7 +181,6 @@ namespace AlienFarms.Data
 
             _seatCount = count;
             _localPlayerId = localPlayerId;
-            _isLocalSpectator = isLocalSpectator;
             _canStart = canStart;
             if (changed)
             {
@@ -226,7 +215,7 @@ namespace AlienFarms.Data
         /// <summary>Clears seats and local role; true when anything was set.</summary>
         private bool ClearSeatData()
         {
-            bool changed = _seatCount != 0 || _localPlayerId != PlayerId.None || _isLocalSpectator || _canStart;
+            bool changed = _seatCount != 0 || _localPlayerId != PlayerId.None || _canStart;
             for (int i = 0; i < MaxSeats; i++)
             {
                 _seats[i] = default;
@@ -234,7 +223,6 @@ namespace AlienFarms.Data
 
             _seatCount = 0;
             _localPlayerId = PlayerId.None;
-            _isLocalSpectator = false;
             _canStart = false;
             return changed;
         }

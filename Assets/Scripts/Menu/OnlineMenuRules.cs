@@ -96,19 +96,14 @@ namespace AlienFarms.Menu
         }
 
         /// <summary>
-        /// Room hint key: syncing until the lobby appears, the spectator notice, then waiting for a player, for both picks
+        /// Room hint key: syncing until the lobby appears, then waiting for a player, for both picks
         /// or for the host. Null when nothing is missing for the host (Start is available).
         /// </summary>
-        public static string HintKey(OnlineLobbyPhase lobbyPhase, int seatCount, bool allPicked, bool isHost, bool isSpectator)
+        public static string HintKey(OnlineLobbyPhase lobbyPhase, int seatCount, bool allPicked, bool isHost)
         {
             if (lobbyPhase == OnlineLobbyPhase.Unavailable)
             {
                 return LocalizationKeys.OnlineRoomSyncing;
-            }
-
-            if (isSpectator)
-            {
-                return LocalizationKeys.OnlineRoomSpectator;
             }
 
             if (seatCount < OnlineLobbyChannel.MaxSeats)

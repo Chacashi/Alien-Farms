@@ -645,7 +645,7 @@ namespace AlienFarms.Menu
         }
 
         /// <summary>
-        /// Renders cards, seats, spectator, code, start and hint. Returns true when the room is read-only here;
+        /// Renders cards, seats, code, start and hint. Returns true when the room is read-only here;
         /// <paramref name="locked"/> is true when the local seat holds a pick (cards locked until it is released).
         /// </summary>
         private bool RenderRoom(OnlineLobbyPhase phase, out bool locked, out bool canStart)
@@ -654,7 +654,6 @@ namespace AlienFarms.Menu
             OnlineLobbySeat localSeat = default;
             bool seated = _lobby != null && _lobby.TryGetSeat(localId, out localSeat);
             bool localHasCharacter = seated && localSeat.HasCharacter;
-            bool isSpectator = _lobby != null && _lobby.IsLocalSpectator;
             bool open = phase == OnlineLobbyPhase.Open;
 
             // Picking is being ready: the cards stay locked until Cancel releases the pick (as in the local selection).
@@ -674,16 +673,15 @@ namespace AlienFarms.Menu
             bool p1Picked = RenderSeat(PlayerId.Player1);
             bool p2Picked = RenderSeat(PlayerId.Player2);
             bool allPicked = p1Picked && p2Picked;
-            _view.SetSpectator(isSpectator, GetSpectatorName());
             _view.SetCode(_session != null ? _session.Code : null);
 
             bool isHost = IsHost;
             canStart = open && _lobby != null && _lobby.CanStart;
-            _view.SetStart(isHost && !isSpectator, canStart);
+            _view.SetStart(isHost, canStart);
             int seatCount = _lobby != null ? _lobby.SeatCount : 0;
-            _view.SetHint(OnlineMenuRules.HintKey(phase, seatCount, allPicked, isHost, isSpectator));
+            _view.SetHint(OnlineMenuRules.HintKey(phase, seatCount, allPicked, isHost));
 
-            // Spectating, or the lobby has not appeared yet: nothing to pick, focus goes to Leave.
+            // Not seated yet: nothing to pick, focus goes to Leave.
             locked = localHasCharacter;
             return !seated;
         }
@@ -750,21 +748,6 @@ namespace AlienFarms.Menu
             }
 
             return _hostLeftWinShown ? LocalizationKeys.StatsHostLeftWin : key;
-        }
-
-        private string GetSpectatorName()
-        {
-            int count = _session != null ? _session.ParticipantCount : 0;
-            for (int i = 0; i < count; i++)
-            {
-                OnlineParticipant participant = _session.GetParticipant(i);
-                if (participant.IsSpectator)
-                {
-                    return participant.DisplayName ?? string.Empty;
-                }
-            }
-
-            return null;
         }
 
         /// <summary>

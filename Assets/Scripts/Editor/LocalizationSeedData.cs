@@ -68,7 +68,6 @@ namespace AlienFarms.Editor
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineRoomWaitingPlayer, "Esperando jugador…", "Waiting for player…"),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineRoomWaitingHost, "Esperando al anfitrión…", "Waiting for the host…"),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineRoomNeedPicks, "Elijan personaje", "Pick your characters"),
-            new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineRoomSpectator, "Estás mirando", "You are spectating"),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineRoomSyncing, "Sincronizando…", "Syncing…"),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineBadgeHost, "Anfitrión", "Host"),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineBadgeYou, "Tú", "You"),
@@ -106,17 +105,14 @@ namespace AlienFarms.Editor
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineErrorNotConfigured, "El modo en línea no está disponible.", "Online mode is not available."),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineErrorUnknown, "Ocurrió un error inesperado.", "An unexpected error occurred."),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineErrorCharacterTaken, "Ese personaje ya fue elegido.", "That character is already taken."),
-            new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineErrorNotSeated, "Los espectadores no pueden elegir personaje.", "Spectators cannot pick a character."),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineErrorCannotStart, "Faltan jugadores o personajes para empezar.", "Players or characters are missing to start."),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineErrorStartFailed, "No se pudo cargar la partida.", "Could not load the match."),
 
-            // Connection status, spectator, rejoin and name (task 2.7).
+            // Connection status, rejoin and name (task 2.7).
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineStatusReconnecting, "Esperando a {0}: {1} s", "Waiting for {0}: {1} s"),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineStatusReturned, "{0} volvió", "{0} is back"),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineStatusLeft, "{0} salió", "{0} left"),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineStatusTimedOut, "{0} no volvió", "{0} did not come back"),
-            new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineSpectatorWatching, "Estás mirando", "You are watching"),
-            new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineSpectatorLeave, "Salir", "Leave"),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineHubRejoin, "Reconectar ({0} s)", "Reconnect ({0} s)"),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineHubNameLabel, "Tu nombre", "Your name"),
             new LocalizationSeedEntry(Ui, LocalizationKeys.OnlineHubNamePlaceholder, "Escribe tu nombre…", "Type your name…"),

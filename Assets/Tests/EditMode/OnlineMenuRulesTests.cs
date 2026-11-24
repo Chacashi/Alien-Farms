@@ -138,19 +138,18 @@ namespace AlienFarms.Tests
             Assert.That(OnlineMenuRules.Resolve(OnlineSessionStatus.Ready, Unavailable, wantsJoin), Is.EqualTo(OnlineScreen.Hub));
         }
 
-        [TestCase(Unavailable, 2, true, true, false, LocalizationKeys.OnlineRoomSyncing)]
-        [TestCase(Unavailable, 0, false, false, true, LocalizationKeys.OnlineRoomSyncing)]
-        [TestCase(Open, 2, true, false, true, LocalizationKeys.OnlineRoomSpectator)]
-        [TestCase(Open, 0, false, true, false, LocalizationKeys.OnlineRoomWaitingPlayer)]
-        [TestCase(Open, 1, false, true, false, LocalizationKeys.OnlineRoomWaitingPlayer)]
-        [TestCase(Open, 1, false, false, false, LocalizationKeys.OnlineRoomWaitingPlayer)]
-        [TestCase(Open, 2, false, true, false, LocalizationKeys.OnlineRoomNeedPicks)]
-        [TestCase(Open, 2, false, false, false, LocalizationKeys.OnlineRoomNeedPicks)]
-        [TestCase(Open, 2, true, false, false, LocalizationKeys.OnlineRoomWaitingHost)]
-        [TestCase(Open, 2, true, true, false, null)]
-        public void HintKey_ShowsWhatIsMissing(OnlineLobbyPhase phase, int seats, bool allPicked, bool isHost, bool isSpectator, string expected)
+        [TestCase(Unavailable, 2, true, true, LocalizationKeys.OnlineRoomSyncing)]
+        [TestCase(Unavailable, 0, false, false, LocalizationKeys.OnlineRoomSyncing)]
+        [TestCase(Open, 0, false, true, LocalizationKeys.OnlineRoomWaitingPlayer)]
+        [TestCase(Open, 1, false, true, LocalizationKeys.OnlineRoomWaitingPlayer)]
+        [TestCase(Open, 1, false, false, LocalizationKeys.OnlineRoomWaitingPlayer)]
+        [TestCase(Open, 2, false, true, LocalizationKeys.OnlineRoomNeedPicks)]
+        [TestCase(Open, 2, false, false, LocalizationKeys.OnlineRoomNeedPicks)]
+        [TestCase(Open, 2, true, false, LocalizationKeys.OnlineRoomWaitingHost)]
+        [TestCase(Open, 2, true, true, null)]
+        public void HintKey_ShowsWhatIsMissing(OnlineLobbyPhase phase, int seats, bool allPicked, bool isHost, string expected)
         {
-            Assert.That(OnlineMenuRules.HintKey(phase, seats, allPicked, isHost, isSpectator), Is.EqualTo(expected));
+            Assert.That(OnlineMenuRules.HintKey(phase, seats, allPicked, isHost), Is.EqualTo(expected));
         }
 
         [TestCase(true, 120.0, 100.0, true)]

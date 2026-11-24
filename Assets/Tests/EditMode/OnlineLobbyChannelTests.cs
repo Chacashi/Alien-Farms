@@ -48,7 +48,6 @@ namespace AlienFarms.Tests
             Assert.That(_channel.Phase, Is.EqualTo(OnlineLobbyPhase.Unavailable));
             Assert.That(_channel.SeatCount, Is.Zero);
             Assert.That(_channel.LocalPlayerId, Is.EqualTo(PlayerId.None));
-            Assert.That(_channel.IsLocalSpectator, Is.False);
             Assert.That(_channel.CanStart, Is.False);
             Assert.That(_channel.HasReject, Is.False);
             Assert.That(_channel.TryGetSeat(PlayerId.Player1, out _), Is.False);
@@ -106,7 +105,7 @@ namespace AlienFarms.Tests
         [Test]
         public void SetSeats_StoresSeatsAndLocalRole()
         {
-            _channel.SetSeats(_seats, 2, PlayerId.Player1, false, false);
+            _channel.SetSeats(_seats, 2, PlayerId.Player1, false);
 
             Assert.That(_channel.SeatCount, Is.EqualTo(2));
             Assert.That(_channel.LocalPlayerId, Is.EqualTo(PlayerId.Player1));
@@ -120,8 +119,8 @@ namespace AlienFarms.Tests
         [Test]
         public void SetSeats_SameDataTwice_RaisesChangedOnce()
         {
-            _channel.SetSeats(_seats, 2, PlayerId.Player1, false, false);
-            _channel.SetSeats(_seats, 2, PlayerId.Player1, false, false);
+            _channel.SetSeats(_seats, 2, PlayerId.Player1, false);
+            _channel.SetSeats(_seats, 2, PlayerId.Player1, false);
 
             Assert.That(_changed, Is.EqualTo(1));
         }
@@ -129,10 +128,10 @@ namespace AlienFarms.Tests
         [Test]
         public void SetSeats_SeatChange_RaisesChanged()
         {
-            _channel.SetSeats(_seats, 2, PlayerId.Player1, false, false);
+            _channel.SetSeats(_seats, 2, PlayerId.Player1, false);
             _seats[1] = new OnlineLobbySeat(PlayerId.Player2, 1, "Guest", false, false);
 
-            _channel.SetSeats(_seats, 2, PlayerId.Player1, false, true);
+            _channel.SetSeats(_seats, 2, PlayerId.Player1, true);
 
             Assert.That(_changed, Is.EqualTo(2));
             Assert.That(_channel.CanStart, Is.True);
@@ -142,9 +141,9 @@ namespace AlienFarms.Tests
         [Test]
         public void SetSeats_FewerSeats_ClearsTheRest()
         {
-            _channel.SetSeats(_seats, 2, PlayerId.Player1, false, false);
+            _channel.SetSeats(_seats, 2, PlayerId.Player1, false);
 
-            _channel.SetSeats(_seats, 1, PlayerId.Player1, false, false);
+            _channel.SetSeats(_seats, 1, PlayerId.Player1, false);
 
             Assert.That(_channel.SeatCount, Is.EqualTo(1));
             Assert.That(_channel.TryGetSeat(PlayerId.Player2, out _), Is.False);
@@ -157,24 +156,15 @@ namespace AlienFarms.Tests
             many[0] = _seats[0];
             many[1] = _seats[1];
 
-            _channel.SetSeats(many, 4, PlayerId.Player1, false, false);
+            _channel.SetSeats(many, 4, PlayerId.Player1, false);
 
             Assert.That(_channel.SeatCount, Is.EqualTo(OnlineLobbyChannel.MaxSeats));
         }
 
         [Test]
-        public void SetSeats_Spectator_HasNoLocalSeat()
-        {
-            _channel.SetSeats(_seats, 2, PlayerId.Player2, true, false);
-
-            Assert.That(_channel.IsLocalSpectator, Is.True);
-            Assert.That(_channel.LocalPlayerId, Is.EqualTo(PlayerId.None));
-        }
-
-        [Test]
         public void TryGetSeat_None_ReturnsFalse()
         {
-            _channel.SetSeats(_seats, 2, PlayerId.Player1, false, false);
+            _channel.SetSeats(_seats, 2, PlayerId.Player1, false);
 
             Assert.That(_channel.TryGetSeat(PlayerId.None, out _), Is.False);
         }
@@ -195,7 +185,7 @@ namespace AlienFarms.Tests
         public void SetPhase_Unavailable_ClearsSeatsAndRole()
         {
             _channel.SetPhase(OnlineLobbyPhase.Open);
-            _channel.SetSeats(_seats, 2, PlayerId.Player1, false, true);
+            _channel.SetSeats(_seats, 2, PlayerId.Player1, true);
 
             _channel.SetPhase(OnlineLobbyPhase.Unavailable);
 
@@ -232,7 +222,7 @@ namespace AlienFarms.Tests
         [Test]
         public void SetPhase_Starting_KeepsSeats()
         {
-            _channel.SetSeats(_seats, 2, PlayerId.Player1, false, true);
+            _channel.SetSeats(_seats, 2, PlayerId.Player1, true);
 
             _channel.SetPhase(OnlineLobbyPhase.Starting);
 

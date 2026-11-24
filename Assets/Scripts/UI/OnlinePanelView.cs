@@ -60,7 +60,7 @@ namespace AlienFarms.UI
         [SerializeField, Tooltip("BTN_CancelBusy (hidden while the busy state cannot be cancelled).")]
         private GameObject _busyFirst;
 
-        [SerializeField, Tooltip("BTN_Leave: focused on Cancel without a pick and for spectators.")]
+        [SerializeField, Tooltip("BTN_Leave: focused on Cancel without a pick or before taking a seat.")]
         private GameObject _roomLeave;
 
         [Header("Texts")]
@@ -104,14 +104,6 @@ namespace AlienFarms.UI
         [SerializeField, Tooltip("One view per player seat (matched by player).")]
         private OnlineSeatView[] _seats = new OnlineSeatView[0];
 
-        [SerializeField, Tooltip("'Spectator: name' row, shown while someone watches.")]
-        private GameObject _spectatorRow;
-
-        [SerializeField] private TMP_Text _spectatorName;
-
-        [SerializeField, Tooltip("'You are watching' banner, shown when this machine spectates.")]
-        private GameObject _spectatorBanner;
-
         [SerializeField, Tooltip("Start button (host only).")]
         private UnityEngine.UI.Button _startButton;
 
@@ -133,10 +125,8 @@ namespace AlienFarms.UI
         private bool _hasRejoinVisibility;
         private string _signedInName;
         private string _codeText;
-        private string _spectatorText;
         private bool _hasSignedIn;
         private bool _hasCode;
-        private bool _hasSpectator;
 
         /// <summary>A card was clicked / submitted (pick request).</summary>
         public event Action<CharacterDefinition> CardClicked;
@@ -433,21 +423,6 @@ namespace AlienFarms.UI
             }
         }
 
-        /// <summary>Spectator row (shown when <paramref name="displayName"/> is not null) and the local 'watching' banner.</summary>
-        public void SetSpectator(bool isLocal, string displayName)
-        {
-            bool hasSpectator = displayName != null;
-            SetActive(_spectatorRow, hasSpectator);
-            SetActive(_spectatorBanner, isLocal);
-            if (_spectatorName != null && hasSpectator
-                && (!_hasSpectator || !string.Equals(_spectatorText, displayName, StringComparison.Ordinal)))
-            {
-                _hasSpectator = true;
-                _spectatorText = displayName;
-                _spectatorName.SetText(displayName);
-            }
-        }
-
         public void SetStart(bool visible, bool interactable)
         {
             SetActive(_startRoot != null ? _startRoot : _startButton != null ? _startButton.gameObject : null, visible);
@@ -644,9 +619,9 @@ namespace AlienFarms.UI
                 Debug.LogWarning($"[{nameof(OnlinePanelView)}] Missing the hub Join or Back button on '{name}': their navigation does not follow BTN_Rejoin.", this);
             }
 
-            if (_startButton == null || _spectatorRow == null || _spectatorName == null || _spectatorBanner == null)
+            if (_startButton == null)
             {
-                Debug.LogWarning($"[{nameof(OnlinePanelView)}] Missing start button or spectator objects on '{name}'.", this);
+                Debug.LogWarning($"[{nameof(OnlinePanelView)}] Missing start button on '{name}'.", this);
             }
         }
     }
