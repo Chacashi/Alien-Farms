@@ -44,8 +44,8 @@ namespace AlienFarms.Networking.Session
         /// <summary>
         /// A failed rejoin keeps the offer when retrying may still work (transient network or service, the server not having
         /// noticed the drop yet: <see cref="OnlineSessionErrorKeys.AlreadyConnected"/>). Every key that does not fall back
-        /// to the join by code (<see cref="FallsBackToCodeJoin"/>) is one of them. A full room also keeps the offer until it expires. A missing
-        /// session, a refused seat or a cancellation (null) drop it.
+        /// to the join by code (<see cref="FallsBackToCodeJoin"/>) is one of them. A full room also keeps it: the offer
+        /// expires with the grace. A missing session, a refused seat or a cancellation (null) drop it.
         /// </summary>
         public static bool KeepsOfferAfterFailure(string errorKey)
         {

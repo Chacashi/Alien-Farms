@@ -23,7 +23,6 @@ namespace AlienFarms.Networking.Match
 
         public SeatPresence Player2 => _player2;
 
-
         /// <summary>Presence of <paramref name="id"/>'s seat (<see cref="SeatPresence.Empty"/> for an invalid id).</summary>
         public SeatPresence Get(PlayerId id)
         {

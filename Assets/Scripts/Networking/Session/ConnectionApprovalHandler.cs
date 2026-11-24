@@ -364,7 +364,9 @@ namespace AlienFarms.Networking.Session
                     break;
                 default:
                     Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Client {clientId} rejected: {decision.Reason}.", this);
+                    // Never the host's own client: removing it would drop the host from its own session.
                     if (_sessionConnection != null && _sessionConnection.IsOnline
+                        && clientId != NetworkManager.ServerClientId
                         && SeatGraceRules.ShouldRemoveRejectedMember(decision.Reason == ApprovalRules.ReasonRoomFull,
                             IsServerStopping, payload.HasUgsPlayerId, _slots.IsUgsIdInUse(payload.UgsPlayerId)))
                     {

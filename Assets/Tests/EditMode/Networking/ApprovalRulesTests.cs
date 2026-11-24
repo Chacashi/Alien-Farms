@@ -400,7 +400,7 @@ namespace AlienFarms.Networking.Tests
         // ---------------------------------------------------------------- Policy and reasons
 
         [Test]
-        public void Policy_FromSettings_MatchesSessionCapacity()
+        public void SessionCapacity_MatchesSeatAndLobbyCapacity()
         {
             Assert.That(AlienFarms.Data.NetworkSettings.SessionCapacity, Is.EqualTo(2));
             Assert.That(AlienFarms.Data.NetworkSettings.SessionCapacity, Is.EqualTo(ServerSlotDirectory.Capacity));
