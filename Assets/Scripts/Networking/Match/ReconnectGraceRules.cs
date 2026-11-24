@@ -66,13 +66,12 @@ namespace AlienFarms.Networking.Match
         }
 
         /// <summary>
-        /// Whole board from the seat table (index = (int)PlayerId - 1) and the spectator places (first one in use wins).
+        /// Whole board from the seat table (index = (int)PlayerId - 1).
         /// <paramref name="lastRelease"/> holds, per seat, how it was last released; <paramref name="previous"/> is the
         /// board written last (its reservations keep their grace end, see <see cref="KeepReservation"/>).
         /// </summary>
         public static SeatPresenceBoard BuildBoard(
             ReadOnlySpan<PlayerSlot> seats,
-            ReadOnlySpan<SpectatorSeat> spectators,
             ReadOnlySpan<PlayerConnectionStatus> lastRelease,
             in SeatPresenceBoard previous,
             double serverNow,
@@ -88,19 +87,7 @@ namespace AlienFarms.Networking.Match
             player1 = KeepReservation(previous.Player1, player1);
             player2 = KeepReservation(previous.Player2, player2);
 
-            bool hasSpectator = false;
-            ulong spectatorClientId = 0UL;
-            for (int i = 0; i < spectators.Length; i++)
-            {
-                if (spectators[i].InUse)
-                {
-                    hasSpectator = true;
-                    spectatorClientId = spectators[i].ClientId;
-                    break;
-                }
-            }
-
-            return new SeatPresenceBoard(player1, player2, hasSpectator, spectatorClientId);
+            return new SeatPresenceBoard(player1, player2);
         }
     }
 }

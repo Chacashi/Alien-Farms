@@ -45,7 +45,7 @@ namespace AlienFarms.Networking.Tests.Persistence
         }
 
         [Test]
-        public void Spectator_RecordsNothing()
+        public void NoLocalSeat_RecordsNothing()
         {
             PlayLive();
 

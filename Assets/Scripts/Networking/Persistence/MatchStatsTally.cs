@@ -41,7 +41,7 @@ namespace AlienFarms.Networking.Persistence
 
         /// <summary>
         /// The round ended with <paramref name="result"/>: true (once) with the local player's increment when it was seen
-        /// live and <paramref name="local"/> is a player (spectators record nothing).
+        /// live and there is a local seat (<paramref name="local"/> is not <see cref="PlayerId.None"/>).
         /// </summary>
         public bool TryComplete(PlayerId local, in MatchResult result, int animals, int tackles, out PlayerStatsSummary delta)
         {

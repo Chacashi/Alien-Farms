@@ -23,7 +23,7 @@ namespace AlienFarms.Tests
         [Test]
         public void Resolve_LateInstanceConnectedSeat_ShowsNothing()
         {
-            // A late spectator receives Connected for every held seat on spawn: that is not news.
+            // A reconnecting client receives Connected for every held seat on spawn: that is not news.
             Assert.That(ConnectionStatusRules.Resolve(PlayerConnectionStatus.Connected, 0f, false), Is.EqualTo(ConnectionBanner.None));
         }
 

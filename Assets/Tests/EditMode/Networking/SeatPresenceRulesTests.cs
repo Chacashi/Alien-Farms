@@ -99,16 +99,6 @@ namespace AlienFarms.Networking.Tests
         }
 
         [Test]
-        public void SpectatorChanges_PublishNothing()
-        {
-            SeatPresenceBoard previous = Board(SeatPresence.Connected(0), SeatPresence.Connected(1));
-            SeatPresenceBoard joined = previous.WithSpectator(true, 2);
-
-            Assert.That(SeatPresenceRules.Diff(previous, joined, 0d, _buffer), Is.EqualTo(0));
-            Assert.That(SeatPresenceRules.Diff(joined, previous, 0d, _buffer), Is.EqualTo(0));
-        }
-
-        [Test]
         public void BothSeatsChanging_PublishesPlayer1First()
         {
             SeatPresenceBoard current = Board(SeatPresence.Connected(0), SeatPresence.Connected(1));
@@ -142,7 +132,7 @@ namespace AlienFarms.Networking.Tests
         [Test]
         public void Current_PublishesHeldSeatsOnly()
         {
-            SeatPresenceBoard board = Board(SeatPresence.Connected(0), SeatPresence.Reconnecting(1, 120d)).WithSpectator(true, 2);
+            SeatPresenceBoard board = Board(SeatPresence.Connected(0), SeatPresence.Reconnecting(1, 120d));
 
             Assert.That(SeatPresenceRules.Current(board, 105d, _buffer), Is.EqualTo(2));
             AssertChange(_buffer[0], PlayerId.Player1, PlayerConnectionStatus.Connected, 0f);
@@ -154,7 +144,7 @@ namespace AlienFarms.Networking.Tests
         }
 
         private static SeatPresenceBoard Board(SeatPresence player1, SeatPresence player2) =>
-            new SeatPresenceBoard(player1, player2, false, 0);
+            new SeatPresenceBoard(player1, player2);
 
         private static void AssertChange(PresenceChange change, PlayerId id, PlayerConnectionStatus status, float graceLeft)
         {

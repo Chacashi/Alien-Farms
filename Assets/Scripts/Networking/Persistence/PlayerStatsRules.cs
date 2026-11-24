@@ -8,7 +8,7 @@ namespace AlienFarms.Networking.Persistence
         /// <summary>
         /// Increment for one round seen by <paramref name="local"/>: one match and exactly one of win / draw / loss
         /// (a forfeit counts for its winner like any win), plus the animals in the own pen and the tackles landed.
-        /// Zero for <see cref="PlayerId.None"/> (spectators record nothing).
+        /// Zero for no local seat (<see cref="PlayerId.None"/>).
         /// </summary>
         public static PlayerStatsSummary ForMatch(PlayerId local, in MatchResult result, int animals, int tackles)
         {

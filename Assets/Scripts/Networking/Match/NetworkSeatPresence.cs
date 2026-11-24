@@ -1,4 +1,3 @@
-using System;
 using AlienFarms.Core;
 using Unity.Netcode;
 using UnityEngine;
@@ -12,9 +11,8 @@ namespace AlienFarms.Networking.Match
     /// <list type="bullet">
     /// <item>Server: raises when it writes a different board.</item>
     /// <item>Pure clients: raise in Update, comparing against the last applied board. On spawn they publish the present
-    /// state (<see cref="SeatPresenceRules.Current"/>), so a late spectator sees a reservation from its first frame.</item>
+    /// state (<see cref="SeatPresenceRules.Current"/>), so a reconnecting client sees a reservation from its first frame.</item>
     /// </list>
-    /// Also tells a pure client whether it is the spectator (<see cref="IsLocalSpectator"/>).
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class NetworkSeatPresence : NetworkBehaviour
@@ -27,16 +25,9 @@ namespace AlienFarms.Networking.Match
 
         // Server: last board written (kept while not spawned yet, pushed on spawn). Pure client: last board applied.
         private SeatPresenceBoard _applied;
-        private bool _isLocalSpectator;
-
-        /// <summary>Raised on a pure client when it becomes (true) or stops being (false) the spectator.</summary>
-        public event Action<bool> LocalSpectatorChanged;
 
         /// <summary>Present board: the replicated one once spawned, otherwise the last one the server wrote.</summary>
         public SeatPresenceBoard Board => IsSpawned ? _board.Value : _applied;
-
-        /// <summary>True on a pure client admitted as spectator (no seat, no avatar).</summary>
-        public bool IsLocalSpectator => _isLocalSpectator;
 
         /// <summary>
         /// Server: publishes <paramref name="board"/> (raising its changes at server time <paramref name="serverNow"/>).
@@ -80,7 +71,6 @@ namespace AlienFarms.Networking.Match
             SeatPresenceBoard board = _board.Value;
             _applied = board;
             Raise(SeatPresenceRules.Current(board, ServerNow, _changes));
-            RefreshLocalSpectator(board);
         }
 
         public override void OnNetworkDespawn()
@@ -91,7 +81,6 @@ namespace AlienFarms.Networking.Match
             }
 
             _applied = default;
-            SetLocalSpectator(false);
         }
 
         private void Update()
@@ -110,7 +99,6 @@ namespace AlienFarms.Networking.Match
             int count = SeatPresenceRules.Diff(_applied, board, ServerNow, _changes);
             _applied = board;
             Raise(count);
-            RefreshLocalSpectator(board);
         }
 
         private double ServerNow => NetworkManager != null ? NetworkManager.ServerTime.Time : 0d;
@@ -127,23 +115,6 @@ namespace AlienFarms.Networking.Match
                     && seat.ClientId == manager.LocalClientId;
                 GameEvents.RaisePlayerConnectionChanged(change.Id, change.Status, change.GraceLeft, isLocalSeat);
             }
-        }
-
-        private void RefreshLocalSpectator(in SeatPresenceBoard board)
-        {
-            NetworkManager manager = NetworkManager;
-            SetLocalSpectator(manager != null && board.IsSpectator(manager.LocalClientId));
-        }
-
-        private void SetLocalSpectator(bool spectator)
-        {
-            if (_isLocalSpectator == spectator)
-            {
-                return;
-            }
-
-            _isLocalSpectator = spectator;
-            LocalSpectatorChanged?.Invoke(spectator);
         }
     }
 }

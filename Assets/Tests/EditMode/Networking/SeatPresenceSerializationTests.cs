@@ -18,10 +18,9 @@ namespace AlienFarms.Networking.Tests
         }
 
         [Test]
-        public void Board_Is45Bytes()
+        public void Board_Is36Bytes()
         {
-            // Two seats + bool has spectator + ulong spectator client.
-            Assert.That(Serialize(new SeatPresenceBoard()).Length, Is.EqualTo(45));
+            Assert.That(Serialize(new SeatPresenceBoard()).Length, Is.EqualTo(36));
         }
 
         [Test]
@@ -39,26 +38,13 @@ namespace AlienFarms.Networking.Tests
         {
             var board = new SeatPresenceBoard(
                 SeatPresence.Connected(0),
-                SeatPresence.Reconnecting(ulong.MaxValue, double.MaxValue),
-                true,
-                ulong.MaxValue - 1);
+                SeatPresence.Reconnecting(ulong.MaxValue, double.MaxValue));
 
             SeatPresenceBoard result = RoundTrip(board);
 
             Assert.That(result, Is.EqualTo(board));
             Assert.That(result.Player2.Status, Is.EqualTo(PlayerConnectionStatus.Reconnecting));
             Assert.That(result.Player2.GraceEndTime, Is.EqualTo(double.MaxValue));
-            Assert.That(result.IsSpectator(ulong.MaxValue - 1), Is.True);
-        }
-
-        [Test]
-        public void Board_WithoutSpectator_ClearsItsClientId()
-        {
-            var board = new SeatPresenceBoard(SeatPresence.Empty, SeatPresence.Empty, false, 9);
-
-            Assert.That(board.SpectatorClientId, Is.EqualTo(0UL));
-            Assert.That(board.IsSpectator(9), Is.False);
-            Assert.That(board.IsSpectator(0), Is.False);
         }
 
         [Test]
@@ -80,15 +66,12 @@ namespace AlienFarms.Networking.Tests
         public void Board_WithAndGet_TouchOnlyThatSeat()
         {
             SeatPresenceBoard board = new SeatPresenceBoard()
-                .With(PlayerId.Player2, SeatPresence.Connected(5))
-                .WithSpectator(true, 8);
+                .With(PlayerId.Player2, SeatPresence.Connected(5));
 
             Assert.That(board.Get(PlayerId.Player2), Is.EqualTo(SeatPresence.Connected(5)));
             Assert.That(board.Get(PlayerId.Player1), Is.EqualTo(SeatPresence.Empty));
             Assert.That(board.Get(PlayerId.None), Is.EqualTo(SeatPresence.Empty));
             Assert.That(board.With(PlayerId.None, SeatPresence.Connected(1)), Is.EqualTo(board));
-            Assert.That(board.IsSpectator(8), Is.True);
-            Assert.That(board.Equals(board.WithSpectator(true, 9)), Is.False);
         }
 
         private static void AssertSeatRoundTrip(SeatPresence seat)

@@ -13,7 +13,7 @@ namespace AlienFarms.Networking.Player
     /// <item>Color: the character's Primary theme color.</item>
     /// <item>Hidden over this machine's own avatar and while <see cref="NetworkSettings.ShowNameTags"/> is off.</item>
     /// <item>Debug line "client N" while <see cref="NetworkSettings.NameTagShowsClientId"/> is on.</item>
-    /// <item>Faces <see cref="NetworkRuntimeAnchor.ViewCamera"/> (local player or spectator camera).</item>
+    /// <item>Faces <see cref="NetworkRuntimeAnchor.ViewCamera"/> (local avatar camera).</item>
     /// </list>
     /// Update only compares cached values (seat, character, owner client, settings, camera reference) and pushes what
     /// changed to the view: no allocation per frame. The name is refreshed on <see cref="NetworkPlayer.DisplayNameChanged"/>.

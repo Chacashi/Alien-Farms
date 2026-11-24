@@ -5,7 +5,7 @@ namespace AlienFarms.Networking.Match
 {
     /// <summary>
     /// Pure rules of <see cref="NetworkSeatPresence"/>: which <see cref="PresenceChange"/>s a board transition publishes.
-    /// The spectator place never publishes anything (it does not suspend nor show a banner). No allocation.
+    /// No allocation.
     /// </summary>
     public static class SeatPresenceRules
     {

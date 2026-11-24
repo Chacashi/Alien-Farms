@@ -18,7 +18,6 @@ namespace AlienFarms.Networking.Match
     /// <item>Seat restored (its avatar spawned again), released as Left or TimedOut: once no seat awaits anybody the clock
     /// resumes and the suspension ends (the match then aborts by itself if a player is missing). A timed-out member is
     /// removed from the online session.</item>
-    /// <item>Spectators join and leave without suspending anything.</item>
     /// <item>The host leaving on purpose (<see cref="NetworkRootLifetime.HostLeaveStarted"/>): the match is suspended and its
     /// clock frozen for good, so nothing ends or scores while the clients get the leaving notice.</item>
     /// </list>
@@ -205,7 +204,7 @@ namespace AlienFarms.Networking.Match
             TryResume();
         }
 
-        // Spectators (and players, before their avatar spawns) only change the board.
+        // Players, before their avatar spawns, only change the board.
         private void HandleClientConnected(ulong clientId)
         {
             WriteBoard();
@@ -267,7 +266,7 @@ namespace AlienFarms.Networking.Match
 
             double serverNow = _manager.ServerTime.Time;
             _written = ReconnectGraceRules.BuildBoard(
-                slots.Seats, slots.Spectators, _lastRelease, _written, serverNow, _approval.Now, _settings.ReconnectGraceSeconds);
+                slots.Seats, _lastRelease, _written, serverNow, _approval.Now, _settings.ReconnectGraceSeconds);
             _presence.ServerWrite(_written, serverNow);
         }
 

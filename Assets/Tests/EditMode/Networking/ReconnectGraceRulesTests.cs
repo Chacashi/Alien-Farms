@@ -52,29 +52,26 @@ namespace AlienFarms.Networking.Tests
         }
 
         [Test]
-        public void BuildBoard_ReadsSeatsAndTheFirstSpectator()
+        public void BuildBoard_ReadsSeats()
         {
             var seats = new[] { Connected(PlayerId.Player1, 0), Dropped(PlayerId.Player2, 1, 10d) };
-            var spectators = new[] { new SpectatorSeat { InUse = true, ClientId = 2 } };
             var lastRelease = new PlayerConnectionStatus[2];
 
-            SeatPresenceBoard board = ReconnectGraceRules.BuildBoard(seats, spectators, lastRelease, default, 500d, 10d, Grace);
+            SeatPresenceBoard board = ReconnectGraceRules.BuildBoard(seats, lastRelease, default, 500d, 10d, Grace);
 
             Assert.That(board.Player1, Is.EqualTo(SeatPresence.Connected(0)));
             Assert.That(board.Player2.Status, Is.EqualTo(PlayerConnectionStatus.Reconnecting));
             Assert.That(board.Player2.GraceEndTime, Is.EqualTo(520d).Within(1e-9));
-            Assert.That(board.IsSpectator(2), Is.True);
         }
 
         [Test]
-        public void BuildBoard_WithoutSpectator()
+        public void BuildBoard_ReleasedSeatShowsHowItWasReleased()
         {
             var seats = new[] { Connected(PlayerId.Player1, 0), default };
             var lastRelease = new[] { PlayerConnectionStatus.Connected, PlayerConnectionStatus.Left };
 
-            SeatPresenceBoard board = ReconnectGraceRules.BuildBoard(seats, new SpectatorSeat[1], lastRelease, default, 0d, 0d, Grace);
+            SeatPresenceBoard board = ReconnectGraceRules.BuildBoard(seats, lastRelease, default, 0d, 0d, Grace);
 
-            Assert.That(board.HasSpectator, Is.False);
             Assert.That(board.Player2, Is.EqualTo(SeatPresence.Released(PlayerConnectionStatus.Left)));
         }
 
@@ -83,10 +80,10 @@ namespace AlienFarms.Networking.Tests
         {
             var seats = new[] { Connected(PlayerId.Player1, 0), Dropped(PlayerId.Player2, 1, 10d) };
             var lastRelease = new PlayerConnectionStatus[2];
-            SeatPresenceBoard first = ReconnectGraceRules.BuildBoard(seats, new SpectatorSeat[1], lastRelease, default, 500d, 10d, Grace);
+            SeatPresenceBoard first = ReconnectGraceRules.BuildBoard(seats, lastRelease, default, 500d, 10d, Grace);
 
             // Rebuilt 3 s later with clocks that drifted by 2 ms.
-            SeatPresenceBoard later = ReconnectGraceRules.BuildBoard(seats, new SpectatorSeat[1], lastRelease, first, 503.002d, 13d, Grace);
+            SeatPresenceBoard later = ReconnectGraceRules.BuildBoard(seats, lastRelease, first, 503.002d, 13d, Grace);
 
             Assert.That(later, Is.EqualTo(first));
         }

@@ -16,8 +16,7 @@ namespace AlienFarms.Networking.Player
     /// <see cref="GameEvents.OnPlayerLeft"/> on the server. Inert on clients (they raise those from NetworkPlayer).
     /// Lives under the gameplay scene's OnlineModeRoot; the GameModeRouter binds it to the match.
     /// Reconnection grace: a dropped player's pose is saved in its seat before its avatar despawns, and the avatar of
-    /// the returning client is placed there (<see cref="PlayerSpawned"/> with restored = true). Spectators have no
-    /// avatar.
+    /// the returning client is placed there (<see cref="PlayerSpawned"/> with restored = true).
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class NetworkPlayerRoster : MonoBehaviour, IPlayerRoster
@@ -254,12 +253,6 @@ namespace AlienFarms.Networking.Player
         private void TrySpawn(ulong clientId)
         {
             ServerSlotDirectory slots = _anchor.Slots;
-            if (slots != null && slots.TryGetSpectator(clientId, out _))
-            {
-                // A spectator watches without an avatar.
-                return;
-            }
-
             if (slots == null || !slots.TryGetByClient(clientId, out PlayerSlot slot))
             {
                 Debug.LogWarning($"[{nameof(NetworkPlayerRoster)}] Client {clientId} has no seat; no player spawned.", this);

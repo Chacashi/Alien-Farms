@@ -42,7 +42,7 @@ namespace AlienFarms.Networking.Tests.Persistence
         }
 
         [Test]
-        public void ForMatch_Spectator_RecordsNothing()
+        public void ForMatch_NoLocalSeat_RecordsNothing()
         {
             var result = new MatchResult(PlayerId.Player1, 1, 0);
 

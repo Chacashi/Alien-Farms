@@ -10,7 +10,7 @@ namespace AlienFarms.Networking.Player
     /// somebody claims the object or the server does not own it, and only while <see cref="OwnershipLabelToggle"/>
     /// (default: <see cref="AlienFarms.Data.NetworkSettings.ShowOwnershipLabels"/>) allows it. The text is rebuilt only
     /// on <see cref="NetworkCarriable.ViewChanged"/> (cached strings, no allocation); while shown it faces the anchor's
-    /// view camera (local player or spectator) in LateUpdate. In NGO client-server HasAuthority is true only on the server, whoever owns it.
+    /// local avatar camera in LateUpdate. In NGO client-server HasAuthority is true only on the server, whoever owns it.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class CarriableOwnershipLabel : MonoBehaviour
@@ -144,7 +144,7 @@ namespace AlienFarms.Networking.Player
             }
         }
 
-        // The local avatar's camera, or the spectator's: a spectator sees the labels too.
+        // Labels face the local avatar's camera once it spawns.
         private Camera ResolveViewCamera()
         {
             return _carriable.Anchor != null ? _carriable.Anchor.ViewCamera : null;

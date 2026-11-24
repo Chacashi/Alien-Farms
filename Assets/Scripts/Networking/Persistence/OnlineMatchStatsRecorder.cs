@@ -12,7 +12,7 @@ namespace AlienFarms.Networking.Persistence
     /// <summary>
     /// Records this machine's online rounds into the stats ledger (task 2.8). Lives under OnlineModeRoot (online only;
     /// local matches never count). Only a round whose Playing phase this instance saw live counts, once
-    /// (<see cref="MatchStatsTally"/>); spectators record nothing. Each round is enqueued with a fresh batch id and the
+    /// (<see cref="MatchStatsTally"/>); no stats are recorded without a local seat (<see cref="PlayerId.None"/>). Each round is enqueued with a fresh batch id and the
     /// ledger flushes it to PlayerPrefs right away, so it survives closing the game; the cloud save service uploads it.
     /// <list type="bullet">
     /// <item>Round end (<see cref="GameEvents.OnMatchEnded"/>, forfeits included): win / draw / loss, animals in the own pen.</item>
