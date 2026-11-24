@@ -70,7 +70,13 @@ namespace AlienFarms.Audio
                 return;
             }
 
-            Play(_buffer[0]);
+            UiSfxCue cue = _buffer[0];
+            if (cue != UiSfxCue.PlayerReconnected)
+            {
+                _pendingCue = UiSfxCue.None;
+            }
+
+            Play(cue);
             if (count == 2 && _buffer[1] == UiSfxCue.MatchResumed && _library != null)
             {
                 _pendingCue = _buffer[1];

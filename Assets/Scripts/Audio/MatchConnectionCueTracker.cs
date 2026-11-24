@@ -11,8 +11,16 @@ namespace AlienFarms.Audio
         private readonly PlayerConnectionStatus[] _last = new PlayerConnectionStatus[2];
         private MatchPhase _phase;
         private bool _suspended;
+        private bool _seatReleasedWhileSuspended;
 
-        public void SetPhase(MatchPhase phase) => _phase = phase;
+        public void SetPhase(MatchPhase phase)
+        {
+            _phase = phase;
+            if (MatchSuspendRules.SuspendsIn(phase) && IsAnySeatReconnecting())
+            {
+                _suspended = true;
+            }
+        }
 
         public void Reset()
         {
@@ -20,6 +28,7 @@ namespace AlienFarms.Audio
             Array.Clear(_last, 0, _last.Length);
             _phase = MatchPhase.None;
             _suspended = false;
+            _seatReleasedWhileSuspended = false;
         }
 
         /// <summary>Tracks a seat transition and writes up to two cues into the supplied buffer.</summary>
@@ -75,17 +84,28 @@ namespace AlienFarms.Audio
                     if (_suspended && !IsAnySeatReconnecting())
                     {
                         _suspended = false;
-                        output[1] = UiSfxCue.MatchResumed;
-                        return 2;
+                        bool shouldResume = !_seatReleasedWhileSuspended;
+                        _seatReleasedWhileSuspended = false;
+                        if (shouldResume)
+                        {
+                            output[1] = UiSfxCue.MatchResumed;
+                            return 2;
+                        }
                     }
 
                     return 1;
 
                 case PlayerConnectionStatus.Left:
                 case PlayerConnectionStatus.TimedOut:
-                    if (!IsAnySeatReconnecting())
+                    if (!_suspended && previous == PlayerConnectionStatus.Reconnecting)
                     {
-                        _suspended = false;
+                        return 0;
+                    }
+
+                    if (_suspended)
+                    {
+                        _suspended = IsAnySeatReconnecting();
+                        _seatReleasedWhileSuspended = _suspended;
                     }
 
                     output[0] = UiSfxCue.ConnectionLost;

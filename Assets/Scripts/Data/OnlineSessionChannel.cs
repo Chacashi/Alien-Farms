@@ -32,6 +32,7 @@ namespace AlienFarms.Data
         [NonSerialized] private int _participantCount;
         [NonSerialized] private string _rejoinCode;
         [NonSerialized] private double _rejoinExpiresAt;
+        [NonSerialized] private bool _isRejoining;
         // Device preference, not session state: loaded lazily (PlayerPrefs is not available during asset loading) and
         // kept across generations because every write goes through to PlayerPrefs.
         [NonSerialized] private string _displayName;
@@ -59,6 +60,9 @@ namespace AlienFarms.Data
         public event Action DeclineRejoinRequested;
 
         public OnlineSessionStatus Status => IsCurrent ? _status : OnlineSessionStatus.SignedOut;
+
+        /// <summary>True while the current join is a reconnection attempt.</summary>
+        public bool IsRejoining => IsCurrent && _isRejoining;
 
         /// <summary>Join code of the current session (null when in none).</summary>
         public string Code => IsCurrent ? _code : null;
@@ -303,7 +307,10 @@ namespace AlienFarms.Data
         }
 
         /// <summary>Moves to <paramref name="status"/> when the transition is allowed; raises <see cref="Changed"/>.</summary>
-        public bool TrySetStatus(OnlineSessionStatus status)
+        public bool TrySetStatus(OnlineSessionStatus status) => TrySetStatus(status, isRejoining: false);
+
+        /// <summary>Publishes the status and whether it starts a rejoin in a single notification.</summary>
+        public bool TrySetStatus(OnlineSessionStatus status, bool isRejoining)
         {
             EnsureCurrent();
             if (!OnlineSessionStatusRules.CanTransition(_status, status))
@@ -312,6 +319,7 @@ namespace AlienFarms.Data
             }
 
             _status = status;
+            _isRejoining = status == OnlineSessionStatus.Joining && isRejoining;
             if (status == OnlineSessionStatus.SignedOut)
             {
                 _localPlayerId = null;
@@ -458,6 +466,7 @@ namespace AlienFarms.Data
 
             _generation = s_generation;
             _status = OnlineSessionStatus.SignedOut;
+            _isRejoining = false;
             _localPlayerId = null;
             _localPlayerName = null;
             _lastErrorKey = null;

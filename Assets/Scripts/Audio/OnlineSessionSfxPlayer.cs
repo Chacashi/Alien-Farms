@@ -47,7 +47,7 @@ namespace AlienFarms.Audio
             if (_session != null)
             {
                 _lastStatus = _session.Status;
-                _joiningIsRejoin = _lastStatus == OnlineSessionStatus.Joining && _session.HasRejoinOffer;
+                _joiningIsRejoin = _session.IsRejoining;
                 _session.Changed += HandleSessionChanged;
             }
 
@@ -106,7 +106,7 @@ namespace AlienFarms.Audio
 
             if (status == OnlineSessionStatus.Joining)
             {
-                _joiningIsRejoin = _session.HasRejoinOffer;
+                _joiningIsRejoin = _session.IsRejoining;
             }
 
             UiSfxCue cue = OnlineSessionCueRules.OnStatusChanged(_lastStatus, status,

@@ -349,7 +349,8 @@ namespace AlienFarms.Networking.Session
             _channel.TrySetStatus(OnlineSessionStatus.Ready);
         }
 
-        private bool BeginStart(OnlineSessionStatus status, out int operation, out CancellationTokenSource cancellation)
+        private bool BeginStart(OnlineSessionStatus status, out int operation, out CancellationTokenSource cancellation,
+            bool isRejoining = false)
         {
             operation = 0;
             cancellation = null;
@@ -361,7 +362,7 @@ namespace AlienFarms.Networking.Session
                 return false;
             }
 
-            if (!_channel.TrySetStatus(status))
+            if (!_channel.TrySetStatus(status, isRejoining))
             {
                 return false;
             }
@@ -400,7 +401,9 @@ namespace AlienFarms.Networking.Session
             string code = _channel.RejoinCode;
             NetworkRuntimeAnchor anchor = _root.Anchor;
             string sessionId = anchor != null ? anchor.RejoinSessionId : null;
-            if (string.IsNullOrEmpty(code) || !BeginStart(OnlineSessionStatus.Joining, out int operation, out CancellationTokenSource cancellation))
+            if (string.IsNullOrEmpty(code)
+                || !BeginStart(OnlineSessionStatus.Joining, out int operation, out CancellationTokenSource cancellation,
+                    isRejoining: true))
             {
                 return;
             }

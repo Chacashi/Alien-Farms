@@ -85,6 +85,49 @@ namespace AlienFarms.Tests
             Assert.That(_output[0], Is.EqualTo(UiSfxCue.MatchSuspended));
         }
 
+        [TestCase(PlayerConnectionStatus.Left)]
+        [TestCase(PlayerConnectionStatus.TimedOut)]
+        public void OneOfTwoReconnectingSeatsReleased_LastReconnectDoesNotResume(PlayerConnectionStatus released)
+        {
+            Apply(PlayerId.Player1, PlayerConnectionStatus.Reconnecting);
+            Apply(PlayerId.Player2, PlayerConnectionStatus.Reconnecting);
+
+            Assert.That(Apply(PlayerId.Player1, released), Is.EqualTo(1));
+            Assert.That(_output[0], Is.EqualTo(UiSfxCue.ConnectionLost));
+            Assert.That(Apply(PlayerId.Player2, PlayerConnectionStatus.Connected), Is.EqualTo(1));
+            Assert.That(_output[0], Is.EqualTo(UiSfxCue.PlayerReconnected));
+
+            Assert.That(Apply(PlayerId.Player2, PlayerConnectionStatus.Reconnecting), Is.EqualTo(1));
+            Assert.That(_output[0], Is.EqualTo(UiSfxCue.MatchSuspended));
+            Assert.That(Apply(PlayerId.Player2, PlayerConnectionStatus.Connected), Is.EqualTo(2));
+            Assert.That(_output[1], Is.EqualTo(UiSfxCue.MatchResumed));
+        }
+
+        [TestCase(PlayerConnectionStatus.Left)]
+        [TestCase(PlayerConnectionStatus.TimedOut)]
+        public void ReconnectingSeatReleasedOutsideSuspension_DoesNotRepeatLoss(PlayerConnectionStatus released)
+        {
+            _tracker.SetPhase(MatchPhase.WaitingForPlayers);
+            Apply(PlayerId.Player1, PlayerConnectionStatus.Connected);
+
+            Assert.That(Apply(PlayerId.Player1, PlayerConnectionStatus.Reconnecting), Is.EqualTo(1));
+            Assert.That(_output[0], Is.EqualTo(UiSfxCue.ConnectionLost));
+            Assert.That(Apply(PlayerId.Player1, released), Is.Zero);
+        }
+
+        [Test]
+        public void ReconnectingBaselineBeforePhase_ResumesAfterPlayingPhaseArrives()
+        {
+            _tracker.Reset();
+            Assert.That(Apply(PlayerId.Player2, PlayerConnectionStatus.Reconnecting), Is.Zero);
+
+            _tracker.SetPhase(MatchPhase.Playing);
+
+            Assert.That(Apply(PlayerId.Player2, PlayerConnectionStatus.Connected), Is.EqualTo(2));
+            Assert.That(_output[0], Is.EqualTo(UiSfxCue.PlayerReconnected));
+            Assert.That(_output[1], Is.EqualTo(UiSfxCue.MatchResumed));
+        }
+
         [Test]
         public void Reset_ClearsSeatBaselinePhaseAndSuspension()
         {

@@ -97,6 +97,38 @@ namespace AlienFarms.Tests
         }
 
         [Test]
+        public void NormalJoin_WithPendingOffer_IsNotRejoining()
+        {
+            MoveToReady();
+            _channel.SetRejoinOffer("ABC123", double.MaxValue);
+
+            Assert.That(_channel.TrySetStatus(OnlineSessionStatus.Joining), Is.True);
+
+            Assert.That(_channel.HasRejoinOffer, Is.True);
+            Assert.That(_channel.IsRejoining, Is.False);
+        }
+
+        [TestCase(OnlineSessionStatus.InSession)]
+        [TestCase(OnlineSessionStatus.Ready)]
+        [TestCase(OnlineSessionStatus.Leaving)]
+        [TestCase(OnlineSessionStatus.SignedOut)]
+        public void Rejoin_PublishesFlagWithJoiningAndClearsItOnExit(OnlineSessionStatus nextStatus)
+        {
+            MoveToReady();
+            bool observedIsRejoining = false;
+            _channel.Changed += () => observedIsRejoining = _channel.IsRejoining;
+            int initialChanges = _changed;
+
+            Assert.That(_channel.TrySetStatus(OnlineSessionStatus.Joining, isRejoining: true), Is.True);
+            Assert.That(observedIsRejoining, Is.True);
+            Assert.That(_changed, Is.EqualTo(initialChanges + 1));
+
+            Assert.That(_channel.TrySetStatus(nextStatus), Is.True);
+            Assert.That(observedIsRejoining, Is.False);
+            Assert.That(_changed, Is.EqualTo(initialChanges + 2));
+        }
+
+        [Test]
         public void FullHostFlow_RaisesChangedAndKeepsCode()
         {
             MoveToReady();
