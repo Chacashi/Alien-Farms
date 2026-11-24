@@ -6,7 +6,7 @@ using UnityEngine;
 namespace AlienFarms.Networking.Session
 {
     /// <summary>
-    /// Server-side seat table: which client holds Player1 / Player2, plus spectators. Plain C#, owned by the approval
+    /// Server-side seat table: which client holds Player1 / Player2. Plain C#, owned by the approval
     /// handler and shared with the roster and the room through the runtime anchor. A seat is freed with
     /// <see cref="Release"/>, or kept for its player with <see cref="MarkDisconnected"/> until it reconnects
     /// (<see cref="ApprovalOutcome.Reconnect"/>) or <see cref="ReleaseExpired"/> drops it (grace, from 2.7).
@@ -14,17 +14,12 @@ namespace AlienFarms.Networking.Session
     public sealed class ServerSlotDirectory
     {
         public const int Capacity = 2;
-        public const int SpectatorCapacity = 1;
 
         // Index = (int)PlayerId - 1.
         private readonly PlayerSlot[] _slots = new PlayerSlot[Capacity];
-        private readonly SpectatorSeat[] _spectators = new SpectatorSeat[SpectatorCapacity];
 
         /// <summary>Player seats by index ((int)PlayerId - 1), for <see cref="ApprovalRules.Evaluate"/>.</summary>
         public ReadOnlySpan<PlayerSlot> Seats => _slots;
-
-        /// <summary>Spectator places, for <see cref="ApprovalRules.Evaluate"/>.</summary>
-        public ReadOnlySpan<SpectatorSeat> Spectators => _spectators;
 
         /// <summary>Seats currently held by a connected client.</summary>
         public int ConnectedCount
@@ -62,23 +57,6 @@ namespace AlienFarms.Networking.Session
             }
         }
 
-        public int SpectatorCount
-        {
-            get
-            {
-                int count = 0;
-                for (int i = 0; i < _spectators.Length; i++)
-                {
-                    if (_spectators[i].InUse)
-                    {
-                        count++;
-                    }
-                }
-
-                return count;
-            }
-        }
-
         /// <summary>
         /// Carries out an approved <paramref name="decision"/> for <paramref name="clientId"/>. False (nothing changed)
         /// when it is a rejection or no longer fits the table.
@@ -91,8 +69,6 @@ namespace AlienFarms.Networking.Session
                     return TryAssign(decision.Seat, clientId, payload);
                 case ApprovalOutcome.Reconnect:
                     return TryReconnect(decision.Seat, clientId, payload);
-                case ApprovalOutcome.Spectator:
-                    return TryAddSpectator(clientId, payload);
                 default:
                     return false;
             }
@@ -143,34 +119,6 @@ namespace AlienFarms.Networking.Session
             _slots[index].DisconnectedAt = 0d;
             _slots[index].DisplayName = payload.DisplayName;
             return true;
-        }
-
-        /// <summary>Seats <paramref name="clientId"/> as a spectator. False when it is already known or no place is free.</summary>
-        public bool TryAddSpectator(ulong clientId, in ConnectionPayload payload)
-        {
-            if (IsKnown(clientId))
-            {
-                return false;
-            }
-
-            for (int i = 0; i < _spectators.Length; i++)
-            {
-                if (_spectators[i].InUse)
-                {
-                    continue;
-                }
-
-                _spectators[i] = new SpectatorSeat
-                {
-                    InUse = true,
-                    ClientId = clientId,
-                    DisplayName = payload.DisplayName,
-                    UgsPlayerId = payload.UgsPlayerId
-                };
-                return true;
-            }
-
-            return false;
         }
 
         /// <summary>Sets the character of the seat <paramref name="id"/>. False when that seat is empty.</summary>
@@ -238,11 +186,7 @@ namespace AlienFarms.Networking.Session
             return false;
         }
 
-        /// <summary>
-        /// <paramref name="ugsPlayerId"/> still holds a place here: a seat (connected or awaiting its reconnection) or a
-        /// spectator place. E.g. a late disconnection of an old client id after that player reconnected must not remove
-        /// it from the online session. False for an empty id. No allocation.
-        /// </summary>
+        /// <summary>Whether this UGS id holds a connected or reserved player seat.</summary>
         public bool IsUgsIdInUse(in FixedString64Bytes ugsPlayerId)
         {
             if (ugsPlayerId.Length == 0)
@@ -253,14 +197,6 @@ namespace AlienFarms.Networking.Session
             for (int i = 0; i < _slots.Length; i++)
             {
                 if (_slots[i].IsOccupied && _slots[i].UgsPlayerId.Equals(ugsPlayerId))
-                {
-                    return true;
-                }
-            }
-
-            for (int i = 0; i < _spectators.Length; i++)
-            {
-                if (_spectators[i].InUse && _spectators[i].UgsPlayerId.Equals(ugsPlayerId))
                 {
                     return true;
                 }
@@ -290,21 +226,6 @@ namespace AlienFarms.Networking.Session
             int index = (int)id - 1;
             slot = index >= 0 && index < _slots.Length ? _slots[index] : default;
             return slot.IsOccupied;
-        }
-
-        public bool TryGetSpectator(ulong clientId, out SpectatorSeat spectator)
-        {
-            for (int i = 0; i < _spectators.Length; i++)
-            {
-                if (_spectators[i].InUse && _spectators[i].ClientId == clientId)
-                {
-                    spectator = _spectators[i];
-                    return true;
-                }
-            }
-
-            spectator = default;
-            return false;
         }
 
         /// <summary>
@@ -361,21 +282,6 @@ namespace AlienFarms.Networking.Session
             return true;
         }
 
-        /// <summary>Frees the spectator place of <paramref name="clientId"/>. False when it held none.</summary>
-        public bool ReleaseSpectator(ulong clientId)
-        {
-            for (int i = 0; i < _spectators.Length; i++)
-            {
-                if (_spectators[i].InUse && _spectators[i].ClientId == clientId)
-                {
-                    _spectators[i] = default;
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         /// <summary>Frees the dropped seats whose <paramref name="graceSeconds"/> passed. Returns how many.</summary>
         public int ReleaseExpired(double now, float graceSeconds)
         {
@@ -395,13 +301,12 @@ namespace AlienFarms.Networking.Session
         public void Clear()
         {
             Array.Clear(_slots, 0, _slots.Length);
-            Array.Clear(_spectators, 0, _spectators.Length);
         }
 
-        // Holds a connected seat or a spectator place.
+        // Holds a connected seat.
         private bool IsKnown(ulong clientId)
         {
-            return TryGetByClient(clientId, out _) || TryGetSpectator(clientId, out _);
+            return TryGetByClient(clientId, out _);
         }
     }
 }

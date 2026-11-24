@@ -5,7 +5,7 @@ namespace AlienFarms.Networking.Session
 {
     /// <summary>
     /// Pure connection approval rules, in order: same protocol, valid payload, one connection per UGS player (a dropped
-    /// player gets its own seat back while the grace lasts), a free seat (Player1 first), a spectator place, otherwise
+    /// player gets its own seat back while the grace lasts), a free seat (Player1 first), otherwise
     /// "room full". Every rejection carries a <see cref="DisconnectReasons"/> key the client maps to localized text.
     /// </summary>
     public static class ApprovalRules
@@ -63,12 +63,11 @@ namespace AlienFarms.Networking.Session
         /// What the client sent. When it did not parse, only <see cref="ConnectionPayload.ProtocolVersion"/> may be set
         /// (see <see cref="ConnectionPayload.TryParse"/>): another version is still answered as a protocol mismatch.
         /// </param>
-        /// <param name="policy">Protocol, seats, spectators and reconnection grace.</param>
+        /// <param name="policy">Protocol, seats and reconnection grace.</param>
         /// <param name="seats">Player seats by index ((int)PlayerId - 1), as held by <see cref="ServerSlotDirectory"/>.</param>
-        /// <param name="spectators">Spectator places, as held by <see cref="ServerSlotDirectory"/>.</param>
         /// <param name="now">Server clock (s), the same one <see cref="PlayerSlot.DisconnectedAt"/> is written with.</param>
         public static ApprovalDecision Evaluate(bool payloadValid, in ConnectionPayload payload, in ApprovalPolicy policy,
-            ReadOnlySpan<PlayerSlot> seats, ReadOnlySpan<SpectatorSeat> spectators, double now)
+            ReadOnlySpan<PlayerSlot> seats, double now)
         {
             // Version first: an older client's payload has another layout, so it may not parse at all.
             if (payload.ProtocolVersion != policy.ProtocolVersion && (payloadValid || payload.ProtocolVersion != 0))
@@ -103,14 +102,6 @@ namespace AlienFarms.Networking.Session
 
                     // Grace over: the seat is free again, for this player as for anyone (below).
                 }
-
-                for (int i = 0; i < spectators.Length; i++)
-                {
-                    if (spectators[i].InUse && spectators[i].UgsPlayerId.Equals(payload.UgsPlayerId))
-                    {
-                        return ApprovalDecision.Reject(ReasonAlreadyConnected);
-                    }
-                }
             }
 
             int offered = Math.Min(policy.PlayerSeats, seats.Length);
@@ -120,11 +111,6 @@ namespace AlienFarms.Networking.Session
                 {
                     return ApprovalDecision.AssignSeat((PlayerId)(i + 1));
                 }
-            }
-
-            if (CountInUse(spectators) < policy.MaxSpectators)
-            {
-                return ApprovalDecision.Spectator();
             }
 
             return ApprovalDecision.Reject(ReasonRoomFull);
@@ -140,20 +126,6 @@ namespace AlienFarms.Networking.Session
         public static bool IsReservationExpired(in PlayerSlot seat, double now, float graceSeconds)
         {
             return seat.IsAwaitingReconnect && now - seat.DisconnectedAt >= graceSeconds;
-        }
-
-        private static int CountInUse(ReadOnlySpan<SpectatorSeat> spectators)
-        {
-            int count = 0;
-            for (int i = 0; i < spectators.Length; i++)
-            {
-                if (spectators[i].InUse)
-                {
-                    count++;
-                }
-            }
-
-            return count;
         }
     }
 }

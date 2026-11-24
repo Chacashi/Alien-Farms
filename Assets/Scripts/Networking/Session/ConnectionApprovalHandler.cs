@@ -12,8 +12,8 @@ namespace AlienFarms.Networking.Session
     /// <summary>
     /// Server connection approval: parses the <see cref="ConnectionPayload"/> (name sanitized), verifies in an online
     /// session that the declared UGS player id is a member of it (<see cref="ApprovalRules.CheckMembership"/>), applies
-    /// <see cref="ApprovalRules"/> (protocol, one connection per UGS player, reconnection, Player1 then Player2, spectator
-    /// when allowed) and records the result in the <see cref="ServerSlotDirectory"/>. A rejection carries its
+    /// <see cref="ApprovalRules"/> (protocol, one connection per UGS player, reconnection, Player1 then Player2, then room full)
+    /// and records the result in the <see cref="ServerSlotDirectory"/>. A rejection carries its
     /// <see cref="DisconnectReasons"/> key in the response. No player object is created by NGO: the gameplay scene's
     /// roster spawns it. Also runs for the host's own client (never verified nor deferred: NGO approves it synchronously).
     /// <para>
@@ -29,7 +29,7 @@ namespace AlienFarms.Networking.Session
     public sealed class ConnectionApprovalHandler : MonoBehaviour
     {
         [Header("Config")]
-        [SerializeField, Tooltip("Protocol version, max players, spectator and reconnection grace.")]
+        [SerializeField, Tooltip("Protocol version and reconnection grace.")]
         private NetworkSettings _settings;
 
         [SerializeField, Range(1f, 9f), Tooltip("Seconds an online client whose UGS id the session does not list yet waits (approval pending) before it is rejected. Keep it under the NetworkManager's Client Connection Buffer Timeout.")]
@@ -44,7 +44,7 @@ namespace AlienFarms.Networking.Session
 
         private readonly ServerSlotDirectory _slots = new ServerSlotDirectory();
         // Clients that announced a voluntary leave ("AF.Leaving"); preallocated, an entry is removed when that client drops.
-        private readonly HashSet<ulong> _leaving = new HashSet<ulong>(ServerSlotDirectory.Capacity + ServerSlotDirectory.SpectatorCapacity);
+        private readonly HashSet<ulong> _leaving = new HashSet<ulong>(ServerSlotDirectory.Capacity);
         private readonly PlayerId[] _expiredBuffer = new PlayerId[ServerSlotDirectory.Capacity];
         private bool _graceEnabled;
         // Re-check interval of a pending membership (the lobby events may update the player list meanwhile).
@@ -340,7 +340,7 @@ namespace AlienFarms.Networking.Session
 
         private ApprovalDecision Decide(ulong clientId, bool parsed, in ConnectionPayload payload, in ApprovalPolicy policy)
         {
-            ApprovalDecision decision = ApprovalRules.Evaluate(parsed, payload, policy, _slots.Seats, _slots.Spectators, Time.realtimeSinceStartupAsDouble);
+            ApprovalDecision decision = ApprovalRules.Evaluate(parsed, payload, policy, _slots.Seats, Time.realtimeSinceStartupAsDouble);
             if (decision.Approved && !_slots.TryApply(decision, clientId, payload))
             {
                 // The rules saw a free place the table refused (e.g. a reused client id): never admit without a seat.
@@ -362,17 +362,21 @@ namespace AlienFarms.Networking.Session
                 case ApprovalOutcome.Reconnect:
                     Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Client {clientId} approved as {decision.Seat} ({decision.Outcome}, '{payload.DisplayName}').", this);
                     break;
-                case ApprovalOutcome.Spectator:
-                    Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Client {clientId} approved as spectator ('{payload.DisplayName}').", this);
-                    break;
                 default:
                     Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Client {clientId} rejected: {decision.Reason}.", this);
+                    if (_sessionConnection != null && _sessionConnection.IsOnline
+                        && SeatGraceRules.ShouldRemoveRejectedMember(decision.Reason == ApprovalRules.ReasonRoomFull,
+                            IsServerStopping, payload.HasUgsPlayerId, _slots.IsUgsIdInUse(payload.UgsPlayerId)))
+                    {
+                        _ = _sessionConnection.TryRemovePlayerAsync(payload.UgsPlayerId.ToString());
+                    }
+
                     break;
             }
         }
 
         // A voluntary leave frees the seat as Left; a silent drop keeps it while the grace is on (SeatReserved), and
-        // frees it otherwise. Spectators never hold a reservation.
+        // frees it otherwise.
         private void HandleClientDisconnected(ulong clientId)
         {
             if (!_manager.IsServer)
@@ -410,21 +414,6 @@ namespace AlienFarms.Networking.Session
                         _slots.Release(clientId, out _);
                         Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Client {clientId} left; seat {id} freed.", this);
                         break;
-                }
-            }
-            else if (_slots.TryGetSpectator(clientId, out SpectatorSeat spectator) && _slots.ReleaseSpectator(clientId))
-            {
-                bool stopping = IsServerStopping;
-                Debug.Log($"[{nameof(ConnectionApprovalHandler)}] Spectator {clientId} {(stopping ? "disconnected by the shutdown" : "left")}.", this);
-
-                // No seat is held for a spectator: drop its lobby membership too (as an expired player seat), so joining
-                // again by code is a fresh join instead of 'already in a session'. A voluntary leave already left the
-                // lobby itself; a server shutdown deletes the whole session. A late drop of an old client id whose member
-                // already holds a place again (reconnected) keeps the membership.
-                if (_sessionConnection != null && SeatGraceRules.ShouldRemoveSpectatorMember(noticed, stopping,
-                        spectator.UgsPlayerId.Length > 0, _slots.IsUgsIdInUse(spectator.UgsPlayerId)))
-                {
-                    _ = _sessionConnection.TryRemovePlayerAsync(spectator.UgsPlayerId.ToString());
                 }
             }
         }

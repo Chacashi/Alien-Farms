@@ -8,13 +8,13 @@ namespace AlienFarms.Networking.Tests
 {
     /// <summary>
     /// Seat table: seats start without a character and the online room sets it (2.2); decisions applied, dropped seats
-    /// kept for reconnection, spectators and saved poses (2.3).
+    /// kept for reconnection and saved poses (2.3).
     /// </summary>
     public sealed class ServerSlotDirectoryTests
     {
         private const int Protocol = 2;
 
-        private static readonly ApprovalPolicy Policy = new ApprovalPolicy(Protocol, 2, 0, 20f);
+        private static readonly ApprovalPolicy Policy = new ApprovalPolicy(Protocol, 2, 20f);
 
         private ServerSlotDirectory _slots;
 
@@ -183,7 +183,6 @@ namespace AlienFarms.Networking.Tests
         {
             Assert.That(_slots.TryApply(ApprovalDecision.Reject(DisconnectReasons.RoomFull), 1, Payload("A")), Is.False);
             Assert.That(_slots.ConnectedCount, Is.EqualTo(0));
-            Assert.That(_slots.SpectatorCount, Is.EqualTo(0));
         }
 
         [Test]
@@ -271,31 +270,7 @@ namespace AlienFarms.Networking.Tests
             Assert.That(_slots.TryGet(second, out _), Is.True);
         }
 
-        // ---------------------------------------------------------------- Spectators and poses
-
-        [Test]
-        public void TryApply_Spectator_AddsUpToCapacityAndRelease()
-        {
-            Assert.That(_slots.TryApply(ApprovalDecision.Spectator(), 3, Payload("S", "u3")), Is.True);
-            Assert.That(_slots.TryApply(ApprovalDecision.Spectator(), 4, Payload("T", "u4")), Is.False);
-
-            Assert.That(_slots.SpectatorCount, Is.EqualTo(1));
-            Assert.That(_slots.ConnectedCount, Is.EqualTo(0));
-            Assert.That(_slots.TryGetSpectator(3, out SpectatorSeat spectator) && spectator.DisplayName.ToString() == "S", Is.True);
-            Assert.That(_slots.Release(3, out _), Is.False, "A spectator holds no seat.");
-            Assert.That(_slots.ReleaseSpectator(3), Is.True);
-            Assert.That(_slots.SpectatorCount, Is.EqualTo(0));
-        }
-
-        [Test]
-        public void SeatedClient_CannotAlsoBeSpectator_AndViceVersa()
-        {
-            Admit(1, Payload("A"), out _);
-            _slots.TryAddSpectator(2, Payload("S"));
-
-            Assert.That(_slots.TryAddSpectator(1, Payload("A")), Is.False);
-            Assert.That(Admit(2, Payload("S"), out _), Is.False);
-        }
+        // ---------------------------------------------------------------- Saved poses
 
         [Test]
         public void TrySavePose_EmptySeat_ReturnsFalse()
@@ -334,17 +309,6 @@ namespace AlienFarms.Networking.Tests
         }
 
         [Test]
-        public void ReleaseSeat_KeepsSpectators()
-        {
-            Admit(1, Payload("A", "u1"), out PlayerId id);
-            _slots.TryAddSpectator(3, Payload("S", "u3"));
-
-            _slots.ReleaseSeat(id);
-
-            Assert.That(_slots.SpectatorCount, Is.EqualTo(1));
-        }
-
-        [Test]
         public void TryFindAwaiting_FindsOnlyDroppedSeatsOfThatUgsId()
         {
             Admit(1, Payload("A", "u1"), out _);
@@ -369,31 +333,16 @@ namespace AlienFarms.Networking.Tests
         }
 
         [Test]
-        public void IsUgsIdInUse_CoversSeatsAwaitingSeatsAndSpectators()
+        public void IsUgsIdInUse_CoversConnectedAndReservedSeats()
         {
             Admit(1, Payload("A", "u1"), out _);
             Admit(2, Payload("B", "u2"), out _);
             _slots.MarkDisconnected(2, 10d, out _);
-            _slots.TryAddSpectator(3, Payload("S", "u3"));
 
             Assert.That(_slots.IsUgsIdInUse(new FixedString64Bytes("u1")), Is.True, "Connected seat.");
             Assert.That(_slots.IsUgsIdInUse(new FixedString64Bytes("u2")), Is.True, "Seat awaiting its reconnection.");
-            Assert.That(_slots.IsUgsIdInUse(new FixedString64Bytes("u3")), Is.True, "Spectator.");
             Assert.That(_slots.IsUgsIdInUse(new FixedString64Bytes("u9")), Is.False);
             Assert.That(_slots.IsUgsIdInUse(default), Is.False, "Empty id.");
-        }
-
-        [Test]
-        public void IsUgsIdInUse_SpectatorReconnectedUnderANewClientId_StaysInUseAfterTheOldOneIsReleased()
-        {
-            // The spectator came back as client 4 before the server noticed client 3 dropping.
-            _slots.TryAddSpectator(3, Payload("S", "u3"));
-            _slots.ReleaseSpectator(3);
-            Assert.That(_slots.IsUgsIdInUse(new FixedString64Bytes("u3")), Is.False, "Released: may be removed from the session.");
-
-            Admit(1, Payload("A", "u1"), out _);
-            _slots.TryAddSpectator(4, Payload("S", "u3"));
-            Assert.That(_slots.IsUgsIdInUse(new FixedString64Bytes("u3")), Is.True, "A newer connection of that member holds a place.");
         }
 
         [Test]
@@ -456,30 +405,29 @@ namespace AlienFarms.Networking.Tests
         [Test]
         public void DroppedSeat_OldClientIdIsNoLongerKnown()
         {
-            // NGO may reuse a client id: the dropped seat's old id can join as a spectator or take another seat.
+            // NGO may reuse a client id: the dropped seat's old id can take another seat.
             Admit(1, Payload("A", "u1"), out _);
             _slots.MarkDisconnected(1, 10d, out _);
 
-            Assert.That(_slots.TryAddSpectator(1, Payload("S", "u3")), Is.True);
+            Assert.That(_slots.TryAssign(PlayerId.Player2, 1, Payload("B", "u2")), Is.True);
         }
 
         [Test]
-        public void Clear_EmptiesSeatsAndSpectators()
+        public void Clear_EmptiesSeats()
         {
             Admit(1, Payload("A"), out _);
-            _slots.TryAddSpectator(2, Payload("S"));
+            _slots.TryAssign(PlayerId.Player2, 2, Payload("B"));
 
             _slots.Clear();
 
             Assert.That(_slots.ConnectedCount, Is.EqualTo(0));
-            Assert.That(_slots.SpectatorCount, Is.EqualTo(0));
             Assert.That(_slots.TryGet(PlayerId.Player1, out _), Is.False);
         }
 
         // Production path: the approval rules pick the seat (Player1 first) and the table applies it.
         private bool Admit(ulong clientId, in ConnectionPayload payload, out PlayerId id)
         {
-            ApprovalDecision decision = ApprovalRules.Evaluate(true, payload, Policy, _slots.Seats, _slots.Spectators, 0d);
+            ApprovalDecision decision = ApprovalRules.Evaluate(true, payload, Policy, _slots.Seats, 0d);
             if (decision.Outcome == ApprovalOutcome.AssignSeat && _slots.TryApply(decision, clientId, payload))
             {
                 id = decision.Seat;

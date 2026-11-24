@@ -33,15 +33,9 @@ namespace AlienFarms.Networking.Session
             return serverStopping ? SeatDropOutcome.Released : OnDisconnect(noticedLeaving, graceEnabled);
         }
 
-        /// <summary>
-        /// Whether a dropped spectator's lobby membership is removed (so it can join again by code as a fresh member):
-        /// only for a silent drop with a known UGS id no other place uses, and never while the server is stopping (the
-        /// whole session is about to be deleted; removing members then races the delete).
-        /// </summary>
-        public static bool ShouldRemoveSpectatorMember(bool noticedLeaving, bool serverStopping, bool hasUgsId, bool ugsIdInUse)
-        {
-            return !noticedLeaving && !serverStopping && hasUgsId && !ugsIdInUse;
-        }
+        /// <summary>Whether a full-room rejection should release this unused lobby membership.</summary>
+        public static bool ShouldRemoveRejectedMember(bool roomFull, bool serverStopping, bool hasUgsId, bool ugsIdInUse) =>
+            roomFull && !serverStopping && hasUgsId && !ugsIdInUse;
 
         /// <summary>Seconds left before the reservation of <paramref name="seat"/> expires; 0 when it awaits nothing or expired.</summary>
         public static float GraceLeft(in PlayerSlot seat, double now, float graceSeconds)

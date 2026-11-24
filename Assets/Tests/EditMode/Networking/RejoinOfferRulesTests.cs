@@ -65,7 +65,7 @@ namespace AlienFarms.Networking.Tests
         [TestCase(OnlineSessionErrorKeys.SessionNotFound, false)]
         [TestCase(OnlineSessionErrorKeys.HostLeft, false)]
         [TestCase(OnlineSessionErrorKeys.ReconnectDenied, false)]
-        [TestCase(OnlineSessionErrorKeys.SessionFull, false)]
+        [TestCase(OnlineSessionErrorKeys.SessionFull, true)]
         [TestCase(OnlineSessionErrorKeys.NotSessionMember, false)]
         [TestCase(OnlineSessionErrorKeys.JoinFailed, false)]
         public void KeepsOfferAfterFailure_OnlyForRetryableErrors(string key, bool expected)

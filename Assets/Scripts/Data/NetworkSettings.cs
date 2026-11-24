@@ -9,20 +9,20 @@ namespace AlienFarms.Data
     [CreateAssetMenu(fileName = "NetworkSettings", menuName = "Alien Farms/Networking/Network Settings")]
     public sealed class NetworkSettings : ScriptableObject
     {
+        // 1v1: host + 1 client; not adjustable
+        public const int SessionCapacity = 2;
+
+        private const int MinimumProtocolVersion = 4;
+
         [Header("Session")]
         // History: 1 = payload with CharacterIndex (1.5); 2 = character picked in the room, removed from the payload (2.3);
-        // 3 = MatchResult.EndReason / forfeit winner replicated by NetworkMatchState (2.8).
+        // 3 = MatchResult.EndReason / forfeit winner replicated by NetworkMatchState (2.8);
+        // 4 = SeatPresenceBoard with only player seats (Block 0).
         [SerializeField, Min(1), Tooltip("Connection protocol version; clients with a different one are rejected. Bump it whenever the connection payload or any replicated layout changes.")]
-        private int _protocolVersion = 3;
+        private int _protocolVersion = 4;
 
         [SerializeField, Tooltip("Unity Gaming Services environment name.")]
         private string _environmentName = "dev";
-
-        [SerializeField, Range(2, 3), Tooltip("Maximum connections per session (2 players, plus a spectator when allowed).")]
-        private int _maxPlayers = 2;
-
-        [SerializeField, Tooltip("Accept a third connection as a spectator (no avatar, no game input; watches the match) instead of answering 'Room full'. Needs Max Players 3.")]
-        private bool _allowSpectator;
 
         [SerializeField, Min(0f), Tooltip("Seconds a disconnected player keeps its slot and pose while it reconnects.")]
         private float _reconnectGraceSeconds = 20f;
@@ -109,10 +109,10 @@ namespace AlienFarms.Data
         [SerializeField, Tooltip("Editor / development builds only: every stats load and save fails as offline, without touching the network.")]
         private bool _simulateStatsFailure;
 
-        public int ProtocolVersion => _protocolVersion;
+        // Existing settings assets can still serialize an older protocol version.
+        public int ProtocolVersion => Mathf.Max(_protocolVersion, MinimumProtocolVersion);
         public string EnvironmentName => _environmentName;
-        public int MaxPlayers => _maxPlayers;
-        public bool AllowSpectator => _allowSpectator;
+        public int MaxPlayers => SessionCapacity;
         public float ReconnectGraceSeconds => _reconnectGraceSeconds;
         public float HostLeaveNoticeSeconds => _hostLeaveNoticeSeconds;
         public bool AutoRejoin => _autoRejoin;
@@ -157,11 +157,6 @@ namespace AlienFarms.Data
             if (string.IsNullOrWhiteSpace(_environmentName))
             {
                 Debug.LogWarning($"[{nameof(NetworkSettings)}] Environment name on '{name}' is empty; Unity Gaming Services will use the default environment.", this);
-            }
-
-            if (_allowSpectator && _maxPlayers < 3)
-            {
-                Debug.LogWarning($"[{nameof(NetworkSettings)}] '{name}' allows a spectator but Max Players is {_maxPlayers}; set it to 3.", this);
             }
         }
     }

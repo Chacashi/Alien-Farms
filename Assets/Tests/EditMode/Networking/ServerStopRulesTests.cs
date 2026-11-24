@@ -25,23 +25,23 @@ namespace AlienFarms.Networking.Tests
         }
 
         [Test]
-        public void ShouldRemoveSpectatorMember_SilentDropWhileRunning_Removes()
+        public void ShouldRemoveRejectedMember_RoomFullWhileRunning_Removes()
         {
-            Assert.That(SeatGraceRules.ShouldRemoveSpectatorMember(false, false, true, false), Is.True);
+            Assert.That(SeatGraceRules.ShouldRemoveRejectedMember(true, false, true, false), Is.True);
         }
 
         [Test]
-        public void ShouldRemoveSpectatorMember_ServerStopping_NeverRemoves()
+        public void ShouldRemoveRejectedMember_ServerStopping_NeverRemoves()
         {
-            Assert.That(SeatGraceRules.ShouldRemoveSpectatorMember(false, true, true, false), Is.False);
+            Assert.That(SeatGraceRules.ShouldRemoveRejectedMember(true, true, true, false), Is.False);
         }
 
-        [TestCase(true, true, false)]
-        [TestCase(false, false, false)]
-        [TestCase(false, true, true)]
-        public void ShouldRemoveSpectatorMember_NoticedUnknownOrReusedId_Keeps(bool noticed, bool hasId, bool inUse)
+        [TestCase(false, true, false)]
+        [TestCase(true, false, false)]
+        [TestCase(true, true, true)]
+        public void ShouldRemoveRejectedMember_OtherRejectionMissingOrUsedId_Keeps(bool roomFull, bool hasId, bool inUse)
         {
-            Assert.That(SeatGraceRules.ShouldRemoveSpectatorMember(noticed, false, hasId, inUse), Is.False);
+            Assert.That(SeatGraceRules.ShouldRemoveRejectedMember(roomFull, false, hasId, inUse), Is.False);
         }
     }
 }

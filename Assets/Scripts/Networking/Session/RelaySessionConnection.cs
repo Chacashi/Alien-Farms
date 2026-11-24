@@ -47,7 +47,7 @@ namespace AlienFarms.Networking.Session
         private static int s_startsInFlight;
 
         [Header("Config")]
-        [SerializeField, Tooltip("Max players (session size) and spectator rule.")]
+        [SerializeField, Tooltip("Session size (2 players).")]
         private NetworkSettings _settings;
 
         [Header("References")]
@@ -688,7 +688,7 @@ namespace AlienFarms.Networking.Session
         }
 
         // A join by code refused as 'already in a session' although nothing is registered locally: the lobby still lists
-        // this player (dropped without leaving, e.g. a spectator whose membership the host has not removed yet). With
+        // this player (dropped without leaving while its membership is still active). With
         // exactly one joined session, that session is identified first WITHOUT the network (a probe handler that never
         // starts NGO), so another game's host never sees this client: the session of joinCode is then reconnected for
         // real (ReconnectToSessionAsync starts the network); any other one is a stale membership, left before joining by

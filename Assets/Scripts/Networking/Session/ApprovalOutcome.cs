@@ -10,9 +10,6 @@ namespace AlienFarms.Networking.Session
         AssignSeat = 1,
 
         /// <summary>Returns to its own seat <see cref="ApprovalDecision.Seat"/>, kept while it was disconnected.</summary>
-        Reconnect = 2,
-
-        /// <summary>Joins without a seat or avatar, only watching.</summary>
-        Spectator = 3
+        Reconnect = 2
     }
 }

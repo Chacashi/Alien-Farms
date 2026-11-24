@@ -17,7 +17,7 @@ namespace AlienFarms.Networking.Session
 
         public ApprovalOutcome Outcome { get; }
 
-        /// <summary>Seat taken or recovered; <see cref="PlayerId.None"/> for a spectator or a rejection.</summary>
+        /// <summary>Seat taken or recovered; <see cref="PlayerId.None"/> for a rejection.</summary>
         public PlayerId Seat { get; }
 
         /// <summary>Stable reason key (<see cref="DisconnectReasons"/>); null when approved.</summary>
@@ -28,8 +28,6 @@ namespace AlienFarms.Networking.Session
         public static ApprovalDecision AssignSeat(PlayerId seat) => new ApprovalDecision(ApprovalOutcome.AssignSeat, seat, null);
 
         public static ApprovalDecision Reconnect(PlayerId seat) => new ApprovalDecision(ApprovalOutcome.Reconnect, seat, null);
-
-        public static ApprovalDecision Spectator() => new ApprovalDecision(ApprovalOutcome.Spectator, PlayerId.None, null);
 
         public static ApprovalDecision Reject(string reason) => new ApprovalDecision(ApprovalOutcome.Rejected, PlayerId.None, reason);
     }
