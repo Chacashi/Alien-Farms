@@ -4,6 +4,7 @@ using AlienFarms.Items;
 using AlienFarms.Networking.Animals;
 using AlienFarms.Networking.Data;
 using AlienFarms.Networking.Items;
+using AlienFarms.Networking.Interest;
 using AlienFarms.Networking.Player;
 using Unity.Netcode;
 using UnityEngine;
@@ -27,6 +28,9 @@ namespace AlienFarms.Networking.Pooling
         [Header("Config")]
         [SerializeField, Tooltip("Runtime anchor of the NetworkRoot (NetworkManager, server check, players).")]
         private NetworkRuntimeAnchor _anchor;
+
+        [SerializeField, Tooltip("Optional server-side visibility manager for pooled network objects.")]
+        private NetworkInterestManager _interest;
 
         [SerializeField, Tooltip("Same spawn settings as the AnimalSpawner: one handler per entry's prefab.")]
         private AnimalSpawnSettings _animalSettings;
@@ -241,6 +245,11 @@ namespace AlienFarms.Networking.Pooling
 
             networkAnimal.Bind(_anchor);
             networkAnimal.ServerPrepareForSpawn();
+            if (_interest != null)
+            {
+                _interest.Register(networkAnimal);
+            }
+
             networkObject.Spawn(true);
             _poolLog?.Spawned(networkAnimal, networkAnimal.SpawnCount);
         }
@@ -255,6 +264,10 @@ namespace AlienFarms.Networking.Pooling
             if (animal.TryGetComponent(out NetworkAnimal networkAnimal))
             {
                 networkAnimal.ServerDetach();
+                if (_interest != null)
+                {
+                    _interest.Unregister(networkAnimal);
+                }
             }
 
             networkObject.Despawn(false);
@@ -286,6 +299,11 @@ namespace AlienFarms.Networking.Pooling
 
             networkBomb.Bind(_anchor);
             networkBomb.ServerPrepareForSpawn();
+            if (_interest != null)
+            {
+                _interest.Register(networkBomb);
+            }
+
             networkObject.Spawn(true);
             _poolLog?.Spawned(networkBomb, networkBomb.SpawnCount);
         }
@@ -300,6 +318,10 @@ namespace AlienFarms.Networking.Pooling
             if (bomb.TryGetComponent(out NetworkBomb networkBomb))
             {
                 networkBomb.ServerDetach();
+                if (_interest != null)
+                {
+                    _interest.Unregister(networkBomb);
+                }
             }
 
             networkObject.Despawn(false);
