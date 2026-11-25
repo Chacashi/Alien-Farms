@@ -45,6 +45,7 @@ namespace AlienFarms.Tests
             _channel.ToggleMicRequested += () => micRequests++;
             _channel.SetRivalVolumeRequested += value => volume = value;
             _channel.ToggleRivalMuteRequested += () => rivalMuteRequests++;
+            _channel.SetHasDesiredChannel(true);
 
             Assert.That(_channel.IsAvailable, Is.True);
 
@@ -67,6 +68,11 @@ namespace AlienFarms.Tests
             _channel.Changed += () => changed++;
 
             _channel.ToggleMicRequested += Toggle;
+
+            Assert.That(_channel.IsAvailable, Is.False);
+            Assert.That(changed, Is.Zero);
+
+            _channel.SetHasDesiredChannel(true);
             _channel.SetRivalVolumeRequested += SetVolume;
             _channel.ToggleMicRequested -= Toggle;
 
@@ -77,6 +83,52 @@ namespace AlienFarms.Tests
 
             Assert.That(_channel.IsAvailable, Is.False);
             Assert.That(changed, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void Availability_ChangesWithDesiredChannelAndVoiceStatus()
+        {
+            int changed = 0;
+            int requests = 0;
+            _channel.ToggleMicRequested += () => requests++;
+            _channel.SetStatus(VoiceStatus.LoggedIn);
+            _channel.Changed += () => changed++;
+
+            _channel.RequestToggleMic();
+            Assert.That(requests, Is.Zero);
+
+            _channel.SetHasDesiredChannel(true);
+            Assert.That(_channel.IsAvailable, Is.True);
+            _channel.SetHasDesiredChannel(false);
+            Assert.That(_channel.IsAvailable, Is.False);
+
+            _channel.SetStatus(VoiceStatus.Joining);
+            Assert.That(_channel.IsAvailable, Is.True);
+            _channel.SetStatus(VoiceStatus.InChannel);
+            Assert.That(_channel.IsAvailable, Is.True);
+            _channel.SetStatus(VoiceStatus.LoggedIn);
+            Assert.That(_channel.IsAvailable, Is.False);
+            Assert.That(changed, Is.EqualTo(5));
+        }
+
+        [Test]
+        public void RivalPreferences_SurviveReconnectionAndResetForNewSession()
+        {
+            _channel.SetRivalPreferencesSession("session-a");
+            _channel.SetRivalVolume(25);
+            _channel.SetRivalLocallyMuted(true);
+
+            _channel.SetRivalPreferencesSession(null);
+            _channel.SetRivalPreferencesSession("session-a");
+            Assert.That(_channel.RivalVolume, Is.EqualTo(25));
+            Assert.That(_channel.RivalLocallyMuted, Is.True);
+
+            int changed = 0;
+            _channel.Changed += () => changed++;
+            _channel.SetRivalPreferencesSession("session-b");
+            Assert.That(_channel.RivalVolume, Is.Zero);
+            Assert.That(_channel.RivalLocallyMuted, Is.False);
+            Assert.That(changed, Is.EqualTo(1));
         }
 
         [Test]

@@ -134,6 +134,18 @@ namespace AlienFarms.Editor
             new LocalizationSeedEntry(Ui, LocalizationKeys.StatsErrorCorrupt, "Tus estadísticas en la nube no son válidas.", "Your cloud stats are invalid."),
             new LocalizationSeedEntry(Ui, LocalizationKeys.StatsErrorUnknown, "No se pudieron cargar tus estadísticas.", "Could not load your stats."),
 
+            new LocalizationSeedEntry(Ui, LocalizationKeys.VoiceStateNoVoice, "Sin voz", "No voice"),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.VoiceStateInRange, "En alcance", "In range"),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.VoiceStateOutOfRange, "Fuera de alcance", "Out of range"),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.VoiceErrorCredentials, "No se pudieron obtener las credenciales de voz", "Could not get voice credentials"),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.VoiceErrorLogin, "No se pudo iniciar sesión en el chat de voz", "Could not sign in to voice chat"),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.VoiceErrorJoin, "No se pudo entrar al canal de voz", "Could not join the voice channel"),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.VoiceErrorRecoverFailed, "Se perdió la conexión de voz", "Voice connection lost"),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.VoiceLabelMic, "Micrófono", "Microphone"),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.VoiceLabelRivalVolume, "Volumen del rival", "Rival volume"),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.VoiceLabelMuteRival, "Silenciar rival", "Mute rival"),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.VoiceLabelRivalMuted, "Rival silenciado", "Rival muted"),
+
             new LocalizationSeedEntry(HowTo, LocalizationKeys.HowToGoal,
                 "Lleva animales de la zona central a tu corral. Cada animal vale distintos puntos (la vaca vale más, pero pesa más). Al acabar el tiempo gana quien tenga más puntos en su corral. <color=#B04A0A>¡Ojo: el rival puede robarte, incluso desde tu corral!</color>",
                 "Bring animals from the center zone to your pen. Each animal is worth different points (the cow is worth more, but it's heavier). When time runs out, whoever has the most points in their pen wins. <color=#B04A0A>Watch out: your rival can steal from you, even from your own pen!</color>"),

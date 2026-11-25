@@ -117,6 +117,19 @@ namespace AlienFarms.UI
         public const string StatsErrorCorrupt = PlayerProgressErrorKeys.Corrupt;
         public const string StatsErrorUnknown = PlayerProgressErrorKeys.Unknown;
 
+        // UI table: voice chat (S14).
+        public const string VoiceStateNoVoice = "voice.state.no_voice";
+        public const string VoiceStateInRange = "voice.state.in_range";
+        public const string VoiceStateOutOfRange = "voice.state.out_of_range";
+        public const string VoiceErrorCredentials = "voice.error.credentials";
+        public const string VoiceErrorLogin = "voice.error.login";
+        public const string VoiceErrorJoin = "voice.error.join";
+        public const string VoiceErrorRecoverFailed = "voice.error.recover_failed";
+        public const string VoiceLabelMic = "voice.label.mic";
+        public const string VoiceLabelRivalVolume = "voice.label.rival_volume";
+        public const string VoiceLabelMuteRival = "voice.label.mute_rival";
+        public const string VoiceLabelRivalMuted = "voice.label.rival_muted";
+
         // UI table: online errors. Values come from OnlineSessionErrorKeys (single source of truth).
         public const string OnlineErrorSignInFailed = OnlineSessionErrorKeys.SignInFailed;
         public const string OnlineErrorServicesUnavailable = OnlineSessionErrorKeys.ServicesUnavailable;

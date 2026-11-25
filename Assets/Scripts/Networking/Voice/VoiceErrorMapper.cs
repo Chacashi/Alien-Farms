@@ -1,13 +1,14 @@
 using System;
+using AlienFarms.UI;
 
 namespace AlienFarms.Networking.Voice
 {
     public static class VoiceErrorMapper
     {
-        public const string Credentials = "voice.error.credentials";
-        public const string Login = "voice.error.login";
-        public const string Join = "voice.error.join";
-        public const string RecoverFailed = "voice.error.recover_failed";
+        public const string Credentials = LocalizationKeys.VoiceErrorCredentials;
+        public const string Login = LocalizationKeys.VoiceErrorLogin;
+        public const string Join = LocalizationKeys.VoiceErrorJoin;
+        public const string RecoverFailed = LocalizationKeys.VoiceErrorRecoverFailed;
 
         public static string FromException(Exception exception, string fallback)
         {

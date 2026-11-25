@@ -12,6 +12,9 @@ namespace AlienFarms.Networking.Voice
         private readonly VoicePositionThrottle _throttle;
         private readonly float _listenerHeight;
         private Transform _previousRig;
+        private Vector3 _lastPosition;
+        private Vector3 _lastForward;
+        private double _lastSentAt = double.NegativeInfinity;
 
         public VoicePositionReporter(NetworkRuntimeAnchor anchor, VoiceChatSettings settings)
         {
@@ -20,7 +23,11 @@ namespace AlienFarms.Networking.Voice
             _listenerHeight = settings.ListenerHeight;
         }
 
-        public void Reset() => _throttle.Reset();
+        public void Reset()
+        {
+            _lastSentAt = double.NegativeInfinity;
+            _throttle.Reset();
+        }
 
         public void Report(IVivoxService sdk, VoiceStatus status, string joinedName, double now)
         {
@@ -36,7 +43,7 @@ namespace AlienFarms.Networking.Voice
                 Reset();
             }
 
-            if (!_throttle.ShouldSend(now))
+            if (!_throttle.ShouldSend(now, _lastSentAt + VoicePositionThrottle.KeepAliveInterval))
             {
                 return;
             }
@@ -55,7 +62,13 @@ namespace AlienFarms.Networking.Voice
                 }
             }
 
-            sdk.Set3DPosition(position, position, forward, Vector3.up, joinedName);
+            if (VoicePositionThrottle.ShouldSendPose(position, forward, _lastPosition, _lastForward, now - _lastSentAt))
+            {
+                sdk.Set3DPosition(position, position, forward, Vector3.up, joinedName);
+                _lastSentAt = now;
+                _lastPosition = position;
+                _lastForward = forward;
+            }
         }
 
         public float RivalDistance(PlayerId seat)

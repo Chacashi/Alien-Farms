@@ -18,6 +18,10 @@ namespace AlienFarms.UI
         [SerializeField] private Button _toggleRivalMute;
         [SerializeField, Tooltip("Optional indicator displayed when the rival is muted locally.")]
         private GameObject _rivalMutedIndicator;
+        [SerializeField, Tooltip("Neighbour navigation that must skip the controls while they are hidden.")]
+        private VoiceNavigationLink[] _navigationLinks = System.Array.Empty<VoiceNavigationLink>();
+
+        private int _appliedAvailability = -1;
 
         private void OnValidate()
         {
@@ -74,6 +78,8 @@ namespace AlienFarms.UI
                 _content.SetActive(available);
             }
 
+            ApplyNavigation(available);
+
             if (!available)
             {
                 return;
@@ -84,6 +90,21 @@ namespace AlienFarms.UI
             if (_rivalMutedIndicator != null && _rivalMutedIndicator.activeSelf != _voice.RivalLocallyMuted)
             {
                 _rivalMutedIndicator.SetActive(_voice.RivalLocallyMuted);
+            }
+        }
+
+        private void ApplyNavigation(bool available)
+        {
+            int state = available ? 1 : 0;
+            if (_appliedAvailability == state)
+            {
+                return;
+            }
+
+            _appliedAvailability = state;
+            for (int i = 0; i < _navigationLinks.Length; i++)
+            {
+                _navigationLinks[i].Apply(available);
             }
         }
 

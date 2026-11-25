@@ -1,5 +1,6 @@
 using AlienFarms.Networking.Voice;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace AlienFarms.Networking.Tests.Voice
 {
@@ -43,6 +44,30 @@ namespace AlienFarms.Networking.Tests.Voice
             Assert.That(throttle.ShouldSend(0d), Is.True);
             Assert.That(throttle.ShouldSend(interval - 0.001d), Is.False);
             Assert.That(throttle.ShouldSend(interval), Is.True);
+        }
+
+        [TestCase(0.049f, 0f, 1d, false)]
+        [TestCase(0.051f, 0f, 1d, true)]
+        [TestCase(0f, 1.9f, 1d, false)]
+        [TestCase(0f, 2.1f, 1d, true)]
+        [TestCase(0f, 0f, 1.999d, false)]
+        [TestCase(0f, 0f, 2d, true)]
+        public void ShouldSendPose_UsesMotionEpsilonsAndKeepAlive(float displacement, float angle, double elapsed,
+            bool expected)
+        {
+            Vector3 forward = Quaternion.Euler(0f, angle, 0f) * Vector3.forward;
+            Assert.That(VoicePositionThrottle.ShouldSendPose(Vector3.right * displacement, forward,
+                Vector3.zero, Vector3.forward, elapsed), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void KeepAliveDeadline_CanSampleBeforeNextScheduledTick()
+        {
+            var throttle = new VoicePositionThrottle(3);
+            Assert.That(throttle.ShouldSend(1.9d), Is.True);
+            Assert.That(throttle.ShouldSend(1.99d, 2d), Is.False);
+            Assert.That(throttle.ShouldSend(2d, 2d), Is.True);
+            Assert.That(throttle.ShouldSend(2.1d), Is.False);
         }
     }
 }

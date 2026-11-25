@@ -48,6 +48,7 @@ namespace AlienFarms.Networking.Voice
         private double _nextRivalSample;
         private bool _heardRival;
         private bool _rivalDisconnected;
+        private double? _rivalReturnDeadline;
 
         private PlayerId LocalSeat => _onlineSession.IsHost ? PlayerId.Player1 : PlayerId.Player2;
         private PlayerId RivalSeat => _onlineSession.IsHost ? PlayerId.Player2 : PlayerId.Player1;
@@ -110,6 +111,7 @@ namespace AlienFarms.Networking.Voice
             ClearParticipants();
             _voice.SetChannelName(null);
             _voice.SetStatus(VoiceStatus.Off);
+            _voice.SetHasDesiredChannel(false);
             _voice.SetLastErrorKey(null);
             Reconcile();
         }
@@ -157,6 +159,7 @@ namespace AlienFarms.Networking.Voice
             {
                 _sessionStatus = status;
                 _sessionId = sessionId;
+                _voice.SetRivalPreferencesSession(sessionId);
                 _blocked = false;
                 if (status < OnlineSessionStatus.Ready)
                 {
@@ -170,6 +173,7 @@ namespace AlienFarms.Networking.Voice
             {
                 _desired = desired;
                 _blocked = false;
+                _voice.SetHasDesiredChannel(desired != null);
                 RefreshStatus();
             }
 
@@ -214,7 +218,7 @@ namespace AlienFarms.Networking.Voice
                             }
                             else if (_joined != null)
                             {
-                                await _sdk.LeaveChannelAsync(_joined);
+                                await LeaveChannelAsync(_joined);
                             }
                         }
 
@@ -322,12 +326,7 @@ namespace AlienFarms.Networking.Voice
                         case VoiceChannelStep.LeaveThenJoin:
                             string previous = _joined;
                             RefreshStatus();
-                            if (_sdk.IsLoggedIn)
-                            {
-                                await _sdk.LeaveChannelAsync(previous);
-                            }
-
-                            HandleChannelLeft(previous);
+                            await LeaveChannelAsync(previous);
                             continue;
                         case VoiceChannelStep.Join:
                             _joining = target;
@@ -369,6 +368,10 @@ namespace AlienFarms.Networking.Voice
                     }
                 }
             }
+            catch (OperationCanceledException) when (_quitting)
+            {
+                _dirty = false;
+            }
             catch (Exception exception)
             {
                 if (_active && !_quitting)
@@ -396,6 +399,28 @@ namespace AlienFarms.Networking.Voice
             if (_dirty)
             {
                 Reconcile();
+            }
+        }
+
+        private async Task LeaveChannelAsync(string channel)
+        {
+            try
+            {
+                if (_sdk.IsLoggedIn)
+                {
+                    await _sdk.LeaveChannelAsync(channel);
+                }
+            }
+            catch (OperationCanceledException) when (_quitting)
+            {
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning($"[{nameof(VoiceChatService)}] Vivox leave failed ({exception.GetType().Name}).", this);
+            }
+            finally
+            {
+                HandleChannelLeft(channel);
             }
         }
 
@@ -569,7 +594,7 @@ namespace AlienFarms.Networking.Voice
             {
                 _voice.SetStatus(VoiceStatus.Recovering);
             }
-            else if (_joining != null)
+            else if (_joining != null && _joining == _desired)
             {
                 _voice.SetStatus(VoiceStatus.Joining);
             }
@@ -663,6 +688,7 @@ namespace AlienFarms.Networking.Voice
 
             _heardRival = false;
             _rivalDisconnected = false;
+            _rivalReturnDeadline = null;
             _voice.SetRivalSeat(PlayerId.None);
             _voice.SetRivalState(VoiceRivalState.NoVoice);
             _voice.SetRivalDistance(-1f);
@@ -677,7 +703,15 @@ namespace AlienFarms.Networking.Voice
             }
 
             _rivalDisconnected = status != PlayerConnectionStatus.Connected;
-            _heardRival = !_rivalDisconnected && _bindings[(int)seat - 1] != null;
+            if (_rivalDisconnected)
+            {
+                _heardRival = false;
+            }
+            else if (_bindings[(int)seat - 1] != null)
+            {
+                _heardRival = true;
+            }
+
             PublishRival();
         }
 
@@ -685,12 +719,13 @@ namespace AlienFarms.Networking.Voice
         {
             PlayerId seat = RivalSeat;
             float distance = _reporter.RivalDistance(seat);
-            bool present = _bindings[(int)seat - 1] != null && !_rivalDisconnected;
-            // Positional participant removal alone can't distinguish range filtering from a disconnect.
-            bool filtered = _heardRival && distance > _settings.AudibleDistance && !_rivalDisconnected;
+            bool present = _bindings[(int)seat - 1] != null;
+            var (state, returnDeadline) = VoiceRivalStateRules.Evaluate(present, _heardRival,
+                !_rivalDisconnected, distance, _settings.AudibleDistance, Time.unscaledTimeAsDouble, _rivalReturnDeadline);
+            _rivalReturnDeadline = returnDeadline;
             _voice.SetRivalSeat(seat);
             _voice.SetRivalDistance(distance);
-            _voice.SetRivalState(VoiceRivalStateRules.Evaluate(present || filtered, distance, _settings.AudibleDistance));
+            _voice.SetRivalState(state);
         }
 
         private void HandleSpeech(VoiceParticipantBinding binding)

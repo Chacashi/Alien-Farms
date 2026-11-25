@@ -12,6 +12,7 @@ namespace AlienFarms.Data
 
         [NonSerialized] private int _generation = -1;
         [NonSerialized] private VoiceStatus _status;
+        [NonSerialized] private bool _hasDesiredChannel;
         [NonSerialized] private string _channelName;
         [NonSerialized] private bool _micMuted;
         [NonSerialized] private bool _localSpeaking;
@@ -20,6 +21,7 @@ namespace AlienFarms.Data
         [NonSerialized] private bool _rivalSpeaking;
         [NonSerialized] private int _rivalVolume;
         [NonSerialized] private bool _rivalLocallyMuted;
+        [NonSerialized] private string _rivalPreferencesSessionId;
         [NonSerialized] private float _rivalDistance;
         [NonSerialized] private string _lastErrorKey;
         private Action _toggleMicRequested;
@@ -92,6 +94,7 @@ namespace AlienFarms.Data
         public string LastErrorKey => IsCurrent ? _lastErrorKey : null;
 
         public bool IsAvailable => IsCurrent &&
+            (_hasDesiredChannel || _status == VoiceStatus.Joining || _status == VoiceStatus.InChannel) &&
             (_toggleMicRequested != null || _setRivalVolumeRequested != null || _toggleRivalMuteRequested != null);
 
         private bool IsCurrent => _generation == s_generation;
@@ -103,7 +106,7 @@ namespace AlienFarms.Data
 
         public void RequestToggleMic()
         {
-            if (IsCurrent)
+            if (IsAvailable)
             {
                 _toggleMicRequested?.Invoke();
             }
@@ -111,7 +114,7 @@ namespace AlienFarms.Data
 
         public void RequestSetRivalVolume(int volume)
         {
-            if (IsCurrent)
+            if (IsAvailable)
             {
                 _setRivalVolumeRequested?.Invoke(VoiceVolumeRules.Clamp(volume));
             }
@@ -119,13 +122,14 @@ namespace AlienFarms.Data
 
         public void RequestToggleRivalMute()
         {
-            if (IsCurrent)
+            if (IsAvailable)
             {
                 _toggleRivalMuteRequested?.Invoke();
             }
         }
 
         public void SetStatus(VoiceStatus value) => Set(ref _status, value);
+        public void SetHasDesiredChannel(bool value) => Set(ref _hasDesiredChannel, value);
         public void SetChannelName(string value) => Set(ref _channelName, value);
         public void SetMicMuted(bool value) => Set(ref _micMuted, value);
         public void SetLocalSpeaking(bool value) => Set(ref _localSpeaking, value);
@@ -136,6 +140,24 @@ namespace AlienFarms.Data
         public void SetRivalLocallyMuted(bool value) => Set(ref _rivalLocallyMuted, value);
         public void SetRivalDistance(float value) => Set(ref _rivalDistance, value);
         public void SetLastErrorKey(string value) => Set(ref _lastErrorKey, value);
+
+        public void SetRivalPreferencesSession(string sessionId)
+        {
+            EnsureCurrent();
+            if (string.IsNullOrEmpty(sessionId) ||
+                string.Equals(_rivalPreferencesSessionId, sessionId, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _rivalPreferencesSessionId = sessionId;
+            if (_rivalVolume != 0 || _rivalLocallyMuted)
+            {
+                _rivalVolume = 0;
+                _rivalLocallyMuted = false;
+                Changed?.Invoke();
+            }
+        }
 
         private void Set<T>(ref T field, T value)
         {
@@ -166,6 +188,7 @@ namespace AlienFarms.Data
 
             _generation = s_generation;
             _status = VoiceStatus.Off;
+            _hasDesiredChannel = false;
             _channelName = null;
             _micMuted = false;
             _localSpeaking = false;
@@ -174,6 +197,7 @@ namespace AlienFarms.Data
             _rivalSpeaking = false;
             _rivalVolume = 0;
             _rivalLocallyMuted = false;
+            _rivalPreferencesSessionId = null;
             _rivalDistance = -1f;
             _lastErrorKey = null;
             _toggleMicRequested = null;

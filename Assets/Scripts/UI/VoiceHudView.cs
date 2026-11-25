@@ -25,9 +25,9 @@ namespace AlienFarms.UI
         [SerializeField] private TMP_Text _rivalState;
         [SerializeField] private TMP_Text _distance;
         [SerializeField] private TMP_Text _error;
-        [SerializeField] private LocalizedString _noVoice = new LocalizedString(LocalizationKeys.UiTable, "voice.state.no_voice");
-        [SerializeField] private LocalizedString _inRange = new LocalizedString(LocalizationKeys.UiTable, "voice.state.in_range");
-        [SerializeField] private LocalizedString _outOfRange = new LocalizedString(LocalizationKeys.UiTable, "voice.state.out_of_range");
+        [SerializeField] private LocalizedString _noVoice = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.VoiceStateNoVoice);
+        [SerializeField] private LocalizedString _inRange = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.VoiceStateInRange);
+        [SerializeField] private LocalizedString _outOfRange = new LocalizedString(LocalizationKeys.UiTable, LocalizationKeys.VoiceStateOutOfRange);
 
         private readonly char[] _buffer = new char[16];
         private readonly LocalizedString _errorMessage = new LocalizedString();
