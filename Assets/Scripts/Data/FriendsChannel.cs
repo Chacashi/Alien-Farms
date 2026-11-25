@@ -22,6 +22,7 @@ namespace AlienFarms.Data
         [NonSerialized] private string _lastInfoKey;
         [NonSerialized] private SessionInviteOffer _pendingInvite;
         [NonSerialized] private bool _hasInvite;
+        [NonSerialized] private int _openPanelCount;
         private Action<string> _addFriendRequested;
         private Action<string> _acceptRequestRequested;
         private Action<string> _declineRequestRequested;
@@ -62,10 +63,22 @@ namespace AlienFarms.Data
             remove => RemoveListener(ref _inviteRequested, value);
         }
 
-        public event Func<FriendEntry, bool> InviteEligibility
+        public void SetInviteEligibility(Func<FriendEntry, bool> provider) => Set(ref _inviteEligibility, provider);
+
+        public bool IsPanelOpen => IsCurrent && _openPanelCount > 0;
+
+        public void PanelOpened()
         {
-            add => AddListener(ref _inviteEligibility, value);
-            remove => RemoveListener(ref _inviteEligibility, value);
+            EnsureCurrent();
+            _openPanelCount++;
+        }
+
+        public void PanelClosed()
+        {
+            if (IsPanelOpen)
+            {
+                _openPanelCount--;
+            }
         }
 
         public bool CanInvite(FriendEntry entry) =>
@@ -268,6 +281,7 @@ namespace AlienFarms.Data
             }
 
             _generation = s_generation;
+            _openPanelCount = 0;
             _status = FriendsServiceStatus.Off;
             _localPlayerId = null;
             _notificationsConnected = false;

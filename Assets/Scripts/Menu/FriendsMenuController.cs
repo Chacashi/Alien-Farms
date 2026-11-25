@@ -16,7 +16,11 @@ namespace AlienFarms.Menu
         internal bool CanShowInvite => !InMatch && _menuFlow != null &&
             _menuFlow.Phase is MenuPhase.Title or MenuPhase.SubMenu or MenuPhase.Online;
 
+        internal string ToastErrorKey => _friends != null && _friends.LastErrorKey == _toastErrorKey
+            ? _toastErrorKey : null;
+
         private SessionInviteOffer? _pendingJoin;
+        private string _toastErrorKey;
         private MatchPhase _matchPhase;
         private bool InMatch => _matchPhase is MatchPhase.Countdown or MatchPhase.Playing or MatchPhase.Results;
 
@@ -33,6 +37,7 @@ namespace AlienFarms.Menu
         private void OnDisable()
         {
             GameEvents.OnMatchPhaseChanged -= HandleMatchPhaseChanged;
+            DismissToastError();
             _matchPhase = MatchPhase.None;
             _pendingJoin = null;
         }
@@ -42,22 +47,23 @@ namespace AlienFarms.Menu
         public void AcceptInvite()
         {
             if (_friends == null || _onlineSession == null || _menuFlow == null ||
-                !_friends.ConsumeInvite(out SessionInviteOffer offer))
+                !_friends.HasInvite)
             {
                 return;
             }
 
+            SessionInviteOffer offer = _friends.PendingInvite;
             var decision = InviteAcceptRules.Decide(_onlineSession.Status, InMatch, _onlineSession.HasRejoinOffer,
                 Time.realtimeSinceStartupAsDouble >= offer.ExpiresAtRealtime);
             if (decision.Next == InviteAcceptRules.Action.Blocked)
             {
-                _onlineSession.SetError(decision.ErrorKey);
+                ReportAcceptError(decision.ErrorKey);
                 return;
             }
 
             if (_pendingJoin.HasValue)
             {
-                _onlineSession.SetError(OnlineSessionErrorKeys.Busy);
+                ReportAcceptError(OnlineSessionErrorKeys.Busy);
                 return;
             }
 
@@ -74,6 +80,13 @@ namespace AlienFarms.Menu
             }
 
             _pendingJoin = offer;
+            if (!_friends.ConsumeInvite(out _))
+            {
+                _pendingJoin = null;
+                return;
+            }
+
+            DismissToastError();
             if (decision.Next == InviteAcceptRules.Action.LeaveThenJoin)
             {
                 if (!_onlineSession.RequestLeave())
@@ -95,7 +108,39 @@ namespace AlienFarms.Menu
             }
         }
 
-        public void DeclineInvite() => _friends?.DeclineInvite();
+        public void DeclineInvite()
+        {
+            if (ToastErrorKey != null)
+            {
+                DismissToastError();
+                return;
+            }
+
+            _friends?.DeclineInvite();
+        }
+
+        private void ReportAcceptError(string key, bool showToast = false)
+        {
+            if (showToast || _menuFlow.Phase is MenuPhase.Title or MenuPhase.SubMenu)
+            {
+                _toastErrorKey = key;
+                _friends.SetLastErrorKey(key);
+            }
+            else
+            {
+                _onlineSession.SetError(key);
+            }
+        }
+
+        private void DismissToastError()
+        {
+            bool wasVisible = ToastErrorKey != null;
+            _toastErrorKey = null;
+            if (wasVisible)
+            {
+                _friends.SetLastErrorKey(null);
+            }
+        }
 
         private void LateUpdate()
         {
@@ -134,6 +179,16 @@ namespace AlienFarms.Menu
                     _pendingJoin = null;
                     _onlineSession.RequestJoin(offer.Code);
                     return;
+                case InviteJoinSequence.Step.Cancel:
+                    Debug.Log($"[{nameof(FriendsMenuController)}] Invite join canceled in {_menuFlow.Phase} " +
+                        $"with session status {_onlineSession.Status} (in match: {InMatch}).", this);
+                    ReportAcceptError(OnlineSessionErrorKeys.Busy, showToast: true);
+                    if (!CanShowInvite)
+                    {
+                        _onlineSession.SetError(OnlineSessionErrorKeys.Busy);
+                    }
+
+                    break;
                 case InviteJoinSequence.Step.Expire:
                     _onlineSession.SetError(OnlineSessionErrorKeys.InviteExpired);
                     break;

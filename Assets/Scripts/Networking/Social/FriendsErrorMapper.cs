@@ -13,6 +13,8 @@ namespace AlienFarms.Networking.Social
             24013 => FriendsErrorKeys.NotFriend,
             24022 => FriendsErrorKeys.Payload,
             24024 => FriendsErrorKeys.NotEnabled,
+            24044 or 24045 => FriendsErrorKeys.LimitReached,
+            24429 => FriendsErrorKeys.RateLimited,
             24602 => FriendsErrorKeys.Network,
             _ => FriendsErrorKeys.Unknown
         };

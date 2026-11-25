@@ -17,7 +17,7 @@ namespace AlienFarms.Networking.Tests.Social
         [TestCase("af.invite", 2, "BCDFGH", "host", 1_000L, InviteRules.Result.WrongVersion)]
         [TestCase("af.invite", 1, "AAAAAA", "host", 1_000L, InviteRules.Result.Malformed)]
         [TestCase("af.invite", 1, "BCDFGH", "local", 1_000L, InviteRules.Result.FromSelf)]
-        [TestCase("af.invite", 1, "BCDFGH", "host", 2_000L, InviteRules.Result.Expired)]
+        [TestCase("af.invite", 1, "BCDFGH", "host", 62_001L, InviteRules.Result.Expired)]
         public void Validate_RejectsInvalidOffers(string type, int version, string code, string sender,
             long now, InviteRules.Result expected)
         {
@@ -38,27 +38,40 @@ namespace AlienFarms.Networking.Tests.Social
                 Is.EqualTo(InviteRules.Result.Malformed));
         }
 
-        [TestCase(900L, 11d)]
-        [TestCase(1_500L, 10.5d)]
-        public void TryCreateOffer_TransfersOnlyRemainingLifetimeToRealtime(long now, double expectedDeadline)
+        [TestCase(-59_000L)]
+        [TestCase(1_500L)]
+        [TestCase(62_000L)]
+        public void CreateOffer_UsesReceiptTimeWithinClockSkew(long now)
         {
-            bool valid = InviteRules.TryCreateOffer(CreateMessage(), "local", "host", now, 1_000, 10d,
+            var result = InviteRules.CreateOffer(CreateMessage(), "local", "host", "Profile Name", now, 1_000, 10d,
                 out var offer);
 
-            Assert.That(valid, Is.True);
+            Assert.That(result, Is.EqualTo(InviteRules.Result.Valid));
             Assert.That(offer.Code, Is.EqualTo("BCDFGH"));
             Assert.That(offer.FromUgsPlayerId, Is.EqualTo("host"));
-            Assert.That(offer.FromName, Is.EqualTo("Host"));
+            Assert.That(offer.FromName, Is.EqualTo("Profile Name"));
             Assert.That(offer.SessionId, Is.EqualTo("session"));
-            Assert.That(offer.ExpiresAtRealtime, Is.EqualTo(expectedDeadline));
+            Assert.That(offer.ExpiresAtRealtime, Is.EqualTo(11d));
+        }
+
+        [TestCase(-59_001L)]
+        [TestCase(62_001L)]
+        public void CreateOffer_RejectsTimestampsBeyondClockSkew(long now)
+        {
+            Assert.That(InviteRules.CreateOffer(CreateMessage(), "local", "host", null, now, 1_000, 10d,
+                out var offer), Is.EqualTo(InviteRules.Result.Expired));
+            Assert.That(offer.Code, Is.Null);
         }
 
         [Test]
-        public void TryCreateOffer_DoesNotPublishAnExpiredMessage()
+        public void CreateOffer_SanitizesAndCapsFallbackName()
         {
-            Assert.That(InviteRules.TryCreateOffer(CreateMessage(), "local", "host", 2_000, 1_000, 10d,
-                out var offer), Is.False);
-            Assert.That(offer.Code, Is.Null);
+            SessionInviteMessage message = CreateMessage();
+            message.hostName = "<ABCDEFGHIJKLMNOPQRSTUVWXYZ>";
+
+            Assert.That(InviteRules.CreateOffer(message, "local", "host", " ", 1_000, 1_000, 10d,
+                out var offer), Is.EqualTo(InviteRules.Result.Valid));
+            Assert.That(offer.FromName, Is.EqualTo("ABCDEFGHIJKLMNOPQRSTUVWX"));
         }
 
         private static SessionInviteMessage CreateMessage() => new SessionInviteMessage

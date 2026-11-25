@@ -97,9 +97,9 @@ namespace AlienFarms.UI
             _presenceText.Show(_presence, presence.Item1);
             _activityText.Show(_activity, _entry.ActivityKey switch
             {
-                "hub" => LocalizationKeys.FriendsActivityHub,
-                "room" => LocalizationKeys.FriendsActivityRoom,
-                "match" => LocalizationKeys.FriendsActivityMatch,
+                FriendActivityKeys.Hub => LocalizationKeys.FriendsActivityHub,
+                FriendActivityKeys.Room => LocalizationKeys.FriendsActivityRoom,
+                FriendActivityKeys.Match => LocalizationKeys.FriendsActivityMatch,
                 _ => null
             });
             RefreshInvite();

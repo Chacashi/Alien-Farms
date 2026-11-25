@@ -31,8 +31,6 @@ namespace AlienFarms.Input
         [SerializeField, Tooltip("This player's own event system (child UIInput). Enabled only while this player navigates a menu.")]
         private MultiplayerEventSystem _eventSystem;
 
-        internal MultiplayerEventSystem MenuEventSystem => _eventSystem;
-
         [SerializeField, Tooltip("Optional: gameplay input handler, so the cursor is unlocked while in a menu.")]
         private PlayerInputHandler _gameplayInput;
 
@@ -40,6 +38,8 @@ namespace AlienFarms.Input
         [SerializeField] private InputActionReference _navigate;
         [SerializeField] private InputActionReference _submit;
         [SerializeField] private InputActionReference _cancel;
+
+        internal MultiplayerEventSystem MenuEventSystem => _eventSystem;
 
         private readonly AxisStepDetector _horizontal = new AxisStepDetector();
         private readonly AxisStepDetector _vertical = new AxisStepDetector();

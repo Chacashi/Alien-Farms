@@ -40,6 +40,7 @@ namespace AlienFarms.UI
                 return;
             }
 
+            _friends.PanelOpened();
             _friends.Changed += Refresh;
             _copyId.onClick.AddListener(CopyId);
             _friendId.onValueChanged.AddListener(HandleInputChanged);
@@ -60,6 +61,7 @@ namespace AlienFarms.UI
             }
 
             _friends.Changed -= Refresh;
+            _friends.PanelClosed();
             _copyId.onClick.RemoveListener(CopyId);
             _friendId.onValueChanged.RemoveListener(HandleInputChanged);
             _addFriend.onClick.RemoveListener(AddFriend);
@@ -80,7 +82,7 @@ namespace AlienFarms.UI
             HandleInputChanged(_friendId.text);
             if (_refresh != null)
             {
-                _refresh.interactable = ready;
+                _refresh.interactable = ready || _friends.Status == FriendsServiceStatus.Error;
             }
 
             for (int i = 0; i < _friendRows.Length; i++)

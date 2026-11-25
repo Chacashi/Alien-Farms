@@ -139,6 +139,8 @@ namespace AlienFarms.UI
         public const string FriendsErrorNotEnabled = FriendsErrorKeys.NotEnabled;
         public const string FriendsErrorNetwork = FriendsErrorKeys.Network;
         public const string FriendsErrorPayload = FriendsErrorKeys.Payload;
+        public const string FriendsErrorRateLimited = FriendsErrorKeys.RateLimited;
+        public const string FriendsErrorLimitReached = FriendsErrorKeys.LimitReached;
         public const string FriendsErrorUnknown = FriendsErrorKeys.Unknown;
         public const string FriendsInfoInviteSent = FriendsErrorKeys.InviteSent;
         public const string FriendsInfoRequestSent = FriendsErrorKeys.RequestSent;

@@ -25,7 +25,14 @@ namespace AlienFarms.Networking.Social
 
         private enum Request { Add, Accept, Decline, CancelOutgoing, Invite, Refresh }
 
+        private const double InitialRetrySeconds = 2d;
+        private const double MaxRetrySeconds = 30d;
+
+        // Two Play sessions without domain reload can overlap if the SDK is still initializing.
         private static SemaphoreSlim s_initializationGate = new SemaphoreSlim(1);
+        // The SDK can survive SubsystemRegistration and may not replay its connectivity event.
+        private static bool s_lastConnectivity;
+
         private readonly Queue<(Request Kind, string Id, string SessionId)> _requests = new();
         private readonly List<FriendEntry> _friendEntries = new();
         private readonly List<FriendRequestEntry> _incomingEntries = new();
@@ -40,11 +47,13 @@ namespace AlienFarms.Networking.Social
         private bool _active;
         private bool _quitting;
         private bool _initializing;
-        private bool _requestInFlight;
+        private (Request Kind, string Id)? _requestInFlight;
         private bool _presenceInFlight;
         private bool _connected;
         private int _lifetime;
         private double _nextRefreshAt;
+        private double _nextInitRetryAt;
+        private double _initRetrySeconds = InitialRetrySeconds;
 
         private bool HasReferences => _settings != null && _friends != null &&
             _onlineSession != null && _sessionService != null;
@@ -86,7 +95,7 @@ namespace AlienFarms.Networking.Social
             _friends.CancelOutgoingRequested += HandleCancelOutgoing;
             _friends.RefreshRequested += HandleRefresh;
             _friends.InviteRequested += HandleInvite;
-            _friends.InviteEligibility += CanInvite;
+            _friends.SetInviteEligibility(CanInvite);
 
             HandleSessionChanged();
         }
@@ -107,22 +116,16 @@ namespace AlienFarms.Networking.Social
             _friends.CancelOutgoingRequested -= HandleCancelOutgoing;
             _friends.RefreshRequested -= HandleRefresh;
             _friends.InviteRequested -= HandleInvite;
-            _friends.InviteEligibility -= CanInvite;
+            _friends.SetInviteEligibility(null);
             ResetSession();
         }
 
         private void ResetSession()
         {
             _lifetime++;
-            if (_sdk != null)
-            {
-                _sdk.RelationshipAdded -= HandleRelationshipAdded;
-                _sdk.RelationshipDeleted -= HandleRelationshipDeleted;
-                _sdk.PresenceUpdated -= HandlePresenceUpdated;
-                _sdk.MessageReceived -= HandleMessageReceived;
-                _sdk.NotificationsConnectivityChanged -= HandleConnectivityChanged;
-                _sdk = null;
-            }
+            UnsubscribeSdk();
+            _initRetrySeconds = InitialRetrySeconds;
+            _nextInitRetryAt = 0d;
 
             _requests.Clear();
             _inviteSentAt.Clear();
@@ -138,6 +141,19 @@ namespace AlienFarms.Networking.Social
             _friends.SetLastInfoKey(null);
             _friends.SetFriends(null, 0);
             _friends.SetRequests(null, 0);
+        }
+
+        private void UnsubscribeSdk()
+        {
+            if (_sdk != null)
+            {
+                _sdk.RelationshipAdded -= HandleRelationshipAdded;
+                _sdk.RelationshipDeleted -= HandleRelationshipDeleted;
+                _sdk.PresenceUpdated -= HandlePresenceUpdated;
+                _sdk.MessageReceived -= HandleMessageReceived;
+                _sdk.NotificationsConnectivityChanged -= HandleConnectivityChanged;
+                _sdk = null;
+            }
         }
 
         private void HandleSessionChanged()
@@ -157,7 +173,7 @@ namespace AlienFarms.Networking.Social
                 return;
             }
 
-            if (_friends.Status == FriendsServiceStatus.Off && !_initializing)
+            if ((_friends.Status is FriendsServiceStatus.Off or FriendsServiceStatus.Error) && !_initializing)
             {
                 _ = InitializeAsync();
             }
@@ -183,6 +199,12 @@ namespace AlienFarms.Networking.Social
                 }
 
                 _sdk = FriendsService.Instance;
+                if (!IsSdkInitialized(_sdk))
+                {
+                    s_lastConnectivity = false;
+                }
+
+                _connected = s_lastConnectivity;
                 _sdk.RelationshipAdded += HandleRelationshipAdded;
                 _sdk.RelationshipDeleted += HandleRelationshipDeleted;
                 _sdk.PresenceUpdated += HandlePresenceUpdated;
@@ -202,6 +224,7 @@ namespace AlienFarms.Networking.Social
                 _nextRefreshAt = Time.unscaledTimeAsDouble + _settings.FallbackRefreshSeconds;
                 _friends.SetLastErrorKey(null);
                 PublishLists();
+                _initRetrySeconds = InitialRetrySeconds;
                 _friends.SetStatus(FriendsServiceStatus.Ready);
 
                 var online = FriendPresenceRules.Resolve(_onlineSession.Status, false);
@@ -213,6 +236,9 @@ namespace AlienFarms.Networking.Social
             {
                 if (IsCurrent(lifetime))
                 {
+                    UnsubscribeSdk();
+                    _nextInitRetryAt = Time.unscaledTimeAsDouble + _initRetrySeconds;
+                    _initRetrySeconds = Math.Min(_initRetrySeconds * 2d, MaxRetrySeconds);
                     _friends.SetStatus(FriendsServiceStatus.Error);
                     ReportError(exception);
                 }
@@ -228,8 +254,29 @@ namespace AlienFarms.Networking.Social
             }
         }
 
+        private static bool IsSdkInitialized(IFriendsService sdk)
+        {
+            try
+            {
+                // Friends 1.4.1 exposes no initialization flag. This getter documents the pre-init exception.
+                _ = sdk.Relationships;
+                return true;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+        }
+
         private void Update()
         {
+            if (CanInitialize && _friends.Status == FriendsServiceStatus.Error && !_initializing &&
+                Time.unscaledTimeAsDouble >= _nextInitRetryAt)
+            {
+                _ = InitializeAsync();
+                return;
+            }
+
             if (!IsReady)
             {
                 return;
@@ -237,7 +284,7 @@ namespace AlienFarms.Networking.Social
 
             double now = Time.unscaledTimeAsDouble;
             TrySendPresence(now);
-            if (_requestInFlight)
+            if (_requestInFlight.HasValue)
             {
                 return;
             }
@@ -247,7 +294,7 @@ namespace AlienFarms.Networking.Social
                 var request = _requests.Dequeue();
                 _ = ExecuteRequestAsync(request.Kind, request.Id, true, request.SessionId);
             }
-            else if (!_connected && now >= _nextRefreshAt)
+            else if (!_connected && _friends.IsPanelOpen && now >= _nextRefreshAt)
             {
                 _ = ExecuteRequestAsync(Request.Refresh, null, false);
             }
@@ -258,7 +305,20 @@ namespace AlienFarms.Networking.Social
         private void HandleDecline(string id) => Enqueue(Request.Decline, id);
         private void HandleCancelOutgoing(string id) => Enqueue(Request.CancelOutgoing, id);
         private void HandleInvite(string id) => Enqueue(Request.Invite, id);
-        private void HandleRefresh() => Enqueue(Request.Refresh, null);
+        private void HandleRefresh()
+        {
+            if (CanInitialize && _friends.Status == FriendsServiceStatus.Error)
+            {
+                if (!_initializing)
+                {
+                    _ = InitializeAsync();
+                }
+
+                return;
+            }
+
+            Enqueue(Request.Refresh, null);
+        }
 
         private void Enqueue(Request kind, string id)
         {
@@ -274,13 +334,27 @@ namespace AlienFarms.Networking.Social
                 return;
             }
 
+            id = id?.Trim();
+            if (_requestInFlight == (kind, id))
+            {
+                return;
+            }
+
+            foreach (var queued in _requests)
+            {
+                if (queued.Kind == kind && queued.Id == id)
+                {
+                    return;
+                }
+            }
+
             string sessionId = kind == Request.Invite ? _sessionService.CurrentSession?.Id : null;
-            _requests.Enqueue((kind, id?.Trim(), sessionId));
+            _requests.Enqueue((kind, id, sessionId));
         }
 
         private async Task ExecuteRequestAsync(Request kind, string id, bool userRequested, string sessionId = null)
         {
-            _requestInFlight = true;
+            _requestInFlight = (kind, id);
             int lifetime = _lifetime;
             try
             {
@@ -340,7 +414,14 @@ namespace AlienFarms.Networking.Social
             {
                 if (IsCurrent(lifetime))
                 {
-                    ReportError(exception);
+                    if (userRequested)
+                    {
+                        ReportError(exception);
+                    }
+                    else
+                    {
+                        LogBackgroundError("refresh", exception);
+                    }
                 }
             }
             finally
@@ -350,7 +431,7 @@ namespace AlienFarms.Networking.Social
                     _nextRefreshAt = Time.unscaledTimeAsDouble + _settings.FallbackRefreshSeconds;
                 }
 
-                _requestInFlight = false;
+                _requestInFlight = null;
             }
         }
 
@@ -360,6 +441,19 @@ namespace AlienFarms.Networking.Social
                 _inviteSentAt.TryGetValue(entry.UgsPlayerId, out double sentAt) ? sentAt : (double?)null,
                 Time.realtimeSinceStartupAsDouble, _settings.InviteCooldownSeconds);
 
+        private int FindFriendIndex(string id)
+        {
+            for (int i = 0; i < _friendEntries.Count; i++)
+            {
+                if (_friendEntries[i].UgsPlayerId == id)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
         private async Task<string> SendInviteAsync(string id, string sessionId, int lifetime)
         {
             if (id == _friends.LocalPlayerId)
@@ -367,7 +461,7 @@ namespace AlienFarms.Networking.Social
                 return FriendsErrorKeys.Self;
             }
 
-            int index = _friendEntries.FindIndex(entry => entry.UgsPlayerId == id);
+            int index = FindFriendIndex(id);
             if (index < 0)
             {
                 return FriendsErrorKeys.NotFriend;
@@ -415,6 +509,14 @@ namespace AlienFarms.Networking.Social
                 return;
             }
 
+            string senderId = notification.UserId;
+            int index = string.IsNullOrWhiteSpace(senderId) ? -1 : FindFriendIndex(senderId);
+            if (index < 0)
+            {
+                Debug.Log($"[{nameof(FriendsSocialService)}] Ignored an invitation from a non-friend.", this);
+                return;
+            }
+
             SessionInviteMessage message;
             try
             {
@@ -427,8 +529,14 @@ namespace AlienFarms.Networking.Social
 
             long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             long ttlMs = _settings.InviteTtlSeconds * 1000L;
-            if (InviteRules.TryCreateOffer(message, _friends.LocalPlayerId, notification.UserId, now, ttlMs,
-                Time.realtimeSinceStartupAsDouble, out SessionInviteOffer offer))
+            var result = InviteRules.CreateOffer(message, _friends.LocalPlayerId, senderId,
+                _friendEntries[index].DisplayName, now, ttlMs, Time.realtimeSinceStartupAsDouble,
+                out SessionInviteOffer offer);
+            if (result == InviteRules.Result.Expired)
+            {
+                Debug.Log($"[{nameof(FriendsSocialService)}] Ignored an expired invitation.", this);
+            }
+            else if (result == InviteRules.Result.Valid)
             {
                 _friends.SetPendingInvite(offer);
             }
@@ -438,6 +546,15 @@ namespace AlienFarms.Networking.Social
 
         private void ReportError(Exception exception)
         {
+            if (exception is FriendsServiceException sdkException)
+            {
+                Debug.LogWarning($"[{nameof(FriendsSocialService)}] Friends error {(int)sdkException.ErrorCode}: {sdkException.Message}", this);
+            }
+            else if (exception is not RelationshipNotFoundException)
+            {
+                Debug.LogException(exception, this);
+            }
+
             string key = exception switch
             {
                 FriendsServiceException friendsException => FriendsErrorMapper.Map((int)friendsException.ErrorCode),
@@ -448,18 +565,24 @@ namespace AlienFarms.Networking.Social
             _friends.SetLastErrorKey(key);
         }
 
+        private void LogBackgroundError(string operation, Exception exception)
+        {
+            string code = exception is FriendsServiceException sdkException ? $" ({(int)sdkException.ErrorCode})" : string.Empty;
+            Debug.LogWarning($"[{nameof(FriendsSocialService)}] Background {operation} failed{code}: {exception}", this);
+        }
+
         private void HandleRelationshipAdded(IRelationshipAddedEvent change) => PublishIfReady();
         private void HandleRelationshipDeleted(IRelationshipDeletedEvent change) => PublishIfReady();
         private void HandlePresenceUpdated(IPresenceUpdatedEvent change) => PublishIfReady();
 
         private void HandleConnectivityChanged(INotificationsStateChangedEvent change)
         {
+            bool connected = change.State == FriendsEventConnectionState.Subscribed;
+            s_lastConnectivity = connected;
             if (!CanInitialize)
             {
                 return;
             }
-
-            bool connected = change.State == FriendsEventConnectionState.Subscribed;
             if (_connected != connected)
             {
                 _connected = connected;
@@ -521,9 +644,9 @@ namespace AlienFarms.Networking.Social
             {
                 return presence?.GetActivity<FriendPresenceActivity>()?.state switch
                 {
-                    FriendPresenceActivity.Hub => FriendPresenceActivity.Hub,
-                    FriendPresenceActivity.Room => FriendPresenceActivity.Room,
-                    FriendPresenceActivity.Match => FriendPresenceActivity.Match,
+                    FriendActivityKeys.Hub => FriendActivityKeys.Hub,
+                    FriendActivityKeys.Room => FriendActivityKeys.Room,
+                    FriendActivityKeys.Match => FriendActivityKeys.Match,
                     _ => null
                 };
             }
@@ -572,7 +695,7 @@ namespace AlienFarms.Networking.Social
                 if (IsCurrent(lifetime))
                 {
                     _presence.Retry(desired, Time.unscaledTimeAsDouble + _settings.FallbackRefreshSeconds);
-                    ReportError(exception);
+                    LogBackgroundError("presence", exception);
                 }
             }
             finally

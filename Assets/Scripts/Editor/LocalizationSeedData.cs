@@ -154,6 +154,8 @@ namespace AlienFarms.Editor
             new LocalizationSeedEntry(Ui, LocalizationKeys.FriendsErrorNotEnabled, "Amigos no está disponible", "Friends is unavailable"),
             new LocalizationSeedEntry(Ui, LocalizationKeys.FriendsErrorNetwork, "Se perdió la conexión con Amigos", "Connection to Friends was lost"),
             new LocalizationSeedEntry(Ui, LocalizationKeys.FriendsErrorPayload, "No se pudo enviar la invitación", "Could not send the invitation"),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.FriendsErrorRateLimited, "Demasiadas solicitudes. Inténtalo de nuevo en unos segundos", "Too many requests. Try again in a few seconds"),
+            new LocalizationSeedEntry(Ui, LocalizationKeys.FriendsErrorLimitReached, "Alcanzaste el límite de amigos o solicitudes", "You reached the friends or friend requests limit"),
             new LocalizationSeedEntry(Ui, LocalizationKeys.FriendsErrorUnknown, "Ocurrió un error en Amigos", "Something went wrong with Friends"),
             new LocalizationSeedEntry(Ui, LocalizationKeys.FriendsInfoInviteSent, "Invitación enviada", "Invitation sent"),
             new LocalizationSeedEntry(Ui, LocalizationKeys.FriendsInfoRequestSent, "Solicitud enviada", "Friend request sent"),

@@ -57,6 +57,8 @@ namespace AlienFarms.Tests
             _channel.SetPendingInvite(CreateOffer("first"));
             _channel.SetFriends(new[] { new FriendEntry("friend", null, FriendAvailability.Online, null, 0) }, 1);
             _channel.RefreshRequested += () => Assert.Fail("Stale listener invoked");
+            _channel.PanelOpened();
+            _channel.SetInviteEligibility(_ => true);
 
             MethodInfo reset = typeof(FriendsChannel).GetMethod("ResetStatics", BindingFlags.NonPublic | BindingFlags.Static);
             Assert.That(reset, Is.Not.Null);
@@ -68,6 +70,8 @@ namespace AlienFarms.Tests
             Assert.That(_channel.LastInfoKey, Is.Null);
             Assert.That(_channel.HasInvite, Is.False);
             Assert.That(_channel.FriendCount, Is.Zero);
+            Assert.That(_channel.IsPanelOpen, Is.False);
+            Assert.That(_channel.CanInvite(CreateFriend()), Is.False);
             Assert.That(_channel.IsAvailable, Is.False);
             Assert.That(_channel.RequestRefresh(), Is.False);
         }
@@ -120,6 +124,39 @@ namespace AlienFarms.Tests
             _channel.DeclineInvite();
             Assert.That(_channel.HasInvite, Is.False);
         }
+
+        [Test]
+        public void PanelCounter_StaysOpenUntilLastPanelCloses()
+        {
+            _channel.PanelClosed();
+            _channel.PanelOpened();
+            _channel.PanelOpened();
+            _channel.PanelClosed();
+            Assert.That(_channel.IsPanelOpen, Is.True);
+
+            _channel.PanelClosed();
+            _channel.PanelClosed();
+            Assert.That(_channel.IsPanelOpen, Is.False);
+
+            _channel.PanelOpened();
+            Assert.That(_channel.IsPanelOpen, Is.True);
+        }
+
+        [Test]
+        public void InviteEligibility_ReplacesAndClearsProvider()
+        {
+            _channel.SetInviteEligibility(_ => true);
+            Assert.That(_channel.CanInvite(CreateFriend()), Is.True);
+
+            _channel.SetInviteEligibility(_ => false);
+            Assert.That(_channel.CanInvite(CreateFriend()), Is.False);
+
+            _channel.SetInviteEligibility(_ => true);
+            _channel.SetInviteEligibility(null);
+            Assert.That(_channel.CanInvite(CreateFriend()), Is.False);
+        }
+
+        private static FriendEntry CreateFriend() => new FriendEntry("friend", null, FriendAvailability.Online, null, 0);
 
         private static SessionInviteOffer CreateOffer(string sessionId) =>
             new SessionInviteOffer("host", "Host", "BCDFGH", sessionId, 120);

@@ -6,9 +6,9 @@ namespace AlienFarms.Networking.Tests.Social
 {
     public sealed class PresenceDebounceTests
     {
-        private static readonly (FriendAvailability, string) Hub = (FriendAvailability.Online, FriendPresenceActivity.Hub);
-        private static readonly (FriendAvailability, string) Room = (FriendAvailability.Online, FriendPresenceActivity.Room);
-        private static readonly (FriendAvailability, string) Match = (FriendAvailability.Busy, FriendPresenceActivity.Match);
+        private static readonly (FriendAvailability, string) Hub = (FriendAvailability.Online, FriendActivityKeys.Hub);
+        private static readonly (FriendAvailability, string) Room = (FriendAvailability.Online, FriendActivityKeys.Room);
+        private static readonly (FriendAvailability, string) Match = (FriendAvailability.Busy, FriendActivityKeys.Match);
 
         [Test]
         public void Schedule_PublishesOnlyTheLatestChangeAfterItsDelay()

@@ -654,6 +654,14 @@ MonoBehaviour:
     m_Localized: Actualizar
     m_Metadata:
       m_Items: []
+  - m_Id: 8986286120226816
+    m_Localized: "Demasiadas solicitudes. Int\xE9ntalo de nuevo en unos segundos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8986286137004032
+    m_Localized: "Alcanzaste el l\xEDmite de amigos o solicitudes"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

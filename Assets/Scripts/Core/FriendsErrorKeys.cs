@@ -10,6 +10,8 @@ namespace AlienFarms.Core
         public const string NotEnabled = "friends.error.not_enabled";
         public const string Network = "friends.error.network";
         public const string Payload = "friends.error.payload";
+        public const string RateLimited = "friends.error.rate_limited";
+        public const string LimitReached = "friends.error.limit_reached";
         public const string Unknown = "friends.error.unknown";
         public const string InviteSent = "friends.info.invite_sent";
         public const string RequestSent = "friends.info.request_sent";

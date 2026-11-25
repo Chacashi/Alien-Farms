@@ -651,6 +651,14 @@ MonoBehaviour:
     m_Key: friends.label.refresh
     m_Metadata:
       m_Items: []
+  - m_Id: 8986286120226816
+    m_Key: friends.error.rate_limited
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8986286137004032
+    m_Key: friends.error.limit_reached
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

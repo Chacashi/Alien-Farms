@@ -4,6 +4,9 @@ namespace AlienFarms.Networking.Social
 {
     public static class InviteRules
     {
+        private const long ClockSkewToleranceMs = 60_000;
+        private const int MaxFallbackNameLength = 24;
+
         public enum Result
         {
             Valid,
@@ -13,20 +16,31 @@ namespace AlienFarms.Networking.Social
             Expired
         }
 
-        public static bool TryCreateOffer(SessionInviteMessage message, string localId, string senderId,
-            long nowUnixMs, long ttlMs, double nowRealtime, out SessionInviteOffer offer)
+        public static Result CreateOffer(SessionInviteMessage message, string localId, string senderId,
+            string displayName, long nowUnixMs, long ttlMs, double nowRealtime, out SessionInviteOffer offer)
         {
             offer = default;
-            if (Validate(message, localId, senderId, nowUnixMs, ttlMs, out string code) != Result.Valid)
+            Result result = Validate(message, localId, senderId, nowUnixMs, ttlMs, out string code);
+            if (result != Result.Valid)
             {
-                return false;
+                return result;
             }
 
-            long elapsedMs = nowUnixMs >= message.sentAtUnixMs ? nowUnixMs - message.sentAtUnixMs : 0L;
-            double remainingSeconds = (ttlMs - elapsedMs) / 1000d;
-            offer = new SessionInviteOffer(senderId, message.hostName, code, message.sessionId,
-                nowRealtime + remainingSeconds);
-            return true;
+            if (string.IsNullOrWhiteSpace(displayName))
+            {
+                displayName = DisplayNameSanitizer.Sanitize(message.hostName);
+                if (displayName.Length > MaxFallbackNameLength)
+                {
+                    int length = char.IsHighSurrogate(displayName[MaxFallbackNameLength - 1])
+                        ? MaxFallbackNameLength - 1 : MaxFallbackNameLength;
+                    displayName = displayName.Substring(0, length).TrimEnd();
+                }
+            }
+
+            // Wall-clock skew determines admission. The local countdown starts on receipt.
+            offer = new SessionInviteOffer(senderId, displayName, code, message.sessionId,
+                nowRealtime + ttlMs / 1000d);
+            return Result.Valid;
         }
 
         public static Result Validate(SessionInviteMessage message, string localId, string senderId, long nowUnixMs, long ttlMs)
@@ -59,7 +73,10 @@ namespace AlienFarms.Networking.Social
                 return Result.FromSelf;
             }
 
-            if (ttlMs <= 0 || (nowUnixMs >= message.sentAtUnixMs && nowUnixMs - message.sentAtUnixMs >= ttlMs))
+            bool outsideWindow = nowUnixMs >= message.sentAtUnixMs
+                ? nowUnixMs - message.sentAtUnixMs - ClockSkewToleranceMs > ttlMs
+                : nowUnixMs < message.sentAtUnixMs - ClockSkewToleranceMs;
+            if (ttlMs <= 0 || outsideWindow)
             {
                 return Result.Expired;
             }

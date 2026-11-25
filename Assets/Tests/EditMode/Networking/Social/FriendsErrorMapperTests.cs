@@ -13,6 +13,9 @@ namespace AlienFarms.Networking.Tests.Social
         [TestCase(24013, FriendsErrorKeys.NotFriend)]
         [TestCase(24022, FriendsErrorKeys.Payload)]
         [TestCase(24024, FriendsErrorKeys.NotEnabled)]
+        [TestCase(24044, FriendsErrorKeys.LimitReached)]
+        [TestCase(24045, FriendsErrorKeys.LimitReached)]
+        [TestCase(24429, FriendsErrorKeys.RateLimited)]
         [TestCase(24602, FriendsErrorKeys.Network)]
         [TestCase(-1, FriendsErrorKeys.Unknown)]
         public void Map_ReturnsLocalizationKey(int code, string key)

@@ -654,6 +654,14 @@ MonoBehaviour:
     m_Localized: Refresh
     m_Metadata:
       m_Items: []
+  - m_Id: 8986286120226816
+    m_Localized: Too many requests. Try again in a few seconds
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8986286137004032
+    m_Localized: You reached the friends or friend requests limit
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

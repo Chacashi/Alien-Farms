@@ -8,14 +8,14 @@ namespace AlienFarms.Networking.Social
         {
             if (inMatch)
             {
-                return (FriendAvailability.Busy, FriendPresenceActivity.Match);
+                return (FriendAvailability.Busy, FriendActivityKeys.Match);
             }
 
             return status switch
             {
                 OnlineSessionStatus.SignedOut or OnlineSessionStatus.SigningIn => (FriendAvailability.Offline, null),
-                OnlineSessionStatus.InSession => (FriendAvailability.Online, FriendPresenceActivity.Room),
-                _ => (FriendAvailability.Online, FriendPresenceActivity.Hub)
+                OnlineSessionStatus.InSession => (FriendAvailability.Online, FriendActivityKeys.Room),
+                _ => (FriendAvailability.Online, FriendActivityKeys.Hub)
             };
         }
     }

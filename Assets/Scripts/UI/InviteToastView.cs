@@ -69,11 +69,25 @@ namespace AlienFarms.UI
             Hide();
         }
 
+        private bool ShouldShow => _controller.CanShowInvite &&
+            (_friends.HasInvite || _controller.ToastErrorKey != null);
+
         private void Refresh()
         {
-            if (!_friends.HasInvite || !_controller.CanShowInvite)
+            if (!ShouldShow)
             {
                 Hide();
+                return;
+            }
+
+            string errorKey = _controller.ToastErrorKey;
+            _accept.interactable = errorKey == null;
+            if (errorKey != null)
+            {
+                _messageText.Show(_message, errorKey);
+                _countdown.SetCharArray(_countdownBuffer, 0, 0);
+                _shownSeconds = -1;
+                _content.SetActive(true);
                 return;
             }
 
@@ -91,14 +105,18 @@ namespace AlienFarms.UI
                 return;
             }
 
-            if (_content.activeSelf != (_friends.HasInvite && _controller.CanShowInvite))
+            if (_content.activeSelf != ShouldShow)
             {
                 Refresh();
             }
 
             if (_content.activeSelf)
             {
-                RefreshCountdown(_friends.PendingInvite);
+                if (_controller.ToastErrorKey == null)
+                {
+                    RefreshCountdown(_friends.PendingInvite);
+                }
+
                 Focus();
             }
         }
@@ -141,10 +159,15 @@ namespace AlienFarms.UI
                 multiplayer.playerRoot = _content;
             }
 
-            if (!OwnsSelection(eventSystem.currentSelectedGameObject))
+            GameObject selected = eventSystem.currentSelectedGameObject;
+            if (!OwnsSelection(selected))
             {
-                _previousSelection = eventSystem.currentSelectedGameObject;
-                eventSystem.SetSelectedGameObject(_accept.gameObject);
+                _previousSelection = selected;
+                eventSystem.SetSelectedGameObject(_accept.interactable ? _accept.gameObject : _decline.gameObject);
+            }
+            else if (!_accept.interactable && selected == _accept.gameObject)
+            {
+                eventSystem.SetSelectedGameObject(_decline.gameObject);
             }
         }
 
