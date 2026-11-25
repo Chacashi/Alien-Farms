@@ -31,6 +31,8 @@ namespace AlienFarms.Input
         [SerializeField, Tooltip("This player's own event system (child UIInput). Enabled only while this player navigates a menu.")]
         private MultiplayerEventSystem _eventSystem;
 
+        internal MultiplayerEventSystem MenuEventSystem => _eventSystem;
+
         [SerializeField, Tooltip("Optional: gameplay input handler, so the cursor is unlocked while in a menu.")]
         private PlayerInputHandler _gameplayInput;
 

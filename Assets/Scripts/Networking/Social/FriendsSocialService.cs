@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AlienFarms.Core;
 using AlienFarms.Data;
+using AlienFarms.Menu;
 using AlienFarms.Networking.Session;
 using Unity.Services.Friends;
 using Unity.Services.Friends.Exceptions;
@@ -22,13 +23,15 @@ namespace AlienFarms.Networking.Social
         [SerializeField] private OnlineSessionChannel _onlineSession;
         [SerializeField] private OnlineSessionService _sessionService;
 
-        private enum Request { Add, Accept, Decline, CancelOutgoing, Refresh }
+        private enum Request { Add, Accept, Decline, CancelOutgoing, Invite, Refresh }
 
         private static SemaphoreSlim s_initializationGate = new SemaphoreSlim(1);
-        private readonly Queue<(Request Kind, string Id)> _requests = new();
+        private readonly Queue<(Request Kind, string Id, string SessionId)> _requests = new();
         private readonly List<FriendEntry> _friendEntries = new();
         private readonly List<FriendRequestEntry> _incomingEntries = new();
         private readonly List<FriendRequestEntry> _outgoingEntries = new();
+        private readonly Dictionary<string, double> _inviteSentAt = new();
+        private string _inviteInFlight;
         private readonly PresenceDebounce _presence = new();
         private FriendEntry[] _friendBuffer;
         private FriendRequestEntry[] _requestBuffer;
@@ -48,6 +51,7 @@ namespace AlienFarms.Networking.Social
         private bool CanInitialize => _active && !_quitting && _onlineSession.Status >= OnlineSessionStatus.Ready &&
             _sessionService.Bootstrapper?.IsSignedIn == true;
         private bool IsReady => CanInitialize && _friends.Status == FriendsServiceStatus.Ready;
+        private bool InMatch => _matchPhase is MatchPhase.Countdown or MatchPhase.Playing or MatchPhase.Results;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics() => s_initializationGate = new SemaphoreSlim(1);
@@ -81,6 +85,8 @@ namespace AlienFarms.Networking.Social
             _friends.DeclineRequestRequested += HandleDecline;
             _friends.CancelOutgoingRequested += HandleCancelOutgoing;
             _friends.RefreshRequested += HandleRefresh;
+            _friends.InviteRequested += HandleInvite;
+            _friends.InviteEligibility += CanInvite;
 
             HandleSessionChanged();
         }
@@ -100,6 +106,8 @@ namespace AlienFarms.Networking.Social
             _friends.DeclineRequestRequested -= HandleDecline;
             _friends.CancelOutgoingRequested -= HandleCancelOutgoing;
             _friends.RefreshRequested -= HandleRefresh;
+            _friends.InviteRequested -= HandleInvite;
+            _friends.InviteEligibility -= CanInvite;
             ResetSession();
         }
 
@@ -111,11 +119,15 @@ namespace AlienFarms.Networking.Social
                 _sdk.RelationshipAdded -= HandleRelationshipAdded;
                 _sdk.RelationshipDeleted -= HandleRelationshipDeleted;
                 _sdk.PresenceUpdated -= HandlePresenceUpdated;
+                _sdk.MessageReceived -= HandleMessageReceived;
                 _sdk.NotificationsConnectivityChanged -= HandleConnectivityChanged;
                 _sdk = null;
             }
 
             _requests.Clear();
+            _inviteSentAt.Clear();
+            _inviteInFlight = null;
+            _friends.DeclineInvite();
             _presence.Reset();
             _connected = false;
             _matchPhase = MatchPhase.None;
@@ -174,6 +186,7 @@ namespace AlienFarms.Networking.Social
                 _sdk.RelationshipAdded += HandleRelationshipAdded;
                 _sdk.RelationshipDeleted += HandleRelationshipDeleted;
                 _sdk.PresenceUpdated += HandlePresenceUpdated;
+                _sdk.MessageReceived += HandleMessageReceived;
                 _sdk.NotificationsConnectivityChanged += HandleConnectivityChanged;
 
                 // InitializeAsync is idempotent when the SDK instance survives a NetworkRoot replacement.
@@ -232,7 +245,7 @@ namespace AlienFarms.Networking.Social
             if (_requests.Count > 0)
             {
                 var request = _requests.Dequeue();
-                _ = ExecuteRequestAsync(request.Kind, request.Id, true);
+                _ = ExecuteRequestAsync(request.Kind, request.Id, true, request.SessionId);
             }
             else if (!_connected && now >= _nextRefreshAt)
             {
@@ -244,6 +257,7 @@ namespace AlienFarms.Networking.Social
         private void HandleAccept(string id) => Enqueue(Request.Accept, id);
         private void HandleDecline(string id) => Enqueue(Request.Decline, id);
         private void HandleCancelOutgoing(string id) => Enqueue(Request.CancelOutgoing, id);
+        private void HandleInvite(string id) => Enqueue(Request.Invite, id);
         private void HandleRefresh() => Enqueue(Request.Refresh, null);
 
         private void Enqueue(Request kind, string id)
@@ -260,10 +274,11 @@ namespace AlienFarms.Networking.Social
                 return;
             }
 
-            _requests.Enqueue((kind, id?.Trim()));
+            string sessionId = kind == Request.Invite ? _sessionService.CurrentSession?.Id : null;
+            _requests.Enqueue((kind, id?.Trim(), sessionId));
         }
 
-        private async Task ExecuteRequestAsync(Request kind, string id, bool userRequested)
+        private async Task ExecuteRequestAsync(Request kind, string id, bool userRequested, string sessionId = null)
         {
             _requestInFlight = true;
             int lifetime = _lifetime;
@@ -286,6 +301,22 @@ namespace AlienFarms.Networking.Social
                         await _sdk.DeleteOutgoingFriendRequestAsync(id);
                         info = FriendsErrorKeys.RequestCanceled;
                         break;
+                    case Request.Invite:
+                        string error = await SendInviteAsync(id, sessionId, lifetime);
+                        if (!IsCurrent(lifetime))
+                        {
+                            return;
+                        }
+
+                        if (error != null)
+                        {
+                            _friends.SetLastInfoKey(null);
+                            _friends.SetLastErrorKey(error);
+                            return;
+                        }
+
+                        info = FriendsErrorKeys.InviteSent;
+                        break;
                     default:
                         await _sdk.ForceRelationshipsRefreshAsync();
                         info = FriendsErrorKeys.ListRefreshed;
@@ -294,7 +325,10 @@ namespace AlienFarms.Networking.Social
 
                 if (IsCurrent(lifetime))
                 {
-                    PublishLists();
+                    if (kind != Request.Invite)
+                    {
+                        PublishLists();
+                    }
                     if (userRequested)
                     {
                         _friends.SetLastErrorKey(null);
@@ -317,6 +351,86 @@ namespace AlienFarms.Networking.Social
                 }
 
                 _requestInFlight = false;
+            }
+        }
+
+        private bool CanInvite(FriendEntry entry) => IsReady && _inviteInFlight != entry.UgsPlayerId &&
+            InviteSendRules.CanInvite(_onlineSession.IsHost, _onlineSession.Status, _onlineSession.ParticipantCount,
+                entry.Availability, InMatch,
+                _inviteSentAt.TryGetValue(entry.UgsPlayerId, out double sentAt) ? sentAt : (double?)null,
+                Time.realtimeSinceStartupAsDouble, _settings.InviteCooldownSeconds);
+
+        private async Task<string> SendInviteAsync(string id, string sessionId, int lifetime)
+        {
+            if (id == _friends.LocalPlayerId)
+            {
+                return FriendsErrorKeys.Self;
+            }
+
+            int index = _friendEntries.FindIndex(entry => entry.UgsPlayerId == id);
+            if (index < 0)
+            {
+                return FriendsErrorKeys.NotFriend;
+            }
+
+            if (string.IsNullOrEmpty(sessionId) || sessionId != _sessionService.CurrentSession?.Id ||
+                !CanInvite(_friendEntries[index]))
+            {
+                return OnlineSessionErrorKeys.Busy;
+            }
+
+            if (!SessionCodeFormat.TryNormalize(_onlineSession.Code, out string code))
+            {
+                return FriendsErrorKeys.Payload;
+            }
+
+            _inviteInFlight = id;
+            try
+            {
+                await _sdk.MessageAsync(id, new SessionInviteMessage
+                {
+                    code = code,
+                    sessionId = sessionId,
+                    hostName = _onlineSession.LocalPlayerName,
+                    sentAtUnixMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                });
+
+                if (IsCurrent(lifetime))
+                {
+                    _inviteSentAt[id] = Time.realtimeSinceStartupAsDouble;
+                }
+
+                return null;
+            }
+            finally
+            {
+                _inviteInFlight = null;
+            }
+        }
+
+        private void HandleMessageReceived(IMessageReceivedEvent notification)
+        {
+            if (!IsReady)
+            {
+                return;
+            }
+
+            SessionInviteMessage message;
+            try
+            {
+                message = notification.GetAs<SessionInviteMessage>();
+            }
+            catch (Exception)
+            {
+                return;
+            }
+
+            long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long ttlMs = _settings.InviteTtlSeconds * 1000L;
+            if (InviteRules.TryCreateOffer(message, _friends.LocalPlayerId, notification.UserId, now, ttlMs,
+                Time.realtimeSinceStartupAsDouble, out SessionInviteOffer offer))
+            {
+                _friends.SetPendingInvite(offer);
             }
         }
 
@@ -431,8 +545,7 @@ namespace AlienFarms.Networking.Social
 
         private void SchedulePresence()
         {
-            bool inMatch = _onlineSession.Status == OnlineSessionStatus.InSession &&
-                _matchPhase is MatchPhase.Countdown or MatchPhase.Playing or MatchPhase.Results;
+            bool inMatch = _onlineSession.Status == OnlineSessionStatus.InSession && InMatch;
             _presence.Schedule(FriendPresenceRules.Resolve(_onlineSession.Status, inMatch),
                 Time.unscaledTimeAsDouble, _settings.PresenceDebounceSeconds);
         }

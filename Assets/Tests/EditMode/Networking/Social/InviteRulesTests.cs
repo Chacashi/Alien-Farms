@@ -38,6 +38,29 @@ namespace AlienFarms.Networking.Tests.Social
                 Is.EqualTo(InviteRules.Result.Malformed));
         }
 
+        [TestCase(900L, 11d)]
+        [TestCase(1_500L, 10.5d)]
+        public void TryCreateOffer_TransfersOnlyRemainingLifetimeToRealtime(long now, double expectedDeadline)
+        {
+            bool valid = InviteRules.TryCreateOffer(CreateMessage(), "local", "host", now, 1_000, 10d,
+                out var offer);
+
+            Assert.That(valid, Is.True);
+            Assert.That(offer.Code, Is.EqualTo("BCDFGH"));
+            Assert.That(offer.FromUgsPlayerId, Is.EqualTo("host"));
+            Assert.That(offer.FromName, Is.EqualTo("Host"));
+            Assert.That(offer.SessionId, Is.EqualTo("session"));
+            Assert.That(offer.ExpiresAtRealtime, Is.EqualTo(expectedDeadline));
+        }
+
+        [Test]
+        public void TryCreateOffer_DoesNotPublishAnExpiredMessage()
+        {
+            Assert.That(InviteRules.TryCreateOffer(CreateMessage(), "local", "host", 2_000, 1_000, 10d,
+                out var offer), Is.False);
+            Assert.That(offer.Code, Is.Null);
+        }
+
         private static SessionInviteMessage CreateMessage() => new SessionInviteMessage
         {
             code = " bcdfgh ",

@@ -13,6 +13,22 @@ namespace AlienFarms.Networking.Social
             Expired
         }
 
+        public static bool TryCreateOffer(SessionInviteMessage message, string localId, string senderId,
+            long nowUnixMs, long ttlMs, double nowRealtime, out SessionInviteOffer offer)
+        {
+            offer = default;
+            if (Validate(message, localId, senderId, nowUnixMs, ttlMs, out string code) != Result.Valid)
+            {
+                return false;
+            }
+
+            long elapsedMs = nowUnixMs >= message.sentAtUnixMs ? nowUnixMs - message.sentAtUnixMs : 0L;
+            double remainingSeconds = (ttlMs - elapsedMs) / 1000d;
+            offer = new SessionInviteOffer(senderId, message.hostName, code, message.sessionId,
+                nowRealtime + remainingSeconds);
+            return true;
+        }
+
         public static Result Validate(SessionInviteMessage message, string localId, string senderId, long nowUnixMs, long ttlMs)
         {
             return Validate(message, localId, senderId, nowUnixMs, ttlMs, out _);

@@ -631,6 +631,26 @@ MonoBehaviour:
     m_Key: friends.label.invite_offer
     m_Metadata:
       m_Items: []
+  - m_Id: 8983616965824512
+    m_Key: friends.info.request_declined
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8983616990990336
+    m_Key: friends.info.request_canceled
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8983616990990337
+    m_Key: friends.info.list_refreshed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8983616990990338
+    m_Key: friends.status.initializing
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8983616990990339
+    m_Key: friends.label.refresh
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

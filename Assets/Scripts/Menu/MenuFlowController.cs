@@ -74,6 +74,15 @@ namespace AlienFarms.Menu
 
         public MenuPhase Phase => _phase;
 
+        internal UnityEngine.EventSystems.EventSystem MenuEventSystem
+        {
+            get
+            {
+                PlayerId owner = _phase == MenuPhase.Online ? _onlineOwner : GetTitleOwner();
+                return owner == PlayerId.None ? null : _players[(int)owner - 1]?.MenuEventSystem;
+            }
+        }
+
         private void Awake()
         {
             // R1: a MainMenu (re)loaded while in an online session keeps the session's MatchSession (online mode).

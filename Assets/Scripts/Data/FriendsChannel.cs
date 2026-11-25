@@ -28,6 +28,7 @@ namespace AlienFarms.Data
         private Action<string> _cancelOutgoingRequested;
         private Action<string> _inviteRequested;
         private Action _refreshRequested;
+        private Func<FriendEntry, bool> _inviteEligibility;
 
         public event Action Changed;
 
@@ -60,6 +61,15 @@ namespace AlienFarms.Data
             add => AddListener(ref _inviteRequested, value);
             remove => RemoveListener(ref _inviteRequested, value);
         }
+
+        public event Func<FriendEntry, bool> InviteEligibility
+        {
+            add => AddListener(ref _inviteEligibility, value);
+            remove => RemoveListener(ref _inviteEligibility, value);
+        }
+
+        public bool CanInvite(FriendEntry entry) =>
+            IsCurrent && !string.IsNullOrEmpty(entry.UgsPlayerId) && _inviteEligibility?.Invoke(entry) == true;
 
         public event Action RefreshRequested
         {
@@ -274,6 +284,7 @@ namespace AlienFarms.Data
             _declineRequestRequested = null;
             _cancelOutgoingRequested = null;
             _inviteRequested = null;
+            _inviteEligibility = null;
             _refreshRequested = null;
         }
 

@@ -634,6 +634,26 @@ MonoBehaviour:
     m_Localized: '{0} te invita'
     m_Metadata:
       m_Items: []
+  - m_Id: 8983616965824512
+    m_Localized: Solicitud rechazada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8983616990990336
+    m_Localized: Solicitud cancelada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8983616990990337
+    m_Localized: Lista actualizada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8983616990990338
+    m_Localized: "Conectando con Amigos\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8983616990990339
+    m_Localized: Actualizar
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

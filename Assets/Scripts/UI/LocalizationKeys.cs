@@ -143,6 +143,11 @@ namespace AlienFarms.UI
         public const string FriendsInfoInviteSent = FriendsErrorKeys.InviteSent;
         public const string FriendsInfoRequestSent = FriendsErrorKeys.RequestSent;
         public const string FriendsInfoFriendAdded = FriendsErrorKeys.FriendAdded;
+        public const string FriendsInfoRequestDeclined = FriendsErrorKeys.RequestDeclined;
+        public const string FriendsInfoRequestCanceled = FriendsErrorKeys.RequestCanceled;
+        public const string FriendsInfoListRefreshed = FriendsErrorKeys.ListRefreshed;
+        public const string FriendsStatusInitializing = "friends.status.initializing";
+        public const string FriendsLabelRefresh = "friends.label.refresh";
         public const string FriendsPresenceUnknown = "friends.presence.unknown";
         public const string FriendsPresenceOnline = "friends.presence.online";
         public const string FriendsPresenceBusy = "friends.presence.busy";
