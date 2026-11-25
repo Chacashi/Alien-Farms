@@ -29,12 +29,12 @@ MonoBehaviour:
   _throwViewTolerance: 15
   _throwRequestTimeout: 0.5
   _lagCompDefault: 1
-  _showOwnershipLabels: 1
+  _showOwnershipLabels: 0
   _logOwnership: 1
-  _showPoolStats: 1
+  _showPoolStats: 0
   _logPoolLifecycle: 0
   _showNameTags: 1
-  _nameTagShowsClientId: 1
+  _nameTagShowsClientId: 0
   _readRivalStats: 1
   _statsSaveAttempts: 3
   _statsRetryDelaySeconds: 4
