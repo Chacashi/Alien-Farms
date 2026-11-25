@@ -503,6 +503,134 @@ MonoBehaviour:
     m_Key: voice.label.rival_muted
     m_Metadata:
       m_Items: []
+  - m_Id: 8979959297855488
+    m_Key: online.error.invite_expired
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827008
+    m_Key: friends.error.self
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827009
+    m_Key: friends.error.already_friends
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827010
+    m_Key: friends.error.request_exists
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827011
+    m_Key: friends.error.blocked
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827012
+    m_Key: friends.error.not_friend
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827013
+    m_Key: friends.error.not_enabled
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827014
+    m_Key: friends.error.network
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827015
+    m_Key: friends.error.payload
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827016
+    m_Key: friends.error.unknown
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827017
+    m_Key: friends.info.invite_sent
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827018
+    m_Key: friends.info.request_sent
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827019
+    m_Key: friends.info.friend_added
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827020
+    m_Key: friends.presence.unknown
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827021
+    m_Key: friends.presence.online
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827022
+    m_Key: friends.presence.busy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827023
+    m_Key: friends.presence.away
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827024
+    m_Key: friends.presence.invisible
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827025
+    m_Key: friends.presence.offline
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827026
+    m_Key: friends.activity.hub
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827027
+    m_Key: friends.activity.room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827028
+    m_Key: friends.activity.match
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827029
+    m_Key: friends.label.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827030
+    m_Key: friends.label.player_id
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827031
+    m_Key: friends.label.copy_id
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827032
+    m_Key: friends.label.add
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827033
+    m_Key: friends.label.requests
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827034
+    m_Key: friends.label.accept
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827035
+    m_Key: friends.label.decline
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827036
+    m_Key: friends.label.cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827037
+    m_Key: friends.label.invite
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827038
+    m_Key: friends.label.invite_offer
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

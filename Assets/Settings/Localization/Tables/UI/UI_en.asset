@@ -506,6 +506,134 @@ MonoBehaviour:
     m_Localized: Rival muted
     m_Metadata:
       m_Items: []
+  - m_Id: 8979959297855488
+    m_Localized: The invitation has expired.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827008
+    m_Localized: You cannot add yourself
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827009
+    m_Localized: You are already friends
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827010
+    m_Localized: A friend request is already pending
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827011
+    m_Localized: This relationship is blocked
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827012
+    m_Localized: This player is not your friend
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827013
+    m_Localized: Friends is unavailable
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827014
+    m_Localized: Connection to Friends was lost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827015
+    m_Localized: Could not send the invitation
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827016
+    m_Localized: Something went wrong with Friends
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827017
+    m_Localized: Invitation sent
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827018
+    m_Localized: Friend request sent
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827019
+    m_Localized: Friend added
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827020
+    m_Localized: Unknown
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827021
+    m_Localized: Online
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827022
+    m_Localized: Busy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827023
+    m_Localized: Away
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827024
+    m_Localized: Invisible
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827025
+    m_Localized: Offline
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827026
+    m_Localized: Online menu
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827027
+    m_Localized: In a room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827028
+    m_Localized: In a match
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827029
+    m_Localized: Friends
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827030
+    m_Localized: Your ID
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827031
+    m_Localized: Copy ID
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827032
+    m_Localized: Add friend
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827033
+    m_Localized: Requests
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827034
+    m_Localized: Accept
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827035
+    m_Localized: Decline
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827036
+    m_Localized: Cancel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827037
+    m_Localized: Invite
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827038
+    m_Localized: '{0} invited you'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

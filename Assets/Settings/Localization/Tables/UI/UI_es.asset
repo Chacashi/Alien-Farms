@@ -506,6 +506,134 @@ MonoBehaviour:
     m_Localized: Rival silenciado
     m_Metadata:
       m_Items: []
+  - m_Id: 8979959297855488
+    m_Localized: "La invitaci\xF3n ha caducado."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827008
+    m_Localized: No puedes agregarte a ti mismo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827009
+    m_Localized: Ya son amigos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827010
+    m_Localized: Ya hay una solicitud pendiente
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827011
+    m_Localized: "La relaci\xF3n est\xE1 bloqueada"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827012
+    m_Localized: Este jugador no es tu amigo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827013
+    m_Localized: "Amigos no est\xE1 disponible"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827014
+    m_Localized: "Se perdi\xF3 la conexi\xF3n con Amigos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827015
+    m_Localized: "No se pudo enviar la invitaci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827016
+    m_Localized: "Ocurri\xF3 un error en Amigos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827017
+    m_Localized: "Invitaci\xF3n enviada"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827018
+    m_Localized: Solicitud enviada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827019
+    m_Localized: Amigo agregado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827020
+    m_Localized: Desconocido
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827021
+    m_Localized: "En l\xEDnea"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827022
+    m_Localized: Ocupado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827023
+    m_Localized: Ausente
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827024
+    m_Localized: Invisible
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827025
+    m_Localized: "Sin conexi\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827026
+    m_Localized: "Men\xFA en l\xEDnea"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827027
+    m_Localized: En la sala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827028
+    m_Localized: En partida
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827029
+    m_Localized: Amigos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827030
+    m_Localized: Tu ID
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827031
+    m_Localized: Copiar ID
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827032
+    m_Localized: Agregar amigo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827033
+    m_Localized: Solicitudes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827034
+    m_Localized: Aceptar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827035
+    m_Localized: Rechazar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827036
+    m_Localized: Cancelar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827037
+    m_Localized: Invitar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8979959318827038
+    m_Localized: '{0} te invita'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

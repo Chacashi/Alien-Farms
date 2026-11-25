@@ -130,6 +130,39 @@ namespace AlienFarms.UI
         public const string VoiceLabelMuteRival = "voice.label.mute_rival";
         public const string VoiceLabelRivalMuted = "voice.label.rival_muted";
 
+        // UI table: Friends and session invitations (S14).
+        public const string FriendsErrorSelf = FriendsErrorKeys.Self;
+        public const string FriendsErrorAlreadyFriends = FriendsErrorKeys.AlreadyFriends;
+        public const string FriendsErrorRequestExists = FriendsErrorKeys.RequestExists;
+        public const string FriendsErrorBlocked = FriendsErrorKeys.Blocked;
+        public const string FriendsErrorNotFriend = FriendsErrorKeys.NotFriend;
+        public const string FriendsErrorNotEnabled = FriendsErrorKeys.NotEnabled;
+        public const string FriendsErrorNetwork = FriendsErrorKeys.Network;
+        public const string FriendsErrorPayload = FriendsErrorKeys.Payload;
+        public const string FriendsErrorUnknown = FriendsErrorKeys.Unknown;
+        public const string FriendsInfoInviteSent = FriendsErrorKeys.InviteSent;
+        public const string FriendsInfoRequestSent = FriendsErrorKeys.RequestSent;
+        public const string FriendsInfoFriendAdded = FriendsErrorKeys.FriendAdded;
+        public const string FriendsPresenceUnknown = "friends.presence.unknown";
+        public const string FriendsPresenceOnline = "friends.presence.online";
+        public const string FriendsPresenceBusy = "friends.presence.busy";
+        public const string FriendsPresenceAway = "friends.presence.away";
+        public const string FriendsPresenceInvisible = "friends.presence.invisible";
+        public const string FriendsPresenceOffline = "friends.presence.offline";
+        public const string FriendsActivityHub = "friends.activity.hub";
+        public const string FriendsActivityRoom = "friends.activity.room";
+        public const string FriendsActivityMatch = "friends.activity.match";
+        public const string FriendsLabelTitle = "friends.label.title";
+        public const string FriendsLabelPlayerId = "friends.label.player_id";
+        public const string FriendsLabelCopyId = "friends.label.copy_id";
+        public const string FriendsLabelAdd = "friends.label.add";
+        public const string FriendsLabelRequests = "friends.label.requests";
+        public const string FriendsLabelAccept = "friends.label.accept";
+        public const string FriendsLabelDecline = "friends.label.decline";
+        public const string FriendsLabelCancel = "friends.label.cancel";
+        public const string FriendsLabelInvite = "friends.label.invite";
+        public const string FriendsLabelInviteOffer = "friends.label.invite_offer";
+
         // UI table: online errors. Values come from OnlineSessionErrorKeys (single source of truth).
         public const string OnlineErrorSignInFailed = OnlineSessionErrorKeys.SignInFailed;
         public const string OnlineErrorServicesUnavailable = OnlineSessionErrorKeys.ServicesUnavailable;
@@ -145,6 +178,7 @@ namespace AlienFarms.UI
         public const string OnlineErrorConnectionLost = OnlineSessionErrorKeys.ConnectionLost;
         public const string OnlineErrorReconnectDenied = OnlineSessionErrorKeys.ReconnectDenied;
         public const string OnlineErrorRejoinExpired = OnlineSessionErrorKeys.RejoinExpired;
+        public const string OnlineErrorInviteExpired = OnlineSessionErrorKeys.InviteExpired;
         public const string OnlineErrorRelayFailed = OnlineSessionErrorKeys.RelayFailed;
         public const string OnlineErrorConnectionFailed = OnlineSessionErrorKeys.ConnectionFailed;
         public const string OnlineErrorJoinFailed = OnlineSessionErrorKeys.JoinFailed;

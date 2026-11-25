@@ -25,6 +25,7 @@ namespace AlienFarms.Core
         public const string ReconnectDenied = "online.error.reconnect_denied";
         /// <summary>The reconnection offer ran out (the reserved seat was released).</summary>
         public const string RejoinExpired = "online.error.rejoin_expired";
+        public const string InviteExpired = "online.error.invite_expired";
         public const string RelayFailed = "online.error.relay_failed";
         public const string ConnectionFailed = "online.error.connection_failed";
         /// <summary>Join refused without a specific reason (e.g. invalid code).</summary>
