@@ -131,6 +131,15 @@ namespace AlienFarms.Core
         /// <summary>A tackle claim was resolved. Payload: attacker, victim and whether the tackle was accepted.</summary>
         public static event Action<PlayerId, PlayerId, bool> OnTackleResolved;
 
+        /// <summary>Online voice: a seat joined or left the voice channel. Payload: seat, whether it is in the channel.</summary>
+        public static event Action<PlayerId, bool> OnVoiceParticipantChanged;
+
+        /// <summary>Online voice: a seat started or stopped speaking. Payload: seat, whether speech is detected.</summary>
+        public static event Action<PlayerId, bool> OnVoiceSpeakingChanged;
+
+        /// <summary>Online voice: own mic mute or the rival's local mute changed. Payload: seat, whether it is muted.</summary>
+        public static event Action<PlayerId, bool> OnVoiceMuteChanged;
+
         public static void RaisePlayerJoined(PlayerId playerId) => OnPlayerJoined?.Invoke(playerId);
 
         public static void RaisePlayerLeft(PlayerId playerId) => OnPlayerLeft?.Invoke(playerId);
@@ -230,6 +239,15 @@ namespace AlienFarms.Core
         public static void RaiseTackleResolved(PlayerId attacker, PlayerId victim, bool accepted) =>
             OnTackleResolved?.Invoke(attacker, victim, accepted);
 
+        public static void RaiseVoiceParticipantChanged(PlayerId playerId, bool inChannel) =>
+            OnVoiceParticipantChanged?.Invoke(playerId, inChannel);
+
+        public static void RaiseVoiceSpeakingChanged(PlayerId playerId, bool speaking) =>
+            OnVoiceSpeakingChanged?.Invoke(playerId, speaking);
+
+        public static void RaiseVoiceMuteChanged(PlayerId playerId, bool muted) =>
+            OnVoiceMuteChanged?.Invoke(playerId, muted);
+
         // Enter Play Mode without domain reload keeps statics alive: clear stale subscribers.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics()
@@ -266,6 +284,9 @@ namespace AlienFarms.Core
             OnPenInventoryChanged = null;
             OnPlayerConnectionChanged = null;
             OnTackleResolved = null;
+            OnVoiceParticipantChanged = null;
+            OnVoiceSpeakingChanged = null;
+            OnVoiceMuteChanged = null;
             PenInventorySnapshot.Reset();
         }
     }
