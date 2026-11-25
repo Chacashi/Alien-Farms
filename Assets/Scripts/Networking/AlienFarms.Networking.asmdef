@@ -11,6 +11,8 @@
         "Unity.Services.Authentication",
         "Unity.Services.Multiplayer",
         "Unity.Services.CloudSave",
+        "Unity.Services.Vivox",
+        "Unity.Services.Friends",
         "Unity.InputSystem",
         "Unity.TextMeshPro"
     ],
