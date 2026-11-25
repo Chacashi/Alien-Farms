@@ -199,7 +199,8 @@ namespace AlienFarms.Networking.Social
                 }
 
                 _sdk = FriendsService.Instance;
-                if (!IsSdkInitialized(_sdk))
+                bool sdkWasInitialized = IsSdkInitialized(_sdk);
+                if (!sdkWasInitialized)
                 {
                     s_lastConnectivity = false;
                 }
@@ -217,6 +218,16 @@ namespace AlienFarms.Networking.Social
                 if (!IsCurrent(lifetime))
                 {
                     return;
+                }
+
+                // A surviving SDK keeps cached lists; presence events may have been missed while it was idle.
+                if (sdkWasInitialized)
+                {
+                    await _sdk.ForceRelationshipsRefreshAsync();
+                    if (!IsCurrent(lifetime))
+                    {
+                        return;
+                    }
                 }
 
                 _friends.SetLocalPlayerId(_onlineSession.LocalPlayerId);

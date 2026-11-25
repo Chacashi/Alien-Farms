@@ -75,7 +75,7 @@ namespace AlienFarms.Menu
 
             if (_menuFlow.Phase != MenuPhase.Online)
             {
-                _onlineSession.SetError(OnlineSessionErrorKeys.Busy);
+                ReportAcceptError(OnlineSessionErrorKeys.Busy, showToast: true);
                 return;
             }
 
