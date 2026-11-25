@@ -14,5 +14,8 @@ namespace AlienFarms.Core
         public const string InviteSent = "friends.info.invite_sent";
         public const string RequestSent = "friends.info.request_sent";
         public const string FriendAdded = "friends.info.friend_added";
+        public const string RequestDeclined = "friends.info.request_declined";
+        public const string RequestCanceled = "friends.info.request_canceled";
+        public const string ListRefreshed = "friends.info.list_refreshed";
     }
 }
