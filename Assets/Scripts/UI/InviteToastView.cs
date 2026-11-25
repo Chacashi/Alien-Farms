@@ -36,6 +36,12 @@ namespace AlienFarms.UI
 
         private void OnValidate()
         {
+            // The prefab asset can't hold _controller (a scene object); only validate scene instances.
+            if (!gameObject.scene.IsValid())
+            {
+                return;
+            }
+
             if (!HasReferences || _content == gameObject)
             {
                 Debug.LogWarning($"[{nameof(InviteToastView)}] Missing references or invalid content on '{name}'.", this);

@@ -149,6 +149,7 @@ GameObject:
   - component: {fileID: 1418458366712097371}
   - component: {fileID: 2557990919286885314}
   - component: {fileID: 1903224791541864712}
+  - component: {fileID: 325854804231199025}
   m_Layer: 0
   m_Name: NetworkRoot
   m_TagString: Untagged
@@ -398,6 +399,22 @@ MonoBehaviour:
   _sessionService: {fileID: 8737395324864652958}
   _networkManager: {fileID: 2352713602397585419}
   _anchor: {fileID: 11400000, guid: 73498404eacadb24f9a4e5c637046ab3, type: 2}
+--- !u!114 &325854804231199025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 783177356002245637}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c527bdafb6f4162ac08ef731a4bc51d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Networking::AlienFarms.Networking.Social.FriendsSocialService
+  _settings: {fileID: 11400000, guid: ede07ccc5b52dbc4980a682f91c837a0, type: 2}
+  _friends: {fileID: 11400000, guid: 92a10c3661515064ebcae1472116959f, type: 2}
+  _onlineSession: {fileID: 11400000, guid: e886cd36434b8b84582b8c99c48ae0c1, type: 2}
+  _sessionService: {fileID: 8737395324864652958}
 --- !u!1 &1165992470216084917
 GameObject:
   m_ObjectHideFlags: 0
