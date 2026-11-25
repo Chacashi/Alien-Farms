@@ -1659,6 +1659,7 @@ GameObject:
   - component: {fileID: 515961433993032094}
   - component: {fileID: 1606121165117485457}
   - component: {fileID: 7100747675412686533}
+  - component: {fileID: 8604121757729680109}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -1975,6 +1976,21 @@ MonoBehaviour:
   _navigate: {fileID: 5685879832191748826, guid: 31166a29a951cef488e041e9f376137d, type: 3}
   _submit: {fileID: 5395302291010256683, guid: 31166a29a951cef488e041e9f376137d, type: 3}
   _cancel: {fileID: 8445614215953194824, guid: 31166a29a951cef488e041e9f376137d, type: 3}
+--- !u!114 &8604121757729680109
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7117857313156260007}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55ce2d2694c347519500955cc5d4d04a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Runtime::AlienFarms.Input.PlayerVoiceHotkey
+  _playerInput: {fileID: 4355428974623653540}
+  _toggleMic: {fileID: -2575193460506059269, guid: 31166a29a951cef488e041e9f376137d, type: 3}
+  _voice: {fileID: 11400000, guid: 8b70c042d0dc22a4e914727f76920f0d, type: 2}
 --- !u!1 &7133204055326033548
 GameObject:
   m_ObjectHideFlags: 0

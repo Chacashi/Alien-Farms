@@ -148,6 +148,7 @@ GameObject:
   - component: {fileID: 8737395324864652958}
   - component: {fileID: 1418458366712097371}
   - component: {fileID: 2557990919286885314}
+  - component: {fileID: 1903224791541864712}
   m_Layer: 0
   m_Name: NetworkRoot
   m_TagString: Untagged
@@ -378,6 +379,24 @@ MonoBehaviour:
   _settings: {fileID: 11400000, guid: bbd39eff9786ae94ba8c4ad1657bab45, type: 2}
   _session: {fileID: 11400000, guid: e886cd36434b8b84582b8c99c48ae0c1, type: 2}
   _progress: {fileID: 11400000, guid: 2c649e6a523ae744b971e3e9fd188922, type: 2}
+  _anchor: {fileID: 11400000, guid: 73498404eacadb24f9a4e5c637046ab3, type: 2}
+--- !u!114 &1903224791541864712
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 783177356002245637}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f1ef02edb31424e8b7f52548b799111, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: AlienFarms.Networking::AlienFarms.Networking.Voice.VoiceChatService
+  _settings: {fileID: 11400000, guid: 1883b1164ab008f40a6dc438afc49932, type: 2}
+  _voice: {fileID: 11400000, guid: 8b70c042d0dc22a4e914727f76920f0d, type: 2}
+  _onlineSession: {fileID: 11400000, guid: e886cd36434b8b84582b8c99c48ae0c1, type: 2}
+  _sessionService: {fileID: 8737395324864652958}
+  _networkManager: {fileID: 2352713602397585419}
   _anchor: {fileID: 11400000, guid: 73498404eacadb24f9a4e5c637046ab3, type: 2}
 --- !u!1 &1165992470216084917
 GameObject:

@@ -459,6 +459,50 @@ MonoBehaviour:
     m_Key: title.play_local
     m_Metadata:
       m_Items: []
+  - m_Id: 8871934184640512
+    m_Key: voice.state.no_voice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360768
+    m_Key: voice.state.in_range
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360769
+    m_Key: voice.state.out_of_range
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360770
+    m_Key: voice.error.credentials
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360771
+    m_Key: voice.error.login
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360772
+    m_Key: voice.error.join
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360773
+    m_Key: voice.error.recover_failed
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360774
+    m_Key: voice.label.mic
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360775
+    m_Key: voice.label.rival_volume
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360776
+    m_Key: voice.label.mute_rival
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360777
+    m_Key: voice.label.rival_muted
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

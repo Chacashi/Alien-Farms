@@ -462,6 +462,50 @@ MonoBehaviour:
     m_Localized: Local
     m_Metadata:
       m_Items: []
+  - m_Id: 8871934184640512
+    m_Localized: Sin voz
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360768
+    m_Localized: En alcance
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360769
+    m_Localized: Fuera de alcance
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360770
+    m_Localized: No se pudieron obtener las credenciales de voz
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360771
+    m_Localized: "No se pudo iniciar sesi\xF3n en el chat de voz"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360772
+    m_Localized: No se pudo entrar al canal de voz
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360773
+    m_Localized: "Se perdi\xF3 la conexi\xF3n de voz"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360774
+    m_Localized: "Micr\xF3fono"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360775
+    m_Localized: Volumen del rival
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360776
+    m_Localized: Silenciar rival
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360777
+    m_Localized: Rival silenciado
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

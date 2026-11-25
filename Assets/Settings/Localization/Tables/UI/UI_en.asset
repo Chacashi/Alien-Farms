@@ -462,6 +462,50 @@ MonoBehaviour:
     m_Localized: Local
     m_Metadata:
       m_Items: []
+  - m_Id: 8871934184640512
+    m_Localized: No voice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360768
+    m_Localized: In range
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360769
+    m_Localized: Out of range
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360770
+    m_Localized: Could not get voice credentials
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360771
+    m_Localized: Could not sign in to voice chat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360772
+    m_Localized: Could not join the voice channel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360773
+    m_Localized: Voice connection lost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360774
+    m_Localized: Microphone
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360775
+    m_Localized: Rival volume
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360776
+    m_Localized: Mute rival
+    m_Metadata:
+      m_Items: []
+  - m_Id: 8871934243360777
+    m_Localized: Rival muted
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
